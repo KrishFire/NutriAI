@@ -1,0 +1,2396 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Project Repository and Development Environment",
+        "description": "Initialize the project repository with Expo and set up the development environment.",
+        "details": "1. Create a new GitHub repository named 'NutriAI'\n2. Initialize Expo project using the latest version (as of 2023, Expo SDK 48 or newer)\n   npx create-expo-app NutriAI\n3. Set up ESLint and Prettier for code consistency\n4. Configure TypeScript for type safety\n5. Set up a .gitignore file to exclude node_modules and other unnecessary files\n6. Create a README.md with project setup instructions\n7. Set up a basic folder structure (e.g., src/, components/, screens/, utils/)\n8. Install necessary dependencies:\n   npm install @react-navigation/native @react-navigation/stack expo-camera expo-speech expo-barcode-scanner @react-native-async-storage/async-storage\n9. Set up basic navigation structure using React Navigation",
+        "testStrategy": "1. Verify that the repository is created and accessible\n2. Ensure Expo project builds and runs without errors\n3. Test ESLint and Prettier configurations\n4. Verify TypeScript compilation\n5. Check that .gitignore is working correctly\n6. Review README.md for completeness\n7. Confirm folder structure is in place\n8. Verify all dependencies are installed and working\n9. Test basic navigation functionality",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create and Initialize Repositories",
+            "description": "Set up separate repositories for the React Native/Expo frontend and the Supabase backend. Initialize with appropriate .gitignore files and README documentation.",
+            "dependencies": [],
+            "details": "Create two repositories (frontend and backend). Initialize with git, add .gitignore for Node/Expo and Supabase, and write initial README files outlining project purpose and setup instructions.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Initialize Expo Project and Configure Folder Structure",
+            "description": "Use Expo CLI to bootstrap the React Native project. Organize folders for components, navigation, hooks, services, assets, and tests.",
+            "dependencies": [
+              1
+            ],
+            "details": "Run `npx create-expo-app` to initialize the project. Create folders: /components (UI), /navigation, /hooks (custom React Hooks for state management), /services (API integration), /assets (images, fonts), and /__tests__ (unit/integration tests).",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Set Up Linting, Formatting, and TypeScript",
+            "description": "Install and configure ESLint, Prettier, and TypeScript for code quality and consistency in the Expo project.",
+            "dependencies": [
+              2
+            ],
+            "details": "Install ESLint and Prettier with recommended React Native/TypeScript configs. Add lint and format scripts to package.json. Initialize TypeScript (`npx tsc --init`), rename files to .tsx, and update tsconfig.json for Expo compatibility.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Install Dependencies and Set Up Navigation",
+            "description": "Install required dependencies for navigation (React Navigation), state management, and API integration (Supabase JS, OpenAI SDK). Configure navigation structure.",
+            "dependencies": [
+              3
+            ],
+            "details": "Install @react-navigation/native, stack/tab navigators, and dependencies for Supabase and OpenAI API. Set up navigation folder with initial stack/tab navigators. Scaffold example screens and link them in navigation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Design and Scaffold UI Components with State Management",
+            "description": "Create reusable UI components and connect them to state using React Hooks. Ensure components are testable and follow design guidelines from the PRD.",
+            "dependencies": [
+              4
+            ],
+            "details": "Develop core UI components (buttons, inputs, cards, etc.) in /components. Use React Hooks for local and global state management. Write unit tests for components and hooks. Ensure accessibility and responsiveness.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Set Up Supabase Backend: Schema, RLS, and API Integration",
+            "description": "Configure Supabase project, define table schemas, set up Row Level Security (RLS) policies, and connect the frontend to Supabase APIs.",
+            "dependencies": [
+              1
+            ],
+            "details": "In Supabase, create tables as per PRD (users, messages, etc.), define columns and relationships, and write RLS policies for secure access. Generate API keys and connect Expo app using Supabase JS client. Scaffold service functions in /services for CRUD operations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement and Run Unit/Integration Tests",
+            "description": "Write and execute unit and integration tests for UI components, hooks, navigation, and API services (including Supabase and OpenAI integration).",
+            "dependencies": [
+              5,
+              6
+            ],
+            "details": "Use Jest and React Native Testing Library for frontend tests. Write integration tests for API services and Supabase RLS policies. Ensure test coverage for critical flows and document test results.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Implement Supabase Integration and Authentication",
+        "description": "Set up Supabase integration for backend services and implement user authentication.",
+        "details": "1. Sign up for Supabase and create a new project\n2. Install Supabase client library: npm install @supabase/supabase-js\n3. Set up Supabase configuration in a separate config file\n4. Implement user registration and login flows using Supabase Auth\n5. Create necessary tables in Supabase (users, meals, streaks)\n6. Implement row-level security policies for data protection\n7. Set up JWT authentication for secure API calls\n8. Create utility functions for Supabase operations (e.g., insertMeal, getUserProfile)\n9. Implement error handling and logging for Supabase operations",
+        "testStrategy": "1. Verify Supabase project creation and configuration\n2. Test user registration flow\n3. Test user login flow\n4. Verify JWT token generation and validation\n5. Test row-level security by attempting unauthorized access\n6. Verify data insertion and retrieval for each table\n7. Test error handling scenarios\n8. Perform security audit of authentication implementation",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize Supabase Project and Backend",
+            "description": "Set up a new Supabase project, configure the database, and obtain API keys for client integration.",
+            "dependencies": [],
+            "details": "Create a Supabase project via the Supabase dashboard. Set up the initial Postgres database instance. Retrieve the Supabase URL and anon/public API key for client use. Document project settings for future reference.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create and Configure React Native/Expo Project",
+            "description": "Initialize a new Expo React Native project and prepare the environment for Supabase integration.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use `npx create-expo-app` to scaffold the project. Set up TypeScript template if required. Ensure React Native development environment is ready. Prepare for dependency installation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Install and Initialize Supabase Client Library",
+            "description": "Install Supabase client and related dependencies in the React Native project and configure the client instance.",
+            "dependencies": [
+              2
+            ],
+            "details": "Install `@supabase/supabase-js`, `@react-native-async-storage/async-storage`, and any UI libraries. Create a helper file to initialize the Supabase client using the project URL and anon key. Ensure session persistence and token refresh are configured.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Design and Implement User Registration and Login Flows",
+            "description": "Develop UI components and logic for user registration and authentication using Supabase Auth.",
+            "dependencies": [
+              3
+            ],
+            "details": "Create registration and login screens using React Native components. Use React Hooks for state management (form state, loading, errors). Integrate Supabase Auth API for sign-up, sign-in, and session management. Add navigation logic for authenticated vs unauthenticated states.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Create Database Tables and Define Schema",
+            "description": "Design and create necessary tables in Supabase (e.g., users, profiles, app-specific data) with appropriate columns and relationships.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use Supabase dashboard or SQL editor to define table schemas. Set up primary keys, foreign keys, and indexes as needed. Document schema for frontend integration.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement Row Level Security (RLS) Policies",
+            "description": "Configure RLS policies on Supabase tables to enforce secure, user-specific data access.",
+            "dependencies": [
+              5
+            ],
+            "details": "Write and enable RLS policies for each table to restrict access based on authenticated user ID. Test policies using Supabase dashboard and client queries. Document policy logic.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Set Up JWT Authentication and Secure API Access",
+            "description": "Ensure JWT-based authentication is enabled and properly configured for secure client-server communication.",
+            "dependencies": [
+              3,
+              6
+            ],
+            "details": "Verify Supabase Auth is issuing JWTs. Configure client to store and send JWTs with requests. Test token validation and expiration handling. Document security considerations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Develop Utility Functions and API Service Layer",
+            "description": "Create reusable utility functions and an API service layer for interacting with Supabase and any external APIs (e.g., OpenAI).",
+            "dependencies": [
+              3,
+              5,
+              7
+            ],
+            "details": "Implement functions for CRUD operations, authentication, and external API calls. Use React Hooks for data fetching and state updates. Ensure error handling and loading states are managed. Write unit tests for utility functions.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Implement Error Handling and Testing",
+            "description": "Add comprehensive error handling in UI and service layers, and write unit/integration tests for all critical flows.",
+            "dependencies": [
+              4,
+              8
+            ],
+            "details": "Display user-friendly error messages in UI components. Handle API/network errors gracefully. Write unit tests for hooks, utility functions, and integration tests for registration/login and data flows. Validate RLS and JWT security via test cases.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Design and Implement User Interface Components",
+        "description": "Create reusable UI components based on the wireframes provided in the PRD.",
+        "details": "1. Set up a UI component library (e.g., React Native Elements or custom components)\n2. Implement the following components based on the Figma wireframes:\n   - Calorie ring component\n   - Macro sub-rings component\n   - Meal logging sheet\n   - Food item row component\n   - Calendar component for history view\n   - Custom buttons and input fields\n3. Ensure components are responsive and follow accessibility guidelines\n4. Implement large-text mode for accessibility\n5. Create a theming system for consistent styling across the app\n6. Optimize components for performance, especially the rings visualization\n7. Implement animations for smooth transitions between states",
+        "testStrategy": "1. Visual inspection of components against Figma wireframes\n2. Test components on various screen sizes for responsiveness\n3. Verify accessibility features (e.g., screen reader compatibility, color contrast)\n4. Test large-text mode functionality\n5. Perform performance tests on ring components with large datasets\n6. User testing for intuitiveness and ease of use\n7. Cross-platform testing (iOS and Android)",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set Up Component Library Infrastructure",
+            "description": "Initialize a new React Native/Expo project for the component library, configure TypeScript, linting, testing, and documentation tools (e.g., Storybook), and set up CI/CD for automated builds and tests.",
+            "dependencies": [],
+            "details": "Use Expo CLI to scaffold the project. Integrate TypeScript for type safety, ESLint/Prettier for code quality, and Storybook for component documentation. Configure CI/CD (e.g., GitHub Actions or CircleCI) to run linting, unit/integration tests, and build steps. Ensure the library can be consumed by the main app as a private npm package.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Design and Implement Major UI Components",
+            "description": "Develop core reusable UI components (e.g., Button, Input, Card, Modal) following atomic design principles, ensuring modularity and reusability.",
+            "dependencies": [
+              1
+            ],
+            "details": "Organize components into atoms, molecules, and organisms. Use functional components and React Hooks for state management. Define prop types and interfaces for each component. Document usage and props in Storybook. Write unit tests for each component.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Integrate State Management with React Hooks",
+            "description": "Implement stateful logic in components using React Hooks (useState, useEffect, useContext) to manage local and shared state.",
+            "dependencies": [
+              2
+            ],
+            "details": "Identify components requiring internal state or context (e.g., form fields, modals). Use useState for local state and useContext for shared/global state. Ensure state updates trigger minimal re-renders (consider React.memo where appropriate). Write tests for stateful behavior.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement API Service Integration (Supabase/OpenAI)",
+            "description": "Create service modules for interacting with Supabase (authentication, CRUD operations) and OpenAI (if required), and integrate them into relevant UI components.",
+            "dependencies": [
+              3
+            ],
+            "details": "Set up Supabase client in the project. Define API service functions for user authentication, data fetching, and mutations. Integrate API calls into components using hooks (e.g., useEffect for data fetching). Mock API responses for unit/integration tests.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Design Supabase Table Schema and RLS Policies",
+            "description": "Define the database schema in Supabase for all required entities and implement Row Level Security (RLS) policies to enforce data access rules.",
+            "dependencies": [
+              4
+            ],
+            "details": "Create tables for users, UI component data, and any other required entities. Write RLS policies to restrict access based on user roles and ownership. Document schema and policies. Test RLS policies using Supabase dashboard and integration tests.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Ensure Responsiveness and Accessibility",
+            "description": "Adapt UI components for various device sizes and implement accessibility best practices (labels, roles, keyboard navigation, color contrast).",
+            "dependencies": [
+              2
+            ],
+            "details": "Use Flexbox and responsive units for layout. Test components on multiple device sizes/emulators. Add accessibility props (e.g., accessible, accessibilityLabel) and ensure screen reader compatibility. Write accessibility tests and manual test cases.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement Theming and Customization",
+            "description": "Add support for light/dark themes and customizable styles across all components, enabling dynamic theme switching.",
+            "dependencies": [
+              2
+            ],
+            "details": "Use a theming library or context (e.g., styled-components ThemeProvider or custom context) to provide theme variables. Ensure all components consume theme values for colors, spacing, and typography. Write tests for theme switching and style overrides.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Optimize Performance and Add Animations",
+            "description": "Profile and optimize component performance, minimize re-renders, and implement smooth animations for interactive elements.",
+            "dependencies": [
+              2
+            ],
+            "details": "Use React.memo and useCallback to prevent unnecessary re-renders. Optimize image loading and list rendering. Integrate animation libraries (e.g., React Native Reanimated) for transitions and feedback. Write performance benchmarks and animation tests.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Implement Photo-based Meal Logging Flow",
+        "description": "Develop the photo-based meal logging feature using GPT-4 Vision API.",
+        "details": "1. Set up OpenAI API integration with GPT-4 Vision\n2. Implement camera functionality using Expo Camera\n3. Create an API endpoint for image analysis (/v1/vision/analyze)\n4. Implement image upload and processing logic\n5. Parse GPT-4 Vision API response to extract meal information\n6. Display editable list of identified food items with macros\n7. Implement 'Save' functionality to store meal data in Supabase\n8. Add error handling for API failures and timeouts\n9. Optimize image processing for faster response times\n10. Implement caching mechanism for common food items to reduce API calls",
+        "testStrategy": "1. Test camera functionality and image capture\n2. Verify successful image upload and processing\n3. Test GPT-4 Vision API integration with various food images\n4. Measure response times for image analysis (target: ≤3000ms)\n5. Verify accuracy of food identification and macro calculations\n6. Test editing and saving functionality\n7. Perform error handling tests (e.g., API failures, timeouts)\n8. Benchmark performance and optimize as needed",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize React Native/Expo Project and Supabase Client",
+            "description": "Set up a new Expo React Native project and configure the Supabase client for API integration, including authentication and storage.",
+            "dependencies": [],
+            "details": "Create the project using Expo CLI. Install @supabase/supabase-js, @react-native-async-storage/async-storage, and react-native-url-polyfill. Initialize Supabase client in a helper file with the project URL and anon key. Ensure RLS is enabled on the Supabase backend. Write unit tests for client initialization.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Design and Implement Camera/Image Picker UI",
+            "description": "Create UI components for capturing or selecting food images using the device camera or gallery.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use Expo Camera and ImagePicker modules. Implement React Hooks for managing image state. Ensure permissions are handled. Write unit tests for UI and state updates.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create Supabase Storage Buckets and Table Schema",
+            "description": "Set up Supabase storage buckets for image uploads and define tables for food items and image metadata.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create a 'food_images' storage bucket and a 'food_items' table with fields for user_id, image_url, food_name, nutrition, etc. Define RLS policies to restrict access to authenticated users' own data. Write integration tests for table access and RLS enforcement.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement Image Upload to Supabase Storage",
+            "description": "Integrate image upload functionality from the frontend to Supabase storage and save metadata in the database.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Use Supabase storage API to upload images. Store returned URLs in the 'food_items' table. Manage upload state with React Hooks. Handle upload errors and display feedback. Write integration tests for upload and database entry creation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Create API Endpoint for Image Processing and GPT-4 Vision Integration",
+            "description": "Develop a backend endpoint (Supabase Edge Function or serverless function) to process uploaded images and call the GPT-4 Vision API.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Set up an endpoint that receives image URLs, sends them to GPT-4 Vision, and returns parsed food/nutrition data. Secure the endpoint with authentication. Write unit and integration tests for endpoint logic and security.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Parse GPT-4 Vision Response and Update Food Item Data",
+            "description": "Implement logic to parse GPT-4 Vision API responses and update the corresponding food item records in Supabase.",
+            "dependencies": [
+              5
+            ],
+            "details": "Extract structured food/nutrition data from GPT-4 Vision responses. Update the 'food_items' table with parsed data. Handle parsing errors and edge cases. Write unit tests for parsing logic and integration tests for database updates.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Develop UI for Food Item Review and Editing",
+            "description": "Build React Native UI components for users to review, edit, and confirm food item details after processing.",
+            "dependencies": [],
+            "details": "Display parsed data in editable form fields. Use React Hooks for form state management. Validate user input. Write unit tests for UI and state logic.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Data Saving and Synchronization",
+            "description": "Save edited food item data back to Supabase and ensure real-time UI updates.",
+            "dependencies": [],
+            "details": "Use Supabase client to update records. Implement optimistic UI updates and handle synchronization errors. Write integration tests for data saving and real-time updates.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Add Robust Error Handling and User Feedback",
+            "description": "Implement comprehensive error handling for all API calls, uploads, and UI actions, providing clear feedback to users.",
+            "dependencies": [
+              4,
+              5,
+              6,
+              8
+            ],
+            "details": "Use try/catch blocks and error boundaries. Display error messages and retry options in the UI. Log errors for debugging. Write unit tests for error scenarios.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Optimize Performance and Implement Caching",
+            "description": "Enhance app performance by caching API responses, images, and minimizing redundant network calls.",
+            "dependencies": [
+              4,
+              6,
+              8
+            ],
+            "details": "Use local storage or in-memory caching for frequently accessed data. Optimize image loading and API requests. Profile and address performance bottlenecks. Write tests to verify caching and performance improvements.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Implement Voice-based Meal Logging",
+        "description": "Develop voice-based meal logging feature using Whisper API and GPT for parsing.",
+        "details": "1. Integrate Expo Speech Recognition API\n2. Implement audio recording functionality\n3. Set up OpenAI Whisper API integration for speech-to-text\n4. Create an API endpoint for voice analysis\n5. Implement GPT parsing of transcribed text to extract meal information\n6. Display editable list of identified food items with macros\n7. Implement 'Save' functionality to store meal data in Supabase\n8. Add error handling for API failures and poor audio quality\n9. Implement offline fallback for voice recognition\n10. Optimize voice processing for faster response times",
+        "testStrategy": "1. Test voice recording functionality\n2. Verify successful audio upload and processing\n3. Test Whisper API integration with various accents and languages\n4. Measure response times for voice analysis\n5. Verify accuracy of food identification from voice input\n6. Test editing and saving functionality\n7. Perform error handling tests (e.g., API failures, poor audio)\n8. Test offline fallback functionality",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement Text-based and Barcode Meal Logging",
+        "description": "Develop text-based and barcode scanning meal logging features.",
+        "details": "1. Implement text input field for manual food entry\n2. Integrate Nutritionix API for food database search\n3. Implement autocomplete functionality for food search\n4. Create barcode scanning functionality using Expo Barcode Scanner\n5. Integrate with a barcode food database API (e.g., Open Food Facts)\n6. Display editable list of identified food items with macros\n7. Implement 'Save' functionality to store meal data in Supabase\n8. Add error handling for API failures and invalid barcodes\n9. Implement caching mechanism for frequently searched foods and scanned barcodes\n10. Optimize search and barcode scanning for faster response times",
+        "testStrategy": "1. Test text input and search functionality\n2. Verify Nutritionix API integration and search results\n3. Test barcode scanning with various product barcodes\n4. Verify barcode database API integration\n5. Test editing and saving functionality for both text and barcode inputs\n6. Perform error handling tests (e.g., API failures, invalid barcodes)\n7. Benchmark performance of search and barcode scanning\n8. Test caching mechanism for improved performance",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Manual Entry UI Components",
+            "description": "Create React Native UI components for manual food entry, including input fields for food name, quantity, and nutritional values.",
+            "dependencies": [],
+            "details": "Use React Native Paper or RNEUI for consistent styling. Ensure accessibility and mobile responsiveness. Plan for form validation and error display.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement State Management for Manual Entry",
+            "description": "Set up React Hooks to manage form state, validation, and submission for manual entry.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use useState and useReducer for complex form logic. Ensure state resets on successful submission or navigation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Integrate Nutritionix API for Food Search",
+            "description": "Create a service layer to query the Nutritionix API for food search and nutrition data retrieval.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement API calls with error handling and loading states. Store API keys securely using Expo's secrets management.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Develop Autocomplete UI and Logic",
+            "description": "Build an autocomplete component that fetches suggestions from Nutritionix as the user types.",
+            "dependencies": [
+              3
+            ],
+            "details": "Debounce input, display suggestions in a dropdown, and handle selection. Integrate with state management for seamless user experience.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Barcode Scanning UI",
+            "description": "Add a barcode scanning screen using Expo's Camera API, with clear instructions and feedback.",
+            "dependencies": [],
+            "details": "Handle camera permissions, scanning animation, and error states (e.g., barcode not found).",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Integrate Barcode API for Lookup",
+            "description": "Connect scanned barcodes to a barcode lookup API (e.g., Nutritionix or Open Food Facts) and display results.",
+            "dependencies": [
+              5
+            ],
+            "details": "Map barcode data to food entries, handle API errors, and allow fallback to manual entry if lookup fails.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Design and Implement Editing UI",
+            "description": "Create UI for editing existing food entries, supporting both manual and API-derived entries.",
+            "dependencies": [
+              1,
+              4,
+              6
+            ],
+            "details": "Pre-fill fields with current data, allow updates, and validate changes before saving.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Set Up Supabase Table Schema and RLS Policies",
+            "description": "Define Supabase tables for food entries, users, and logs. Implement Row Level Security (RLS) policies for user data isolation.",
+            "dependencies": [],
+            "details": "Design schema with appropriate types and indexes. Write RLS policies to restrict access to authenticated users' own data.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Implement Data Saving and Caching Logic",
+            "description": "Integrate Supabase client for saving, updating, and retrieving food entries. Add local caching for offline support and performance.",
+            "dependencies": [
+              2,
+              7,
+              8
+            ],
+            "details": "Use AsyncStorage for caching. Sync local and remote data, handle conflicts, and ensure data consistency.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Add Error Handling, Testing, and Performance Optimization",
+            "description": "Implement global error boundaries, user-friendly error messages, and loading indicators. Write unit and integration tests for all components and services. Profile and optimize performance.",
+            "dependencies": [
+              4,
+              6,
+              7,
+              9
+            ],
+            "details": "Use Jest and React Native Testing Library for tests. Profile API calls and UI rendering. Optimize re-renders and minimize network requests.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Implement Daily Macro Tracking and Visualization",
+        "description": "Develop the daily macro tracking feature with ring visualizations.",
+        "details": "1. Create a data structure to store daily macro information\n2. Implement logic to calculate and update daily macro totals\n3. Develop the main ring component for calorie visualization\n4. Implement sub-ring components for protein, carbs, and fat\n5. Create animations for ring progress updates\n6. Implement tap functionality to open detailed breakdown modal\n7. Develop the detailed breakdown modal with macro information\n8. Implement real-time updates of rings as meals are logged\n9. Add color coding for over/under macro goals\n10. Implement data persistence using Supabase for historical tracking",
+        "testStrategy": "1. Unit test macro calculation logic\n2. Verify ring and sub-ring visualizations against calculated data\n3. Test animations and interaction responsiveness\n4. Verify detailed breakdown modal functionality\n5. Test real-time updates with various meal logging scenarios\n6. Verify color coding accuracy for different macro states\n7. Test data persistence and retrieval from Supabase\n8. Perform usability testing for the macro visualization feature",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Supabase Table Schema and RLS Policies",
+            "description": "Define the Supabase database schema for storing macro data, ring/sub-ring configurations, user profiles, and app state. Implement Row Level Security (RLS) policies for secure, user-specific data access.",
+            "dependencies": [],
+            "details": "Considerations: Table structure for macros, rings, sub-rings, users; RLS policies for user isolation; migration scripts; schema documentation; unit tests for schema constraints and RLS.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Supabase API Service Integration",
+            "description": "Develop a service layer in the React Native app for interacting with Supabase, including CRUD operations for macros, rings, sub-rings, and user data.",
+            "dependencies": [
+              1
+            ],
+            "details": "Considerations: Use Supabase JS client; error handling; authentication; API abstraction; integration tests for API calls; mock Supabase for unit tests.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Develop Macro Calculation Logic",
+            "description": "Implement logic for calculating macro values based on user input and stored data, ensuring accuracy and performance.",
+            "dependencies": [
+              2
+            ],
+            "details": "Considerations: Use React Hooks for state; memoization for performance; unit tests for calculation accuracy; integration tests with API service.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Design and Build Ring and Sub-Ring Visualization Components",
+            "description": "Create reusable React Native components for displaying macro data as interactive rings and sub-rings, supporting dynamic updates and user interaction.",
+            "dependencies": [
+              3
+            ],
+            "details": "Considerations: Use SVG or Canvas for custom visuals; props for data/state; separate style files; accessibility; unit tests for rendering; integration tests for interaction.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Animations for Ring and Sub-Ring Components",
+            "description": "Add smooth animations to ring and sub-ring components for transitions, updates, and user interactions.",
+            "dependencies": [
+              4
+            ],
+            "details": "Considerations: Use React Native Animated API or Reanimated; performance optimization; test for animation smoothness; unit tests for animation triggers.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Develop Modal Components for Data Entry and Details",
+            "description": "Implement modal dialogs for entering macro data, viewing details, and editing ring/sub-ring configurations.",
+            "dependencies": [
+              4
+            ],
+            "details": "Considerations: Use React Native Modal; manage modal state with hooks; accessibility; integration tests for modal workflows; unit tests for modal logic.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Enable Real-Time Updates with Supabase Subscriptions",
+            "description": "Integrate Supabase real-time features to update macro data and visualizations instantly across devices.",
+            "dependencies": [
+              2,
+              4
+            ],
+            "details": "Considerations: Use Supabase real-time subscriptions; update React state on data change; handle connection loss; integration tests for real-time sync.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Color Coding Logic for Macro States",
+            "description": "Develop logic and UI for color coding rings and sub-rings based on macro thresholds and user-defined rules.",
+            "dependencies": [
+              4
+            ],
+            "details": "Considerations: Define color rules; use theme variables; ensure accessibility (contrast); unit tests for color logic; visual regression tests.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Implement Data Persistence and Offline Support",
+            "description": "Ensure macro data and user state persist across sessions and support offline access with sync to Supabase when online.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Considerations: Use local storage (AsyncStorage); conflict resolution; sync strategies; integration tests for offline/online transitions.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Conduct Usability and Accessibility Testing",
+            "description": "Test the app for usability, accessibility, and performance, iterating on UI/UX based on feedback and best practices.",
+            "dependencies": [
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "Considerations: Use automated and manual tests; accessibility audits; user testing sessions; collect feedback; document issues and improvements.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Implement Streak Tracking and Reminders",
+        "description": "Develop the streak tracking feature and implement reminder notifications.",
+        "details": "1. Implement streak tracking logic based on UTC day\n2. Create a Supabase function for daily streak updates\n3. Implement client-side streak calculation for real-time feedback\n4. Develop UI components for displaying current streak\n5. Implement streak reset logic when a day is missed\n6. Create a notification system using Expo Notifications\n7. Implement logic to check daily calorie logging progress\n8. Set up scheduled notifications for 8 PM reminders if <75% calories logged\n9. Allow users to customize reminder times\n10. Implement notification permissions handling and user preferences",
+        "testStrategy": "1. Unit test streak calculation logic\n2. Verify Supabase function for streak updates\n3. Test streak UI components with various streak scenarios\n4. Verify streak reset functionality\n5. Test notification scheduling and delivery\n6. Verify calorie logging progress check accuracy\n7. Test customizable reminder times\n8. Perform notification permission flow testing\n9. Test streak functionality across timezone changes",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Supabase Table Schema for Streaks",
+            "description": "Define and create the necessary Supabase tables to store user streak data, including fields for current streak, longest streak, last activity date, and user reference.",
+            "dependencies": [],
+            "details": "Include consideration for indexing, foreign keys to users, and extensibility for future streak types. Document schema in project docs.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Supabase Row-Level Security (RLS) Policies",
+            "description": "Write and test RLS policies to ensure users can only access and modify their own streak data.",
+            "dependencies": [
+              1
+            ],
+            "details": "Policies should restrict SELECT, INSERT, UPDATE, and DELETE operations to authenticated users on their own rows. Include integration tests for RLS enforcement.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Develop Supabase Edge Function for Streak Calculation and Reset",
+            "description": "Create a Supabase Edge Function to calculate streaks, update streak records, and handle streak resets based on activity timestamps.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Function should accept user ID and activity timestamp, calculate new streak values, and update the database. Include unit and integration tests.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Integrate Streak Calculation Logic on Client Side",
+            "description": "Implement React Hooks to fetch, display, and optimistically update streak data in the app UI, calling the Supabase function as needed.",
+            "dependencies": [
+              3
+            ],
+            "details": "Use React Query or custom hooks for state management. Ensure UI reflects loading, error, and success states. Write unit tests for hooks.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Build UI Components for Streak Display and Progress",
+            "description": "Design and implement React Native components to visualize current streak, longest streak, and progress toward next milestone.",
+            "dependencies": [
+              4
+            ],
+            "details": "Components should be modular, theme-aware, and accessible. Include snapshot and interaction tests.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement Streak Reset and Edge Case Handling",
+            "description": "Ensure streaks reset correctly when users miss a day or violate streak rules, both in backend logic and client-side state.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Test for off-by-one errors, time zone issues, and manual clock changes. Write integration tests covering reset scenarios.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Set Up Notification System for Streak Reminders and Milestones",
+            "description": "Integrate Expo Notifications to remind users to maintain streaks and celebrate milestones, with backend scheduling support.",
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "Schedule local notifications based on user activity and streak state. Include tests for notification triggers and delivery.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Progress Checks and Analytics",
+            "description": "Add logic to check streak progress, trigger achievements, and log analytics events for user engagement.",
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "Integrate with analytics provider (e.g., Amplitude or Segment). Write tests for event logging and achievement unlocks.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Enable Streak Customization Options",
+            "description": "Allow users to customize streak goals, notification preferences, and display settings via UI and persisted settings.",
+            "dependencies": [
+              5,
+              7
+            ],
+            "details": "Update Supabase schema for user preferences. Add UI for customization and ensure state sync. Test preference persistence.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Handle Permissions and API Service Integration",
+            "description": "Ensure proper permissions for notifications, background tasks, and Supabase API calls, handling errors and user consent flows.",
+            "dependencies": [
+              7,
+              9
+            ],
+            "details": "Request and check permissions at runtime. Handle denied permissions gracefully. Write tests for permission flows and error handling.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Implement User Profile and Goals",
+        "description": "Develop user profile creation and goal setting functionality.",
+        "details": "1. Create user profile schema in Supabase\n2. Implement onboarding flow for profile creation\n3. Develop UI for age, weight, and goal input\n4. Implement BMR (Basal Metabolic Rate) calculation based on user data\n5. Create goal setting interface for calorie and macro targets\n6. Implement logic to adjust macro rings based on user goals\n7. Develop profile editing functionality\n8. Implement progress tracking towards user-defined goals\n9. Create visualization for goal progress over time\n10. Implement data validation and error handling for user inputs",
+        "testStrategy": "1. Verify user profile creation in Supabase\n2. Test onboarding flow user experience\n3. Validate BMR calculation accuracy\n4. Test goal setting and adjustment functionality\n5. Verify macro ring adjustments based on goals\n6. Test profile editing and data update propagation\n7. Verify progress tracking accuracy\n8. Test data validation and error handling\n9. Perform usability testing for goal setting and tracking features",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design and Implement Supabase Profile Table Schema",
+            "description": "Define and create the Supabase table for user profiles, including fields for personal data, BMR, goals, and macros. Set up RLS policies for secure access.",
+            "dependencies": [],
+            "details": "Include fields such as user_id (UUID, FK), name, age, gender, height, weight, BMR, macro targets, and timestamps. Write RLS policies to restrict access to authenticated users' own profiles. Test schema creation and RLS with Supabase dashboard and SQL scripts.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Develop Onboarding Flow UI Components",
+            "description": "Create React Native screens for onboarding, collecting initial profile data and guiding users through setup.",
+            "dependencies": [
+              1
+            ],
+            "details": "Design screens for name, age, gender, height, weight, and activity level input. Use React Navigation for flow. Implement state management with React Hooks. Add input validation and error handling.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Integrate Supabase API for Profile Creation and Fetching",
+            "description": "Implement API service layer in React Native to create and fetch user profiles from Supabase.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Use Supabase JS client to POST new profiles and GET existing ones. Handle loading, error, and success states. Write unit tests for API calls and integration tests for onboarding flow.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Build Data Input UI Components with Validation",
+            "description": "Develop reusable input components for profile and goal data entry, with validation and error feedback.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create components for text, number, and select inputs. Use React Hook Form or custom hooks for state and validation. Add unit tests for validation logic and UI rendering.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement BMR Calculation Logic and Integration",
+            "description": "Add logic to calculate Basal Metabolic Rate (BMR) based on user input, and store result in profile.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Implement BMR formulas (e.g., Mifflin-St Jeor) in a utility function. Trigger calculation after relevant inputs. Store BMR in Supabase profile. Add unit tests for calculation accuracy.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Create Goal Setting Interface and State Management",
+            "description": "Design UI for users to set nutrition and fitness goals, and manage state with React Hooks.",
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "Build screens for goal type selection (weight loss, maintenance, gain), target weight, and timeline. Sync state with profile context. Validate inputs and update Supabase profile via API.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Develop Macro Ring Adjustment UI and Logic",
+            "description": "Implement interactive UI for adjusting macro nutrient targets (carbs, protein, fat) as rings or sliders.",
+            "dependencies": [],
+            "details": "Use React Native SVG or third-party libraries for ring visualization. Manage macro state and ensure total matches calorie goal. Validate and persist changes to Supabase. Add unit tests for UI and logic.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Profile Editing and Update Flow",
+            "description": "Allow users to edit their profile and goals, updating data in Supabase with validation and feedback.",
+            "dependencies": [
+              3,
+              4,
+              6,
+              7
+            ],
+            "details": "Create edit screens pre-filled with current data. Use hooks for state and validation. Integrate Supabase update API. Add optimistic UI updates and error handling. Write integration tests for edit flow.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Build Progress Tracking and Visualization Components",
+            "description": "Design and implement UI for tracking user progress (weight, macros, goals) with charts and summaries.",
+            "dependencies": [
+              5,
+              6,
+              7,
+              8
+            ],
+            "details": "Use chart libraries (e.g., Victory, Recharts) for visualizations. Fetch progress data from Supabase. Manage state for time ranges and filters. Add unit tests for data transformation and rendering.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Comprehensive Validation and Testing",
+            "description": "Ensure all flows have robust validation, unit tests, and integration tests for frontend and backend.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "Write tests for input validation, API integration, RLS enforcement, and UI behavior. Use Jest and React Native Testing Library. Validate Supabase RLS with test users. Document test coverage and edge cases.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Implement Meal History and Calendar View",
+        "description": "Develop the meal history feature with a calendar view for past logs.",
+        "details": "1. Design and implement a calendar component\n2. Create a meal history data structure in Supabase\n3. Implement API endpoints for fetching meal history\n4. Develop UI for displaying daily meal cards\n5. Implement infinite scrolling for meal history\n6. Create detailed view for individual meal logs\n7. Implement editing functionality for past meal logs\n8. Develop search and filter options for meal history\n9. Implement data caching for faster history loading\n10. Create data export functionality for user's meal history",
+        "testStrategy": "1. Test calendar component functionality\n2. Verify meal history data retrieval from Supabase\n3. Test infinite scrolling performance\n4. Verify detailed meal log view accuracy\n5. Test editing functionality for past meals\n6. Verify search and filter options\n7. Benchmark history loading times and optimize\n8. Test data export functionality\n9. Perform usability testing for the meal history feature",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design and Implement Calendar Component UI",
+            "description": "Create a reusable calendar component in React Native/Expo for selecting and displaying dates with meal entries.",
+            "dependencies": [],
+            "details": "Use React Native components and libraries (e.g., react-native-calendars). Integrate with state management using React Hooks. Ensure accessibility and responsiveness. Write unit tests for calendar navigation and date selection.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Define Meal History Data Structure and Supabase Table Schema",
+            "description": "Design the data model for meal history, including fields for date, meal type, foods, notes, and user association. Create the corresponding Supabase table schema.",
+            "dependencies": [],
+            "details": "Include fields: id (UUID), user_id (UUID), date (date), meal_type (enum), foods (JSON), notes (text), created_at (timestamp). Write migration scripts and Supabase schema tests.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Supabase RLS Policies for Meal History",
+            "description": "Set up Row Level Security (RLS) policies to ensure users can only access and modify their own meal history data.",
+            "dependencies": [
+              2
+            ],
+            "details": "Write RLS policies in Supabase for SELECT, INSERT, UPDATE, DELETE based on user_id. Test policies with integration tests to verify access control.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Develop API Endpoints for Meal History CRUD Operations",
+            "description": "Create Supabase API endpoints for creating, reading, updating, and deleting meal history entries.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Use Supabase client in React Native to interact with the meal history table. Implement service functions for CRUD operations. Write unit and integration tests for API calls.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Build Daily Meal Card UI Component",
+            "description": "Design and implement a card component to display daily meal summaries, including meal type, foods, and notes.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Use React Native components. Integrate with state management to display data from API. Write unit tests for rendering and props handling.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement Infinite Scrolling for Meal History List",
+            "description": "Enable infinite scroll to load meal history entries as the user scrolls through the calendar or meal list.",
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "Use FlatList with onEndReached in React Native. Integrate with API service for paginated data fetching. Write integration tests for scroll and data loading behavior.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Create Detailed Meal View and Editing Functionality",
+            "description": "Allow users to view detailed meal information and edit or delete entries.",
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "Implement navigation to detailed view. Use controlled components for editing. Integrate with API service for update/delete. Write unit and integration tests for edit flows.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Add Search and Filter Functionality for Meal History",
+            "description": "Enable users to search and filter meal history by date, meal type, or food items.",
+            "dependencies": [
+              4,
+              6
+            ],
+            "details": "Implement search bar and filter controls. Update API queries for filtering. Use React Hooks for state. Write unit tests for search/filter logic.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Implement Caching and Offline Support",
+            "description": "Cache meal history data locally and provide offline access using React Query or AsyncStorage.",
+            "dependencies": [
+              4,
+              6
+            ],
+            "details": "Integrate caching library. Sync with Supabase when online. Write tests for cache hit/miss and offline scenarios.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Develop Data Export Functionality",
+            "description": "Allow users to export their meal history data (e.g., as CSV or JSON).",
+            "dependencies": [
+              4,
+              8
+            ],
+            "details": "Implement export button and logic to format and download data. Ensure export respects RLS policies. Write unit and integration tests for export feature.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Implement Analytics and Event Tracking",
+        "description": "Set up analytics and implement event tracking as specified in the PRD.",
+        "details": "1. Set up an analytics platform (e.g., Amplitude, Mixpanel)\n2. Implement event tracking for 'meal_logged'\n3. Add tracking for 'photo_fail' events\n4. Implement 'streak_broken' event tracking\n5. Set up 'premium_subscribed' event tracking\n6. Create a central analytics service for consistent event logging\n7. Implement user properties tracking (e.g., user demographics, goals)\n8. Set up funnels for key user flows (e.g., onboarding, meal logging)\n9. Implement error tracking and reporting using Sentry\n10. Create analytics dashboards for key metrics (DAU/MAU, retention)",
+        "testStrategy": "1. Verify event tracking implementation for each specified event\n2. Test analytics service with mock data\n3. Verify user properties are correctly tracked\n4. Test funnel tracking for key user flows\n5. Verify error tracking and reporting in Sentry\n6. Test analytics dashboards for accuracy\n7. Perform end-to-end testing of analytics flow\n8. Verify data privacy compliance in analytics implementation",
+        "priority": "low",
+        "dependencies": [
+          2,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Select and Integrate Analytics SDK in React Native/Expo",
+            "description": "Research, select, and integrate an analytics SDK (e.g., Segment, PostHog, Amplitude) compatible with Expo and React Native. Ensure compatibility with Expo Go or use a development build if needed.",
+            "dependencies": [],
+            "details": "Consider UI for opt-in/out, initialize SDK in app entry point, and wrap app with provider if required. Use React Hooks for analytics context. Write unit tests for SDK initialization.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Design Supabase Table Schema for Analytics Events",
+            "description": "Define Supabase tables for storing analytics events, including event name, timestamp, user ID, properties, and device info.",
+            "dependencies": [
+              1
+            ],
+            "details": "Include columns for event type, user properties, and error details. Plan for indexing on event name and user ID. Write migration scripts and unit tests for schema.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Event Tracking for Key User Actions",
+            "description": "Instrument the React Native app to track all required events (e.g., screen views, button presses, purchases) using the analytics SDK.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Add hooks or direct calls to analytics.track in UI components. Use React Hooks for stateful event data. Write unit tests for event firing and integration tests for event flow.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Set Up Central Analytics Service in Supabase",
+            "description": "Create a Supabase function or API endpoint to receive, validate, and store analytics events from the frontend.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement API with input validation and error handling. Write integration tests for event ingestion and storage.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement User Property Tracking and Identification",
+            "description": "Track user properties (e.g., email, plan, device) and associate them with analytics events. Ensure user identification is consistent across sessions.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Update analytics SDK calls to include user traits. Store user properties in Supabase. Use React Context or hooks for user state. Write unit and integration tests.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Configure Funnel and Conversion Tracking",
+            "description": "Define funnels (e.g., onboarding, purchase) and set up event sequences to track user progress through them.",
+            "dependencies": [
+              3,
+              4,
+              5
+            ],
+            "details": "Implement funnel logic in analytics dashboard and backend queries. Add tests for funnel event sequences and conversion calculations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement Error and Exception Tracking",
+            "description": "Capture and log errors/exceptions in the frontend and backend, sending them as analytics events.",
+            "dependencies": [
+              1,
+              2,
+              4
+            ],
+            "details": "Wrap key UI components with error boundaries. Track errors via analytics SDK and Supabase. Write unit tests for error capture and integration tests for error event flow.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Create Analytics Dashboards and Reporting UI",
+            "description": "Develop dashboards in the frontend to visualize analytics data (event counts, funnels, errors, user properties).",
+            "dependencies": [
+              4,
+              6,
+              7
+            ],
+            "details": "Design UI components for charts/tables. Fetch data from Supabase via API. Use React Hooks for state. Write unit tests for UI and integration tests for data fetching.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Define and Enforce Supabase RLS Policies",
+            "description": "Write Row Level Security (RLS) policies to ensure only authorized users/services can access analytics data.",
+            "dependencies": [
+              2,
+              4
+            ],
+            "details": "Implement RLS for event and user property tables. Test policies with Supabase queries and integration tests.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Ensure Privacy Compliance and User Consent",
+            "description": "Implement privacy features (e.g., consent dialogs, opt-out, data deletion) and ensure compliance with regulations (GDPR, CCPA).",
+            "dependencies": [
+              1,
+              3,
+              9
+            ],
+            "details": "Add UI for consent management. Update analytics SDK to respect consent. Write tests for consent flow and data deletion.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Implement Premium Tier Features",
+        "description": "Develop and integrate premium tier features and in-app purchases.",
+        "details": "1. Define premium features (e.g., advanced analytics, meal planning)\n2. Implement in-app purchase functionality using Expo IAP\n3. Create UI for premium upgrade prompts\n4. Implement server-side receipt validation\n5. Develop premium feature flagging system\n6. Create premium-only UI components and screens\n7. Implement trial period functionality\n8. Develop subscription management interface\n9. Create analytics events for premium conversions and churn\n10. Implement restore purchases functionality",
+        "testStrategy": "1. Test in-app purchase flow on iOS and Android\n2. Verify server-side receipt validation\n3. Test premium feature access control\n4. Verify trial period functionality\n5. Test subscription management interface\n6. Verify analytics events for premium actions\n7. Test restore purchases functionality\n8. Perform user acceptance testing for premium features",
+        "priority": "low",
+        "dependencies": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          10
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Premium Feature Set and Access Logic",
+            "description": "Identify and document all premium features, their access requirements, and user flows. Specify which screens/components are premium-only and outline the logic for access control.",
+            "dependencies": [],
+            "details": "List premium features in PRD. Map features to UI components/screens. Define access logic for each feature. Document requirements for state management and API integration.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Design and Implement Supabase Schema for Premium Users",
+            "description": "Create Supabase tables for users, subscriptions, and premium entitlements. Define relationships and fields for tracking premium status, trial periods, and purchase history.",
+            "dependencies": [
+              1
+            ],
+            "details": "Design tables: users, subscriptions, purchases. Add fields: is_premium, trial_start, trial_end, subscription_status. Write migration scripts. Document schema.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Set Up Row-Level Security (RLS) Policies for Premium Data",
+            "description": "Implement RLS policies in Supabase to restrict access to premium-only data and endpoints based on user subscription status.",
+            "dependencies": [
+              2
+            ],
+            "details": "Write RLS policies for premium tables. Test access with different user roles. Document policy logic and edge cases.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Integrate In-App Purchase (IAP) Flow in React Native/Expo",
+            "description": "Implement IAP UI components and logic for purchasing, restoring, and validating premium subscriptions using Expo-compatible libraries.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Build purchase and restore screens. Use React Hooks for state. Integrate with IAP library. Handle purchase events and errors. Write unit tests for purchase logic.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Server-Side Validation of Purchases",
+            "description": "Set up Supabase endpoints/functions to validate IAP receipts and update user premium status securely.",
+            "dependencies": [
+              2,
+              4
+            ],
+            "details": "Create Supabase function for receipt validation. Integrate with IAP provider APIs. Update subscription status in DB. Write integration tests for validation flow.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Develop Feature Flagging System for Premium Features",
+            "description": "Implement a feature flagging mechanism in Supabase and React Native to enable/disable premium features dynamically.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Add feature_flags table in Supabase. Build React Hooks to fetch and cache flags. Integrate flags into UI logic. Test flag toggling and fallback behavior.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Build Premium-Only Screens and UI Components",
+            "description": "Develop screens and components accessible only to premium users, with appropriate gating and messaging for non-premium users.",
+            "dependencies": [
+              1,
+              3,
+              6
+            ],
+            "details": "Create premium screens/components. Use conditional rendering based on premium status. Add upgrade prompts. Write unit tests for UI gating.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Trial Period Logic and UI",
+            "description": "Add support for trial periods in Supabase schema and React Native UI, including countdowns, trial activation, and expiration handling.",
+            "dependencies": [
+              2,
+              4,
+              7
+            ],
+            "details": "Update DB schema for trial tracking. Build trial activation UI. Use React Hooks for trial state. Handle trial expiration. Test trial flows.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Develop Subscription Management and Analytics Integration",
+            "description": "Create UI for managing subscriptions (view, cancel, renew) and integrate analytics tracking for premium events.",
+            "dependencies": [
+              4,
+              5,
+              8
+            ],
+            "details": "Build subscription management screens. Integrate analytics SDK. Track events: purchase, trial start/end, cancellation. Write integration tests for analytics.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Implement Restore Purchases Flow and Testing",
+            "description": "Enable users to restore previous purchases, syncing with Supabase and updating UI state accordingly. Ensure robust testing.",
+            "dependencies": [
+              4,
+              5,
+              9
+            ],
+            "details": "Add restore purchases button/UI. Sync restored status with Supabase. Use React Hooks for state updates. Write unit and integration tests for restore flow.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Implement Employer Admin Panel",
+        "description": "Develop the web-based employer admin panel for managing employee wellness programs.",
+        "details": "1. Set up a React-based web application for the admin panel\n2. Implement admin authentication using Supabase Auth\n3. Create UI for organization selector\n4. Develop KPI tiles for key metrics\n5. Implement CSV export functionality for reports\n6. Create invite code generation system\n7. Develop UI for managing employee roster\n8. Implement aggregate engagement metrics calculation\n9. Create visualizations for engagement data\n10. Implement role-based access control for admin functions",
+        "testStrategy": "1. Test admin authentication flow\n2. Verify organization selection functionality\n3. Test KPI calculations and display\n4. Verify CSV export for various report types\n5. Test invite code generation and usage\n6. Verify employee roster management functions\n7. Test aggregate metrics calculations\n8. Perform usability testing of the admin panel\n9. Verify role-based access control",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          11
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set Up Expo React Native Web App",
+            "description": "Initialize a new Expo project configured for web, iOS, and Android. Install required dependencies and configure entry points for web compatibility.",
+            "dependencies": [],
+            "details": "Use `expo init` to scaffold the project. Install `react-dom`, `react-native-web`, and `@expo/metro-runtime`. Modify the entry file to use `registerRootComponent`. Start the dev server with `npx expo start --web`.[1][5]",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Configure Supabase Backend and Table Schemas",
+            "description": "Set up a Supabase project, configure authentication, and define tables for organizations, users, KPIs, invites, employee roster, and engagement metrics.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create tables: organizations, users, kpis, invite_codes, employees, engagement_metrics. Define relationships and indexes. Set up RLS policies for each table to enforce role-based access.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Admin Authentication (Frontend & Backend)",
+            "description": "Integrate Supabase Auth for admin login and session management. Build login UI and handle authentication state with React Hooks.",
+            "dependencies": [
+              2
+            ],
+            "details": "Use Supabase Auth API for sign-in/sign-up. Create login and registration screens. Store session in React state/context. Write unit tests for authentication logic and integration tests for login flow.[4]",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Develop Organization Selector UI and Logic",
+            "description": "Build a UI component for admins to select or switch between organizations. Fetch organizations from Supabase and manage selection state.",
+            "dependencies": [
+              3
+            ],
+            "details": "Create a dropdown or list selector. Use React Hooks for state. Fetch organizations via Supabase API. Test UI rendering and selection logic. Ensure RLS policies restrict access to permitted organizations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Design KPI Tiles UI and Data Integration",
+            "description": "Create reusable KPI tile components to display key metrics. Fetch KPI data from Supabase and manage loading/error states.",
+            "dependencies": [
+              4
+            ],
+            "details": "Design tile components with props for metric name, value, and trend. Use React Hooks for data fetching. Integrate with Supabase API. Write unit tests for tile rendering and integration tests for data fetching.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement CSV Export Functionality",
+            "description": "Enable admins to export KPI and engagement data as CSV files. Add export buttons and handle file generation on the frontend.",
+            "dependencies": [
+              5
+            ],
+            "details": "Use a library like `papaparse` or custom logic to generate CSV from Supabase data. Add export buttons to relevant screens. Test CSV output and file download behavior.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Build Invite Code System (UI, API, RLS)",
+            "description": "Allow admins to generate and manage invite codes for onboarding employees. Implement UI, backend logic, and RLS policies.",
+            "dependencies": [],
+            "details": "Create invite code generation UI. Store codes in Supabase invite_codes table. Enforce RLS so only admins can create/view codes. Test code creation, validation, and usage flows.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Develop Employee Roster Management Features",
+            "description": "Build UI and backend integration for viewing, adding, editing, and removing employees within an organization.",
+            "dependencies": [],
+            "details": "Create roster list and detail views. Use React Hooks for state. Integrate with Supabase employees table. Enforce RLS for organization scope. Write unit and integration tests for CRUD operations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Implement Engagement Metrics Tracking and Visualization",
+            "description": "Track and display employee engagement metrics with visualizations (charts/graphs). Fetch data from Supabase and render with a charting library.",
+            "dependencies": [],
+            "details": "Design engagement metrics schema. Use a charting library (e.g., Victory, Recharts). Fetch and aggregate data with Supabase API. Test data accuracy and chart rendering.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Enforce Role-Based Access Control (RBAC) Across App",
+            "description": "Implement RBAC in Supabase (RLS policies) and in the frontend to restrict features and data based on user roles (admin, employee, etc).",
+            "dependencies": [],
+            "details": "Define roles in Supabase. Write RLS policies for each table. In React, conditionally render UI based on user role. Test access restrictions with unit and integration tests.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Implement Data Privacy and Security Measures",
+        "description": "Implement comprehensive data privacy and security measures as per PRD requirements.",
+        "details": "1. Implement row-level security in Supabase for all tables\n2. Set up JWT authentication for all API calls\n3. Implement secure storage for sensitive user data\n4. Create data retention policies (e.g., photo URL expiration after 30 days)\n5. Implement data encryption for sensitive information\n6. Develop user data export functionality for GDPR compliance\n7. Create privacy policy and terms of service documents\n8. Implement user consent management system\n9. Set up audit logging for sensitive data access\n10. Conduct a security audit of the entire application",
+        "testStrategy": "1. Test row-level security with various user roles\n2. Verify JWT authentication for all API endpoints\n3. Test secure storage implementation\n4. Verify data retention policy enforcement\n5. Test data encryption and decryption processes\n6. Verify user data export functionality\n7. Review privacy policy and terms of service for completeness\n8. Test user consent management flow\n9. Verify audit logging functionality\n10. Conduct penetration testing",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Row-Level Security (RLS) Policies in Supabase",
+            "description": "Design and apply RLS policies for all relevant tables to ensure users can only access their own data.",
+            "dependencies": [],
+            "details": "Define table schemas in Supabase, enable RLS, and write policies using SQL. Example: restrict 'todos' table so users only see their own records. Test with different user accounts to verify access control.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Integrate JWT Authentication in React Native/Expo",
+            "description": "Set up Supabase Auth in the React Native frontend to handle JWT-based authentication flows.",
+            "dependencies": [],
+            "details": "Implement login, signup, and session management using Supabase Auth. Use React Hooks for state management. Ensure JWT tokens are securely stored and refreshed as needed. Test authentication flows and error handling.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Secure Storage of Sensitive Data on Device",
+            "description": "Implement secure storage for JWT tokens and other sensitive data using Expo SecureStore or similar.",
+            "dependencies": [
+              2
+            ],
+            "details": "Replace AsyncStorage with SecureStore for storing tokens. Encrypt data before storage if possible. Write unit tests to verify secure storage and retrieval.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Define and Enforce Data Retention Policies",
+            "description": "Establish backend logic and UI controls for data retention and deletion in accordance with privacy requirements.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add metadata fields (e.g., created_at, deleted_at) to tables. Implement scheduled deletion or archiving in Supabase. Provide UI for users to request data deletion. Test retention logic and user flows.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Encryption for Data at Rest and in Transit",
+            "description": "Ensure all sensitive data is encrypted both in the database and during network transmission.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Verify Supabase uses SSL/TLS for API calls. For highly sensitive fields, consider client-side encryption before sending to Supabase. Document encryption approach and test for compliance.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Develop Data Export Functionality",
+            "description": "Allow users to export their data securely from the app, respecting RLS and privacy constraints.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create UI components for data export requests. Implement backend endpoints or Supabase functions to generate exports (e.g., CSV/JSON) scoped to the authenticated user. Test export accuracy and security.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Draft and Display Privacy Policy in App",
+            "description": "Write a comprehensive privacy policy and ensure it is accessible in the app UI.",
+            "dependencies": [],
+            "details": "Draft policy text covering data collection, usage, retention, and user rights. Add a dedicated screen in React Native to display the policy. Track user acceptance in Supabase.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Consent Management UI and Backend",
+            "description": "Build UI components and backend logic for managing user consent for data processing.",
+            "dependencies": [],
+            "details": "Add consent fields to user profiles in Supabase. Create React Native screens for users to review and update consent. Integrate with API services to enforce consent checks. Test consent flows.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Set Up Audit Logging for Sensitive Actions",
+            "description": "Log key user and admin actions (e.g., login, data export, deletion) in a secure, immutable audit log table.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Design audit_log table schema in Supabase. Add hooks or triggers to log relevant events. Ensure RLS prevents unauthorized access to logs. Write integration tests for logging.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Conduct Security Audit and Automated Testing",
+            "description": "Perform a comprehensive security audit and implement automated tests for all privacy and security features.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "Review RLS policies, authentication, encryption, and audit logs. Use automated tools and manual testing to identify vulnerabilities. Write unit and integration tests for all critical paths.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Implement Performance Optimizations",
+        "description": "Optimize app performance to meet PRD requirements for speed and stability.",
+        "details": "1. Implement lazy loading for list views\n2. Optimize image loading and caching\n3. Implement efficient state management (e.g., using Redux or MobX)\n4. Optimize API calls with batching and caching\n5. Implement offline support for core functionalities\n6. Optimize app startup time\n7. Implement code splitting for faster initial load\n8. Optimize animations for smooth performance\n9. Implement error boundary components for crash prevention\n10. Set up performance monitoring using tools like Firebase Performance",
+        "testStrategy": "1. Measure and optimize Time to Interactive\n2. Test app performance on low-end devices\n3. Verify lazy loading implementation\n4. Measure API response times and optimize\n5. Test offline functionality\n6. Measure and optimize app startup time\n7. Verify smooth animations across different devices\n8. Conduct stress tests to ensure stability\n9. Monitor crash-free rate in production\n10. Perform end-to-end performance audit",
+        "priority": "high",
+        "dependencies": [
+          4,
+          5,
+          6,
+          7,
+          10
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Lazy Loading for UI Components and Data",
+            "description": "Set up lazy loading for screens, components, and data fetching to reduce initial load time and memory usage in the React Native/Expo frontend.",
+            "dependencies": [],
+            "details": "Use React.lazy and Suspense for component-level code splitting. For lists, use FlatList with onEndReached to fetch data incrementally. Ensure Supabase API endpoints support pagination. Write unit tests for lazy-loaded components and integration tests for paginated API responses.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Optimize Image Loading and Caching",
+            "description": "Optimize images for different screen densities, implement caching, and use efficient formats to improve rendering speed and reduce memory usage.",
+            "dependencies": [],
+            "details": "Use react-native-fast-image for caching and WebP format for images. Store image metadata in Supabase tables. Update Supabase RLS policies to allow secure image access. Write tests to verify image loading, caching, and fallback behavior.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Refactor State Management with React Hooks",
+            "description": "Optimize state management using React Hooks, minimizing unnecessary re-renders and ensuring efficient updates for UI components.",
+            "dependencies": [],
+            "details": "Use useState, useReducer, and useContext for local and global state. Memoize selectors and handlers with useMemo and useCallback. Avoid redundant state in Redux and local state. Write unit tests for custom hooks and integration tests for state-driven UI updates.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Optimize API Integration with Supabase and OpenAI",
+            "description": "Improve API performance by batching requests, caching responses, and handling errors gracefully in the React Native frontend.",
+            "dependencies": [],
+            "details": "Implement API service layer with retry logic and caching. Use Supabase functions for complex queries. Update Supabase table schemas for efficient indexing. Write integration tests for API calls and error handling scenarios.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add Offline Support and Data Synchronization",
+            "description": "Enable offline access to critical features and synchronize data with Supabase when connectivity is restored.",
+            "dependencies": [
+              4
+            ],
+            "details": "Use libraries like redux-persist or WatermelonDB for local storage. Implement background sync logic for Supabase data. Update RLS policies to support offline-first workflows. Write tests for offline mode, conflict resolution, and sync events.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Reduce Startup Time and Improve Time-to-Interactive",
+            "description": "Profile and optimize the app's startup sequence to minimize loading time and ensure a fast, responsive initial experience.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Defer non-critical API calls and component rendering. Use splash screens and loading indicators. Profile startup with React Native Performance Monitor. Write tests to measure and assert startup time improvements.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement Code Splitting and Bundle Optimization",
+            "description": "Split code into smaller bundles and remove unused dependencies to reduce JavaScript bundle size and memory usage.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Configure Metro bundler for dynamic imports. Use tree shaking and analyze bundle size. Remove dead code and unused libraries. Write tests to verify that critical features load in isolated bundles.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Optimize Animations for Smooth Performance",
+            "description": "Refactor animations to use the native driver and minimize JS thread usage for consistent 60 FPS performance.",
+            "dependencies": [],
+            "details": "Use Animated API with useNativeDriver and consider react-native-reanimated for complex animations. Profile animation performance. Write unit tests for animation logic and integration tests for user interaction flows.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Add Error Boundaries and Robust Error Handling",
+            "description": "Implement error boundaries in the React Native frontend and ensure backend errors are surfaced and logged appropriately.",
+            "dependencies": [],
+            "details": "Create reusable ErrorBoundary components. Integrate error logging with monitoring tools. Update Supabase functions to return descriptive errors. Write unit tests for error boundaries and integration tests for error propagation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Set Up Performance Monitoring and Profiling",
+            "description": "Integrate performance monitoring tools and establish metrics for ongoing optimization across frontend and backend.",
+            "dependencies": [
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "Use React Native Performance Monitor, Flipper, and Supabase logs. Track metrics like FPS, memory usage, API latency, and error rates. Write tests to validate monitoring setup and alerting for performance regressions.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 16,
+        "title": "Implement Accessibility Features",
+        "description": "Enhance app accessibility to meet PRD requirements and industry standards.",
+        "details": "1. Implement large-text mode\n2. Ensure all touch targets are at least 48x48dp\n3. Add proper labeling for all UI elements\n4. Implement screen reader support\n5. Ensure sufficient color contrast throughout the app\n6. Implement keyboard navigation support\n7. Add alternative text for all images\n8. Implement focus management for modal dialogs\n9. Ensure proper heading structure for screen readers\n10. Conduct accessibility audit using automated tools",
+        "testStrategy": "1. Test large-text mode on various screen sizes\n2. Verify touch target sizes meet requirements\n3. Test screen reader functionality on iOS and Android\n4. Verify color contrast ratios\n5. Test keyboard navigation\n6. Verify alternative text for images\n7. Test focus management in modal dialogs\n8. Conduct manual accessibility testing\n9. Perform automated accessibility audits\n10. Conduct user testing with individuals with disabilities",
+        "priority": "medium",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Large-Text Mode Support",
+            "description": "Enable dynamic font scaling throughout the React Native/Expo frontend to support users who require larger text sizes.",
+            "dependencies": [],
+            "details": "Update all text components to use scalable units (e.g., `fontScale`), ensure compatibility with system accessibility settings, and test with various device font size settings. Use React Hooks to manage user preferences for text size. No backend changes required. Write unit tests to verify text scaling.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Ensure Adequate Touch Target Sizing",
+            "description": "Audit and update all interactive UI components to meet minimum touch target size requirements for accessibility.",
+            "dependencies": [],
+            "details": "Review all buttons, links, and touchable elements to ensure they are at least 44x44dp. Refactor components as needed. Use React Hooks to manage state for touch interactions. No backend changes required. Write unit tests to verify touch target sizes.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Add Proper Labeling to UI Components",
+            "description": "Implement and verify accessibility labels for all relevant UI elements to ensure screen readers can accurately describe them.",
+            "dependencies": [],
+            "details": "Add `accessibilityLabel` and `accessibilityRole` props to all interactive and informative components. Use React Hooks to manage dynamic label content. No backend changes required. Write unit tests to check for presence and correctness of labels.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Screen Reader Support Implementation",
+            "description": "Ensure all UI components are discoverable and usable with screen readers (VoiceOver, TalkBack).",
+            "dependencies": [
+              3
+            ],
+            "details": "Set `accessible={true}` on relevant containers, verify logical reading order, and test with both iOS and Android screen readers. Use React Hooks to manage focus and state changes. No backend changes required. Integration tests with screen reader tools.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Enforce Color Contrast Standards",
+            "description": "Audit and update color schemes to meet WCAG contrast ratios for text and interactive elements.",
+            "dependencies": [],
+            "details": "Review all color usages in the UI, update styles to ensure sufficient contrast, and provide alternate themes if needed. Use React Hooks for theme management. No backend changes required. Write unit tests for color contrast using automated tools.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement Keyboard Navigation",
+            "description": "Enable full keyboard navigation for all interactive components, ensuring logical tab order and focus visibility.",
+            "dependencies": [
+              2,
+              4
+            ],
+            "details": "Add keyboard event handlers, ensure all focusable elements are reachable via keyboard, and manage focus state with React Hooks. No backend changes required. Integration tests for keyboard navigation flow.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Provide Alt Text for Images and Media",
+            "description": "Add descriptive alt text to all images and media components for screen reader accessibility.",
+            "dependencies": [
+              3
+            ],
+            "details": "Set `accessibilityLabel` or `alt` props on all <Image> and media components. Use React Hooks to manage dynamic alt text. If images are stored in Supabase, ensure metadata includes alt text fields. Update Supabase table schema to include `alt_text` column for media assets. Write unit and integration tests for alt text presence.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Focus Management for Dynamic Content",
+            "description": "Implement focus management strategies for modals, dialogs, and dynamic content to ensure accessibility.",
+            "dependencies": [],
+            "details": "Use React Hooks to programmatically set focus when new content appears (e.g., after navigation or modal open). Ensure focus is trapped within modals and returns to the triggering element on close. No backend changes required. Integration tests for focus behavior.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Establish Semantic Heading Structure",
+            "description": "Ensure all screens and components use a logical, semantic heading structure for navigation and screen reader users.",
+            "dependencies": [],
+            "details": "Use <Text> components with appropriate accessibility roles to represent headings (e.g., `accessibilityRole=\"header\"`). Maintain a logical hierarchy (h1, h2, etc.) across screens. No backend changes required. Unit tests to verify heading structure.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Conduct Comprehensive Accessibility Audit",
+            "description": "Perform a full accessibility audit of the app, covering all previous subtasks and verifying compliance with WCAG and platform guidelines.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "Use automated tools and manual testing (including screen readers and keyboard navigation) to identify and fix remaining issues. Document findings and remediation steps. No backend changes required. Integration and end-to-end tests for accessibility.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "title": "Implement Localization and Internationalization",
+        "description": "Prepare the app for international markets by implementing localization.",
+        "details": "1. Set up i18n library (e.g., react-i18next)\n2. Extract all hardcoded strings into language files\n3. Implement language selection functionality\n4. Handle right-to-left (RTL) layouts for appropriate languages\n5. Localize date and time formats\n6. Implement number formatting for different locales\n7. Create a system for managing translations\n8. Implement dynamic font scaling for different languages\n9. Localize images and icons where necessary\n10. Set up a workflow for continuous localization updates",
+        "testStrategy": "1. Verify all UI elements are properly localized\n2. Test language switching functionality\n3. Verify RTL layout in appropriate languages\n4. Test date, time, and number formatting in different locales\n5. Verify dynamic font scaling\n6. Test localized images and icons\n7. Conduct user testing with native speakers of target languages\n8. Verify localization workflow with sample updates",
+        "priority": "low",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set Up i18n Library and Project Structure",
+            "description": "Install and configure i18n libraries (i18next, react-i18next, expo-localization) for React Native/Expo. Establish a folder structure for translation files and i18n services.",
+            "dependencies": [],
+            "details": "Install required packages using `npx expo install i18next react-i18next expo-localization`. Create an `i18n` folder for translation JSON files and a service file for i18n configuration. Ensure the i18n instance is initialized at app startup and integrated with React context/hooks for state management.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Extract and Organize Localizable Strings",
+            "description": "Identify all user-facing strings in UI components and extract them into translation files for each supported language.",
+            "dependencies": [
+              1
+            ],
+            "details": "Refactor UI components to replace hardcoded strings with translation keys using the i18n library. Organize translation files (e.g., en.json, es.json) in the `i18n` folder. Use tools or scripts to automate extraction where possible. Ensure fallback mechanisms are in place for missing translations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Language Selection and Persistence",
+            "description": "Add UI for language selection and persist user preference using React Hooks and Supabase.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create a language picker component. Use React state/hooks to manage selected language. Store user language preference in Supabase (user profile table). On app load, fetch and apply the preferred language. Update i18n instance and UI on language change.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Support RTL Layouts and Directionality",
+            "description": "Detect RTL languages and adjust UI layout direction accordingly.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Use expo-localization to detect RTL languages. Update app root and relevant components to support RTL layout using React Native's `I18nManager`. Test UI mirroring and ensure all components render correctly in RTL mode.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Date, Time, and Number Formatting",
+            "description": "Format dates, times, and numbers according to the selected locale using i18n and JavaScript Intl APIs.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Replace all date, time, and number displays in UI with localized formatting functions. Use `Intl.DateTimeFormat` and `Intl.NumberFormat` or i18n library helpers. Add unit tests to verify correct formatting for each supported locale.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Translation Management and Supabase Integration",
+            "description": "Design Supabase schema for storing translations and manage translation updates via API.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Create a `translations` table in Supabase with fields for key, language, and value. Define RLS policies to restrict write access to authorized translators. Implement API endpoints or Supabase functions for fetching and updating translations. Integrate translation fetching into the frontend i18n service.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Font Scaling and Accessibility",
+            "description": "Ensure all text components support dynamic font scaling and accessibility settings.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Update text components to use React Native's accessibility props and support dynamic font scaling. Test with different device accessibility settings. Add integration tests to verify font scaling works across languages and layouts.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Localized Assets Management",
+            "description": "Organize and serve localized images, icons, and other assets based on the selected language/region.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Structure asset folders by locale. Update asset loading logic in UI components to select assets based on current language/region. Store asset metadata in Supabase if dynamic asset management is required. Test asset switching for all supported locales.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Localization Workflow and RLS Policies",
+            "description": "Define localization workflow, including translation submission, review, and deployment. Implement Supabase RLS policies for secure translation management.",
+            "dependencies": [],
+            "details": "Document the translation workflow (e.g., string extraction, translation, review, deployment). Set up Supabase RLS policies to allow only authorized users to submit or edit translations. Add audit fields (created_by, updated_by) to translation tables. Test RLS policies with unit/integration tests.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Testing and Quality Assurance",
+            "description": "Develop and run unit and integration tests for all localization features across frontend and backend.",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "Write unit tests for translation hooks, formatting utilities, and language selection logic. Create integration tests for end-to-end localization flows (string rendering, language switching, RTL layout, asset loading). Test Supabase API endpoints and RLS policies. Validate fallback and error handling for missing translations.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 18,
+        "title": "Implement Continuous Integration and Deployment",
+        "description": "Set up CI/CD pipelines for automated testing and deployment.",
+        "details": "1. Set up GitHub Actions for CI/CD\n2. Implement automated unit testing in CI pipeline\n3. Set up end-to-end testing using Detox\n4. Implement code quality checks (e.g., ESLint, Prettier)\n5. Set up automated builds for iOS and Android\n6. Implement beta distribution using TestFlight and Google Play Console\n7. Set up automated deployment to Expo\n8. Implement versioning and changelog generation\n9. Set up monitoring and alerting for CI/CD pipeline\n10. Implement feature flag system for gradual rollouts",
+        "testStrategy": "1. Verify CI pipeline triggers on pull requests\n2. Test automated unit test execution\n3. Verify end-to-end test execution in CI\n4. Test code quality check enforcement\n5. Verify automated builds for both platforms\n6. Test beta distribution process\n7. Verify Expo deployment process\n8. Test versioning and changelog generation\n9. Verify monitoring and alerting functionality\n10. Test feature flag system with sample rollout",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configure CI/CD Pipeline for React Native/Expo and Supabase",
+            "description": "Set up automated workflows using GitHub Actions and EAS for Expo frontend and Supabase backend, including environment variables and secrets management.",
+            "dependencies": [],
+            "details": "Create .github/workflows for Expo (frontend) and Supabase (backend). Integrate EAS CLI for Expo builds. Ensure secrets (EXPO_TOKEN, SUPABASE_KEY) are securely stored. Reference PRD and RULES.md for required build triggers and branch policies.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Automated Build and Deployment Workflows",
+            "description": "Automate build and deployment for both frontend (Expo EAS) and backend (Supabase migrations/functions) using CI/CD workflows.",
+            "dependencies": [
+              1
+            ],
+            "details": "Configure EAS build jobs for all platforms. Set up deployment triggers on main branch merges. For Supabase, automate migration deployment and function updates. Ensure PR previews for frontend using EAS Hosting.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Set Up Unit and Integration Testing for Frontend",
+            "description": "Establish unit and integration test suites for React Native components, hooks, and API services.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use Jest and React Native Testing Library. Cover UI components, state management (React Hooks), and API service integration (Supabase/OpenAI). Reference PRD for required test cases and RULES.md for coverage thresholds.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Set Up Unit and Integration Testing for Backend",
+            "description": "Implement unit and integration tests for Supabase functions, triggers, and RLS policies.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use Supabase CLI and Postgres test frameworks. Test table schemas, RLS policies, and API endpoints. Ensure tests cover all business logic and security rules as per RULES.md.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Integrate Code Quality and Linting Checks",
+            "description": "Add automated code quality checks for both frontend and backend in CI/CD workflows.",
+            "dependencies": [
+              1
+            ],
+            "details": "Configure ESLint, Prettier, and TypeScript checks for React Native. Set up SQL and function linting for Supabase. Fail builds on code quality violations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Design and Implement Supabase Table Schemas and RLS Policies",
+            "description": "Define and migrate Supabase table schemas and implement Row Level Security (RLS) policies.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create migration scripts for all tables as per PRD. Write RLS policies to enforce access control. Document schema and policies for API integration.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Develop Feature Flag System (Frontend and Backend)",
+            "description": "Implement a feature flag system to enable/disable features dynamically in both frontend and backend.",
+            "dependencies": [],
+            "details": "Create Supabase table for feature flags with RLS. Integrate feature flag checks in React Native using hooks and context. Ensure backend respects feature flags in API logic.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Integrate Monitoring and Error Reporting",
+            "description": "Set up monitoring and error reporting for both frontend and backend.",
+            "dependencies": [
+              2
+            ],
+            "details": "Integrate Sentry or similar for React Native error tracking. Enable Supabase logs and alerts for backend. Ensure alerts for failed builds, deployments, and runtime errors.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Implement Versioning and Beta Distribution",
+            "description": "Automate versioning and beta distribution for the Expo app and Supabase backend.",
+            "dependencies": [
+              2
+            ],
+            "details": "Configure semantic versioning in CI. Use EAS Update for beta releases. Manage Supabase migration versions. Distribute beta builds to testers via EAS or TestFlight/Google Play.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Document CI/CD, Testing, and Deployment Processes",
+            "description": "Create comprehensive documentation for all CI/CD, testing, deployment, and feature flag processes.",
+            "dependencies": [],
+            "details": "Document workflow files, environment setup, test commands, deployment steps, and feature flag usage. Ensure documentation aligns with PRD and RULES.md.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 19,
+        "title": "Implement Error Handling and Logging",
+        "description": "Develop a comprehensive error handling and logging system.",
+        "details": "1. Implement global error boundary in React Native\n2. Set up error logging service (e.g., Sentry)\n3. Implement custom error types for different scenarios\n4. Create user-friendly error messages\n5. Implement retry mechanisms for network requests\n6. Set up crash reporting\n7. Implement logging for critical user actions\n8. Create an admin dashboard for error monitoring\n9. Implement error alerting system for critical issues\n10. Develop a system for categorizing and prioritizing errors",
+        "testStrategy": "1. Test error boundary with simulated errors\n2. Verify error logging in Sentry\n3. Test custom error handling for various scenarios\n4. Verify user-friendly error message display\n5. Test retry mechanisms for poor network conditions\n6. Verify crash reports are properly captured\n7. Test logging of critical user actions\n8. Verify admin dashboard displays errors correctly\n9. Test error alerting system\n10. Verify error categorization and prioritization",
+        "priority": "high",
+        "dependencies": [
+          2,
+          11
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Error Boundaries in React Native/Expo Frontend",
+            "description": "Create reusable error boundary components to catch and handle errors in critical UI sections, following best practices for placement and fallback UI.",
+            "dependencies": [],
+            "details": "Use class components for error boundaries. Wrap independent features (e.g., dashboard, forms) rather than the entire app. Design user-friendly fallback UIs with context-specific messaging and retry options. Integrate with React Hooks for state management where possible. Write unit tests for error boundary behavior.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Set Up Centralized Logging Service (Frontend & Backend)",
+            "description": "Establish a logging service to capture, store, and forward error and action logs from both the frontend and Supabase backend.",
+            "dependencies": [
+              1
+            ],
+            "details": "Integrate a logging library or custom service in React Native. Use Supabase functions or tables to store logs. Ensure logs include error details, user context, and timestamps. Provide API integration for log submission. Write integration tests for log capture and storage.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Define and Implement Custom Error Types",
+            "description": "Create a set of custom error classes/types for both frontend and backend to enable granular error categorization and handling.",
+            "dependencies": [
+              1
+            ],
+            "details": "Define error types (e.g., NetworkError, ValidationError, AuthError) in TypeScript/JavaScript and Supabase (Postgres enums or codes). Ensure error boundaries and logging service recognize and process these types. Add unit tests for error instantiation and propagation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Design User Messaging and Fallback UI Components",
+            "description": "Develop UI components for displaying error messages, retry prompts, and user guidance based on error context and type.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Create modular components for error banners, modals, and inline messages. Use React Hooks for state (e.g., error, retry count). Ensure messages are actionable and context-aware. Write unit tests for UI rendering and state transitions.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Retry Mechanisms for API and Data Operations",
+            "description": "Add retry logic to API service integrations (Supabase, OpenAI) for transient errors, with exponential backoff and user feedback.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Wrap API calls with retry logic using custom hooks or utility functions. Expose retry actions in UI components. Log retry attempts and outcomes. Write integration tests for retry flows and edge cases.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Integrate Crash Reporting Tools and Backend Storage",
+            "description": "Set up crash reporting (e.g., Sentry, custom Supabase table) to capture unhandled exceptions and critical failures from both frontend and backend.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Configure crash reporting SDK in React Native. Create Supabase table schema for crash reports (fields: error type, stack trace, user/session info, timestamp). Set up RLS policies to restrict access. Write integration tests for crash report submission and retrieval.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement Action Logging for User and System Events",
+            "description": "Log significant user actions and system events for auditability and debugging, storing them in Supabase with appropriate schema and RLS.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Define action types and payloads. Create Supabase table for action logs (fields: user_id, action_type, metadata, timestamp). Integrate logging in frontend and backend flows. Write unit and integration tests for action logging.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Develop Admin Dashboard for Error and Log Monitoring",
+            "description": "Build a secure admin dashboard in React Native/Expo to view, filter, and analyze error logs, crash reports, and action logs from Supabase.",
+            "dependencies": [
+              6,
+              7
+            ],
+            "details": "Design UI components for log tables, filters, and detail views. Integrate with Supabase API for data fetching. Implement RLS policies to restrict dashboard access to admins. Write integration tests for dashboard features and access control.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Set Up Automated Alerting for Critical Errors",
+            "description": "Configure automated alerts (e.g., email, Slack, push notifications) for high-severity errors or crash reports detected in Supabase.",
+            "dependencies": [
+              6,
+              8
+            ],
+            "details": "Use Supabase triggers/functions or external services to send alerts on critical log entries. Define alert thresholds and escalation paths. Test alert delivery and deduplication.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Implement Error Categorization and Analytics",
+            "description": "Develop logic and UI for categorizing errors (by type, source, frequency) and provide analytics in the admin dashboard.",
+            "dependencies": [
+              3,
+              8
+            ],
+            "details": "Add error category fields to log schemas. Implement backend queries and frontend visualizations (charts, tables) for error trends. Write tests for categorization logic and analytics accuracy.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 20,
+        "title": "Conduct User Acceptance Testing and Beta Launch",
+        "description": "Prepare for and conduct user acceptance testing, followed by a beta launch.",
+        "details": "1. Develop a comprehensive test plan\n2. Recruit beta testers (including from pilot employers)\n3. Set up beta testing infrastructure (e.g., TestFlight, Google Play Console)\n4. Create user guides and onboarding materials\n5. Implement feedback collection mechanism in the app\n6. Conduct usability testing sessions\n7. Analyze and prioritize feedback and bug reports\n8. Make necessary adjustments based on beta feedback\n9. Prepare for public beta launch\n10. Develop a communication plan for beta launch",
+        "testStrategy": "1. Verify all features work as expected in beta version\n2. Test onboarding process with new users\n3. Verify feedback collection mechanism\n4. Analyze usability testing results\n5. Test critical user journeys end-to-end\n6. Verify app stability and performance in real-world use\n7. Test data accuracy and consistency\n8. Verify privacy and security measures in beta environment\n9. Conduct load testing with expected beta user numbers\n10. Perform final regression testing before public beta launch",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Develop Comprehensive Test Plan",
+            "description": "Create a detailed test plan covering unit, integration, and end-to-end tests for both the React Native/Expo frontend and Supabase backend.",
+            "dependencies": [],
+            "details": "Define test cases for UI components (including edge cases), state management using React Hooks, API service integration (Supabase/OpenAI), Supabase table schema, and RLS policies. Specify required tools (e.g., Jest, React Native Testing Library) and coverage targets.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Recruit and Onboard Beta Testers",
+            "description": "Identify, recruit, and onboard a diverse group of beta testers representing target user personas.",
+            "dependencies": [
+              1
+            ],
+            "details": "Prepare onboarding materials, NDA agreements, and access instructions. Ensure testers have devices compatible with Expo builds. Set up a feedback channel (e.g., Slack, Discord, or email).",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Set Up Infrastructure for Beta",
+            "description": "Provision and configure infrastructure for the beta environment, including Expo builds and Supabase backend.",
+            "dependencies": [
+              1
+            ],
+            "details": "Deploy Expo app to staging, configure Supabase project, set up table schemas, implement RLS policies, and integrate with OpenAI APIs. Ensure monitoring, logging, and error tracking are enabled.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Draft and Publish User Guides",
+            "description": "Create user guides and onboarding documentation tailored for beta testers.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Include step-by-step instructions for app installation (Expo Go or standalone), feature walkthroughs, UI component explanations, and troubleshooting tips. Highlight state management flows and API integration points.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Feedback Collection Mechanisms",
+            "description": "Integrate feedback collection tools within the app and external channels.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Add in-app feedback forms (React Native UI components), connect to Supabase for storing feedback, and set up automated notifications for new submissions. Ensure RLS policies protect user data.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Conduct Usability Testing Sessions",
+            "description": "Organize and facilitate usability testing sessions with beta testers.",
+            "dependencies": [
+              2,
+              5
+            ],
+            "details": "Prepare test scripts focusing on critical UI flows, state transitions, and API interactions. Record sessions (with consent), collect qualitative and quantitative data, and observe pain points.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Analyze Beta Feedback and Usability Data",
+            "description": "Aggregate and analyze feedback and usability data to identify trends and actionable insights.",
+            "dependencies": [
+              5,
+              6
+            ],
+            "details": "Categorize issues by severity and frequency. Map feedback to specific UI components, state management logic, API endpoints, Supabase schema, and RLS policies. Prioritize fixes and improvements.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Adjustments and Fixes",
+            "description": "Address prioritized issues and suggestions from beta feedback and usability analysis.",
+            "dependencies": [],
+            "details": "Update React Native components, refine state management with React Hooks, optimize API service integration, adjust Supabase schema and RLS policies as needed. Write and run new/updated unit and integration tests.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Prepare for Beta Launch",
+            "description": "Finalize all preparations for the public beta launch.",
+            "dependencies": [],
+            "details": "Build and distribute the Expo app, verify Supabase backend readiness, ensure all tests pass, and confirm user guides and feedback channels are up-to-date. Perform a final review of RLS policies and data privacy compliance.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Develop and Execute Communication Plan",
+            "description": "Create and implement a communication plan for beta launch and ongoing updates.",
+            "dependencies": [],
+            "details": "Draft announcements, update documentation, and schedule regular updates for testers. Set up channels for ongoing support and feedback, and establish protocols for responding to critical issues.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-06-28T21:06:52.881Z",
+      "updated": "2025-06-28T21:06:52.881Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
