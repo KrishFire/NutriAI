@@ -91,3 +91,6 @@ export interface AIFoodAnalysis {
   totalCalories: number;
   imageUrl: string;
 }
+
+// Re-export food search types
+export * from './foodSearch';

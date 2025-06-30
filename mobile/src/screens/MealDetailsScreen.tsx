@@ -15,6 +15,7 @@ import { Button, LoadingSpinner } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import { RootStackParamList } from '../types/navigation';
 import { MealAnalysis, FoodItem, NutritionData } from '../services/openai';
+import { saveMealAnalysis } from '../services/meals';
 
 type MealDetailsScreenProps = NativeStackScreenProps<RootStackParamList, 'MealDetails'>;
 
@@ -35,13 +36,13 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
     const newFoods = [...editedAnalysis.foods];
     newFoods[index] = updatedFood;
     
-    // Recalculate total nutrition
+    // Recalculate total nutrition with null safety
     const totalNutrition = newFoods.reduce(
       (total, food) => ({
-        calories: total.calories + food.nutrition.calories,
-        protein: total.protein + food.nutrition.protein,
-        carbs: total.carbs + food.nutrition.carbs,
-        fat: total.fat + food.nutrition.fat,
+        calories: (total.calories || 0) + (food.nutrition.calories || 0),
+        protein: (total.protein || 0) + (food.nutrition.protein || 0),
+        carbs: (total.carbs || 0) + (food.nutrition.carbs || 0),
+        fat: (total.fat || 0) + (food.nutrition.fat || 0),
         fiber: (total.fiber || 0) + (food.nutrition.fiber || 0),
         sugar: (total.sugar || 0) + (food.nutrition.sugar || 0),
         sodium: (total.sodium || 0) + (food.nutrition.sodium || 0),
@@ -61,10 +62,10 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
     
     const totalNutrition = newFoods.reduce(
       (total, food) => ({
-        calories: total.calories + food.nutrition.calories,
-        protein: total.protein + food.nutrition.protein,
-        carbs: total.carbs + food.nutrition.carbs,
-        fat: total.fat + food.nutrition.fat,
+        calories: (total.calories || 0) + (food.nutrition.calories || 0),
+        protein: (total.protein || 0) + (food.nutrition.protein || 0),
+        carbs: (total.carbs || 0) + (food.nutrition.carbs || 0),
+        fat: (total.fat || 0) + (food.nutrition.fat || 0),
         fiber: (total.fiber || 0) + (food.nutrition.fiber || 0),
         sugar: (total.sugar || 0) + (food.nutrition.sugar || 0),
         sodium: (total.sodium || 0) + (food.nutrition.sodium || 0),
@@ -106,19 +107,65 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
 
     setSaving(true);
     try {
-      // TODO: Save meal to Supabase database
-      // This will be implemented when we create the meal logging service
-      
+      // Show meal type selection
       Alert.alert(
-        'Success!', 
-        'Meal saved successfully!',
+        'Select Meal Type',
+        'What type of meal is this?',
         [
           {
-            text: 'OK',
-            onPress: () => navigation.navigate('Home'),
+            text: 'Breakfast',
+            onPress: () => saveMealWithType('breakfast'),
+          },
+          {
+            text: 'Lunch',
+            onPress: () => saveMealWithType('lunch'),
+          },
+          {
+            text: 'Dinner',
+            onPress: () => saveMealWithType('dinner'),
+          },
+          {
+            text: 'Snack',
+            onPress: () => saveMealWithType('snack'),
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => setSaving(false),
           },
         ]
       );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save meal');
+      console.error('Save meal error:', error);
+      setSaving(false);
+    }
+  };
+
+  const saveMealWithType = async (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
+    try {
+      const result = await saveMealAnalysis(
+        user!.id,
+        mealType,
+        editedAnalysis,
+        uploadedImageUrl,
+        editedAnalysis.notes
+      );
+
+      if (result.success) {
+        Alert.alert(
+          'Success!', 
+          'Meal saved successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate('AppTabs'),
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Error', result.error || 'Failed to save meal');
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to save meal');
       console.error('Save meal error:', error);
@@ -387,42 +434,53 @@ interface NutritionSummaryProps {
 }
 
 function NutritionSummary({ nutrition }: NutritionSummaryProps) {
+  // Ensure nutrition object exists and has valid values
+  const safeNutrition = {
+    calories: Number(nutrition?.calories) || 0,
+    protein: Number(nutrition?.protein) || 0,
+    carbs: Number(nutrition?.carbs) || 0,
+    fat: Number(nutrition?.fat) || 0,
+    fiber: Number(nutrition?.fiber) || 0,
+    sugar: Number(nutrition?.sugar) || 0,
+    sodium: Number(nutrition?.sodium) || 0,
+  };
+
   return (
     <View style={styles.nutritionSummary}>
       <View style={styles.macroRow}>
         <View style={styles.macroItem}>
-          <Text style={styles.macroValue}>{nutrition.calories}</Text>
+          <Text style={styles.macroValue}>{safeNutrition.calories}</Text>
           <Text style={styles.macroLabel}>Calories</Text>
         </View>
         <View style={styles.macroItem}>
-          <Text style={styles.macroValue}>{nutrition.protein}g</Text>
+          <Text style={styles.macroValue}>{safeNutrition.protein}g</Text>
           <Text style={styles.macroLabel}>Protein</Text>
         </View>
         <View style={styles.macroItem}>
-          <Text style={styles.macroValue}>{nutrition.carbs}g</Text>
+          <Text style={styles.macroValue}>{safeNutrition.carbs}g</Text>
           <Text style={styles.macroLabel}>Carbs</Text>
         </View>
         <View style={styles.macroItem}>
-          <Text style={styles.macroValue}>{nutrition.fat}g</Text>
+          <Text style={styles.macroValue}>{safeNutrition.fat}g</Text>
           <Text style={styles.macroLabel}>Fat</Text>
         </View>
       </View>
 
-      {(nutrition.fiber || nutrition.sugar || nutrition.sodium) && (
+      {(safeNutrition.fiber > 0 || safeNutrition.sugar > 0 || safeNutrition.sodium > 0) && (
         <View style={styles.microRow}>
-          {nutrition.fiber && (
+          {safeNutrition.fiber > 0 && (
             <View style={styles.microItem}>
-              <Text style={styles.microValue}>{nutrition.fiber}g fiber</Text>
+              <Text style={styles.microValue}>{safeNutrition.fiber}g fiber</Text>
             </View>
           )}
-          {nutrition.sugar && (
+          {safeNutrition.sugar > 0 && (
             <View style={styles.microItem}>
-              <Text style={styles.microValue}>{nutrition.sugar}g sugar</Text>
+              <Text style={styles.microValue}>{safeNutrition.sugar}g sugar</Text>
             </View>
           )}
-          {nutrition.sodium && (
+          {safeNutrition.sodium > 0 && (
             <View style={styles.microItem}>
-              <Text style={styles.microValue}>{nutrition.sodium}mg sodium</Text>
+              <Text style={styles.microValue}>{safeNutrition.sodium}mg sodium</Text>
             </View>
           )}
         </View>

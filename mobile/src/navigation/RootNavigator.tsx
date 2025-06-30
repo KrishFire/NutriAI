@@ -1,48 +1,184 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types/navigation';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { View } from 'react-native';
+import { 
+  RootStackParamList, 
+  AuthStackParamList, 
+  AppTabParamList, 
+  HomeStackParamList, 
+  HistoryStackParamList, 
+  ProfileStackParamList 
+} from '../types/navigation';
 import { useAuth } from '../contexts/AuthContext';
-import { LoadingSpinner } from '../components';
+import { LoadingSpinner, FloatingActionButton } from '../components';
 import HomeScreen from '../screens/HomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import CameraScreen from '../screens/CameraScreen';
 import MealDetailsScreen from '../screens/MealDetailsScreen';
+import HistoryScreen from '../screens/HistoryScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const RootStack = createNativeStackNavigator<RootStackParamList>();
+const AuthStack = createNativeStackNavigator<AuthStackParamList>();
+const Tab = createBottomTabNavigator<AppTabParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+const HistoryStack = createNativeStackNavigator<HistoryStackParamList>();
+const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 
-function AuthStack() {
+function AuthStackNavigator() {
   return (
-    <Stack.Navigator
+    <AuthStack.Navigator
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
       }}
       initialRouteName="Login"
     >
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Signup" component={SignupScreen} />
-    </Stack.Navigator>
+      <AuthStack.Screen name="Login" component={LoginScreen} />
+      <AuthStack.Screen name="Signup" component={SignupScreen} />
+    </AuthStack.Navigator>
+  );
+}
+
+function HomeStackNavigator() {
+  return (
+    <HomeStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+      }}
+    >
+      <HomeStack.Screen name="HomeScreen" component={HomeScreen} />
+      <HomeStack.Screen name="MealDetails" component={MealDetailsScreen} />
+    </HomeStack.Navigator>
+  );
+}
+
+function HistoryStackNavigator() {
+  return (
+    <HistoryStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+      }}
+    >
+      <HistoryStack.Screen name="HistoryScreen" component={HistoryScreen} />
+      <HistoryStack.Screen name="MealDetails" component={MealDetailsScreen} />
+    </HistoryStack.Navigator>
+  );
+}
+
+function ProfileStackNavigator() {
+  return (
+    <ProfileStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+      }}
+    >
+      <ProfileStack.Screen name="ProfileScreen" component={ProfileScreen} />
+    </ProfileStack.Navigator>
+  );
+}
+
+function AppTabNavigator() {
+  return (
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: {
+            height: 80,
+            paddingBottom: 20,
+            paddingTop: 10,
+            backgroundColor: '#FFFFFF',
+            borderTopWidth: 1,
+            borderTopColor: '#E0E0E0',
+          },
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: '500',
+          },
+          tabBarActiveTintColor: '#007AFF',
+          tabBarInactiveTintColor: '#8E8E93',
+        }}
+      >
+        <Tab.Screen 
+          name="Home" 
+          component={HomeStackNavigator}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="home" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen 
+          name="History" 
+          component={HistoryStackNavigator}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="calendar" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen 
+          name="Profile" 
+          component={ProfileStackNavigator}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person" size={size} color={color} />
+            ),
+          }}
+        />
+      </Tab.Navigator>
+      
+      <FloatingActionButton
+        onPress={() => {
+          // TODO: Navigate to Camera modal
+          console.log('FAB pressed - open camera');
+        }}
+      />
+    </View>
   );
 }
 
 function AppStack() {
   return (
-    <Stack.Navigator
+    <RootStack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: 'slide_from_right',
+        presentation: 'modal',
       }}
-      initialRouteName="Home"
     >
-      <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="Camera" component={CameraScreen} />
-      <Stack.Screen name="MealDetails" component={MealDetailsScreen} />
-      {/* Future app screens will be added here */}
-      {/* <Stack.Screen name="Profile" component={ProfileScreen} /> */}
-      {/* <Stack.Screen name="History" component={HistoryScreen} /> */}
-      {/* <Stack.Screen name="Onboarding" component={OnboardingScreen} /> */}
-    </Stack.Navigator>
+      <RootStack.Screen 
+        name="AppTabs" 
+        component={AppTabNavigator}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <RootStack.Screen 
+        name="Camera" 
+        component={CameraScreen}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <RootStack.Screen 
+        name="MealDetails" 
+        component={MealDetailsScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      {/* Future modal screens */}
+      {/* <RootStack.Screen name="ManualEntry" component={ManualEntryScreen} /> */}
+    </RootStack.Navigator>
   );
 }
 
@@ -55,7 +191,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer>
-      {user ? <AppStack /> : <AuthStack />}
+      {user ? <AppStack /> : <AuthStackNavigator />}
     </NavigationContainer>
   );
 }
