@@ -5,6 +5,9 @@
  * Provides type-safe methods for searching foods, handling errors, and caching.
  */
 
+// Debug log to verify module loading
+console.log('[FoodSearchService] Module loading...');
+
 import { supabase } from '../config/supabase';
 import {
   FoodSearchRequest,
@@ -19,6 +22,7 @@ import {
   isFoodSearchResponse,
   isFoodSearchError
 } from '../types/foodSearch';
+import { MealAnalysis, FoodItem as MealFoodItem } from '../services/openai';
 
 /**
  * Custom error class for food search operations
@@ -47,21 +51,9 @@ export interface ServiceResult<T> {
 /**
  * Food Search Service Class
  */
-export class FoodSearchService {
-  private static instance: FoodSearchService;
+class FoodSearchService {
   private cache = new Map<string, { data: FoodSearchResponse; timestamp: number }>();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes client-side cache
-
-  private constructor() {
-    // Singleton pattern
-  }
-
-  public static getInstance(): FoodSearchService {
-    if (!FoodSearchService.instance) {
-      FoodSearchService.instance = new FoodSearchService();
-    }
-    return FoodSearchService.instance;
-  }
 
   /**
    * Search for foods using the USDA database
@@ -358,18 +350,13 @@ export class FoodSearchService {
 }
 
 /**
- * Convenience function to get the singleton instance
- */
-export const foodSearchService = FoodSearchService.getInstance();
-
-/**
  * Utility functions for client-side use
  */
 
 /**
  * Format error message for user display
  */
-export function formatSearchErrorMessage(error: FoodSearchApiError): string {
+function formatSearchErrorMessage(error: FoodSearchApiError): string {
   switch (error.stage) {
     case FOOD_SEARCH_ERROR_CODES.RATE_LIMITED:
       return 'Too many searches. Please wait a moment before trying again.';
@@ -388,10 +375,104 @@ export function formatSearchErrorMessage(error: FoodSearchApiError): string {
 /**
  * Check if error indicates user should retry
  */
-export function shouldRetrySearch(error: FoodSearchApiError): boolean {
+function shouldRetrySearch(error: FoodSearchApiError): boolean {
   return [
     FOOD_SEARCH_ERROR_CODES.RATE_LIMITED,
     FOOD_SEARCH_ERROR_CODES.USDA_API_ERROR,
     FOOD_SEARCH_ERROR_CODES.SERVER_ERROR
   ].includes(error.stage as any);
 }
+
+/**
+ * Single instance of the food search service
+ * Using instantiated module singleton pattern for better reliability
+ */
+const foodSearchService = new FoodSearchService();
+
+/**
+ * Type alias for FoodItem to match expected imports
+ */
+export type FoodItem = FoodSearchItem;
+
+/**
+ * Convenience wrapper for searchFoods that throws on error
+ * This matches the expected API from ManualEntryScreen
+ */
+export async function searchFoods(options: FoodSearchOptions & { query: string }): Promise<FoodSearchResponse> {
+  console.log('[searchFoods] Called with options:', options);
+  
+  try {
+    const result = await foodSearchService.searchFoodsWithRetry(options.query, options);
+  
+  if (!result.success) {
+    throw new Error(formatSearchErrorMessage(result.error!));
+  }
+  
+  // Extract the foods array and metadata from the result
+  const { foods, meta } = result.data!;
+  
+  return {
+    foods,
+    hasMore: meta.hasNextPage,
+    total: meta.totalResults,
+    page: meta.currentPage
+  };
+  } catch (error) {
+    console.error('[searchFoods] Error during search:', error);
+    throw error;
+  }
+}
+
+/**
+ * Convert a FoodSearchItem to MealAnalysis format for MealDetailsScreen
+ */
+export function foodItemToMealAnalysis(foodItem: FoodSearchItem): MealAnalysis {
+  // Create a proper FoodItem object matching the MealAnalysis.foods structure
+  const convertedFoodItem: MealFoodItem = {
+    name: foodItem.name,
+    quantity: `${foodItem.servingSize} ${foodItem.servingUnit}`,
+    nutrition: {
+      calories: Math.round(foodItem.calories),
+      protein: Math.round(foodItem.protein),
+      carbs: Math.round(foodItem.carbs),
+      fat: Math.round(foodItem.fat),
+      fiber: foodItem.fiber ? Math.round(foodItem.fiber) : 0,
+      sugar: foodItem.sugar ? Math.round(foodItem.sugar) : 0,
+      sodium: foodItem.sodium ? Math.round(foodItem.sodium) : 0,
+    },
+    confidence: foodItem.verified ? 0.95 : 0.85,
+  };
+
+  // Return proper MealAnalysis structure expected by MealDetailsScreen
+  return {
+    foods: [convertedFoodItem],
+    totalNutrition: {
+      calories: Math.round(foodItem.calories),
+      protein: Math.round(foodItem.protein),
+      carbs: Math.round(foodItem.carbs),
+      fat: Math.round(foodItem.fat),
+      fiber: foodItem.fiber ? Math.round(foodItem.fiber) : 0,
+      sugar: foodItem.sugar ? Math.round(foodItem.sugar) : 0,
+      sodium: foodItem.sodium ? Math.round(foodItem.sodium) : 0,
+    },
+    confidence: foodItem.verified ? 0.95 : 0.85,
+    notes: `Manually selected: ${foodItem.name}${foodItem.brand ? ` (${foodItem.brand})` : ''}`,
+  };
+}
+
+/**
+ * Export the service instance as default for cleaner imports
+ */
+export default foodSearchService;
+
+/**
+ * Export utility functions
+ */
+export { formatSearchErrorMessage, shouldRetrySearch };
+
+// Debug log to verify exports
+console.log('[FoodSearchService] Module loaded successfully', {
+  searchFoods: typeof searchFoods,
+  foodItemToMealAnalysis: typeof foodItemToMealAnalysis,
+  default: typeof foodSearchService
+});
