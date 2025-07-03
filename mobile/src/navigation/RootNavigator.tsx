@@ -1,5 +1,5 @@
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createNativeStackNavigator, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
@@ -12,7 +12,8 @@ import {
   ProfileStackParamList 
 } from '../types/navigation';
 import { useAuth } from '../contexts/AuthContext';
-import { LoadingSpinner, FloatingActionButton } from '../components';
+import { LoadingSpinner } from '../components';
+import ExpandableFAB from '../components/ExpandableFAB';
 import HomeScreen from '../screens/HomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
@@ -20,6 +21,7 @@ import CameraScreen from '../screens/CameraScreen';
 import MealDetailsScreen from '../screens/MealDetailsScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ManualEntryScreen from '../screens/ManualEntryScreen';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -84,6 +86,18 @@ function ProfileStackNavigator() {
   );
 }
 
+// FAB wrapper component that can access navigation
+function FABWithNavigation() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  
+  return (
+    <ExpandableFAB
+      onCameraPress={() => navigation.navigate('Camera')}
+      onManualPress={() => navigation.navigate('ManualEntry')}
+    />
+  );
+}
+
 function AppTabNavigator() {
   return (
     <View style={{ flex: 1 }}>
@@ -135,12 +149,7 @@ function AppTabNavigator() {
         />
       </Tab.Navigator>
       
-      <FloatingActionButton
-        onPress={() => {
-          // TODO: Navigate to Camera modal
-          console.log('FAB pressed - open camera');
-        }}
-      />
+      <FABWithNavigation />
     </View>
   );
 }
@@ -176,8 +185,14 @@ function AppStack() {
           animation: 'slide_from_right',
         }}
       />
-      {/* Future modal screens */}
-      {/* <RootStack.Screen name="ManualEntry" component={ManualEntryScreen} /> */}
+      <RootStack.Screen 
+        name="ManualEntry" 
+        component={ManualEntryScreen}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
     </RootStack.Navigator>
   );
 }

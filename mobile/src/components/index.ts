@@ -6,6 +6,9 @@ export { default as Input } from './common/Input';
 export { default as LoadingSpinner } from './common/LoadingSpinner';
 export { default as Card } from './common/Card';
 export { default as FloatingActionButton } from './FloatingActionButton';
+export { default as ExpandableFAB } from './ExpandableFAB';
+export { default as FoodSearchResults } from './FoodSearchResults';
+export { default as SearchUXDemo } from './SearchUXDemo';
 
 // Tracking components
 export { default as MacroRing } from './tracking/MacroRing';

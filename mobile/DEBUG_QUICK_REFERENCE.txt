@@ -1,0 +1,37 @@
+NUTRIAI FOOD SEARCH DEBUG - QUICK REFERENCE
+==========================================
+
+STEP 1: Enable Debug
+--------------------
+Add to .env file:
+EXPO_PUBLIC_DEBUG_FOOD_SEARCH=true
+
+Then restart app (Ctrl+C, npm start)
+
+STEP 2: Test Search
+-------------------
+1. Open app
+2. Manual Food Entry
+3. Search: "chicken breast"
+4. Wait 5 seconds
+
+STEP 3: Find Debug Markers
+--------------------------
+DEBUG_FLAG_1: Look for 🔍 [SEARCH_START]
+DEBUG_FLAG_2: Look for ❌ errors
+DEBUG_FLAG_3: Look for ℹ️ [API_CALL_START]
+DEBUG_FLAG_4: Copy everything between start and end
+
+QUICK FIXES
+-----------
+❌ [AUTH_ERROR] → Log out and back in
+🔍 [CACHE_HIT] → Clear app data
+No logs → Check .env file
+
+WHAT TO SEND US
+---------------
+1. All logs between [SEARCH_START] and end
+2. What you searched for
+3. What error you saw
+
+DON'T FORGET: Remove debug line when done!

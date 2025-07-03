@@ -45,10 +45,11 @@ export async function analyzeMealImage(imageUri: string): Promise<MealAnalysis> 
       throw new Error('User not authenticated');
     }
 
-    // Call the Supabase Edge Function with authentication
+    // Call the Supabase Edge Function with authentication and debug mode
     const { data, error } = await supabase.functions.invoke('analyze-meal', {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
+        'X-Debug-Mode': 'true', // Enable debug mode for detailed error info
       },
       body: {
         imageBase64: base64,
@@ -57,7 +58,31 @@ export async function analyzeMealImage(imageUri: string): Promise<MealAnalysis> 
 
     if (error) {
       console.error('Supabase function error:', error);
-      throw new Error(`Failed to analyze meal: ${error.message}`);
+      
+      // Try to extract detailed error information
+      let errorMessage = error.message;
+      try {
+        // @ts-ignore - runtime check for FunctionsHttpError
+        if (error.response && typeof error.response.json === 'function') {
+          const errorBody = await error.response.json();
+          console.error('Edge Function error details:', errorBody);
+          
+          // Extract specific error info from Edge Function response
+          if (errorBody.error) {
+            errorMessage = errorBody.error;
+          }
+          if (errorBody.stage) {
+            errorMessage = `[${errorBody.stage}] ${errorMessage}`;
+          }
+          if (errorBody.requestId) {
+            errorMessage += ` (Request ID: ${errorBody.requestId})`;
+          }
+        }
+      } catch (parseError) {
+        console.error('Could not parse error response:', parseError);
+      }
+      
+      throw new Error(`Failed to analyze meal: ${errorMessage}`);
     }
 
     if (!data) {
@@ -112,6 +137,7 @@ export async function analyzeWithVoiceContext(
     const { data, error } = await supabase.functions.invoke('analyze-meal', {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
+        'X-Debug-Mode': 'true', // Enable debug mode for detailed error info
       },
       body: {
         imageBase64: base64,
@@ -121,7 +147,31 @@ export async function analyzeWithVoiceContext(
 
     if (error) {
       console.error('Supabase function error:', error);
-      throw new Error(`Failed to analyze meal: ${error.message}`);
+      
+      // Try to extract detailed error information
+      let errorMessage = error.message;
+      try {
+        // @ts-ignore - runtime check for FunctionsHttpError
+        if (error.response && typeof error.response.json === 'function') {
+          const errorBody = await error.response.json();
+          console.error('Edge Function error details:', errorBody);
+          
+          // Extract specific error info from Edge Function response
+          if (errorBody.error) {
+            errorMessage = errorBody.error;
+          }
+          if (errorBody.stage) {
+            errorMessage = `[${errorBody.stage}] ${errorMessage}`;
+          }
+          if (errorBody.requestId) {
+            errorMessage += ` (Request ID: ${errorBody.requestId})`;
+          }
+        }
+      } catch (parseError) {
+        console.error('Could not parse error response:', parseError);
+      }
+      
+      throw new Error(`Failed to analyze meal: ${errorMessage}`);
     }
 
     if (!data) {

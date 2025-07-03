@@ -149,6 +149,8 @@ interface FoodSearchResponse {
     totalResults: number;
     currentPage: number;
     processingTime?: number;
+    totalAvailable?: number;
+    initialDisplayed?: number;
   };
 }
 
@@ -380,49 +382,98 @@ function generateSearchSuggestions(query: string): SearchSuggestion[] {
 
 /**
  * Categorize and group search results for progressive disclosure
+ * Following MyFitnessPal pattern: Show 3-4 best matches, hide rest
  */
-function categorizeSearchResults(foods: FoodItemResponse[]): FoodResultGroup[] {
+function categorizeSearchResults(foods: FoodItemResponse[], query: string): FoodResultGroup[] {
   const groups: FoodResultGroup[] = [];
   
-  // Group 1: Common Foods (SR Legacy + Foundation, top 4)
-  const commonFoods = foods
-    .filter(food => food.dataType === 'SR Legacy' || food.dataType === 'Foundation')
-    .slice(0, 4);
+  // Check if this is a branded search (user looking for specific brand)
+  const queryLower = query.toLowerCase();
+  const isBrandedSearch = foods.some(f => f.brand && queryLower.includes(f.brand.toLowerCase()));
   
-  if (commonFoods.length > 0) {
-    groups.push({
-      title: 'Best Matches',
-      items: commonFoods,
-      maxDisplayed: 4
-    });
+  if (isBrandedSearch) {
+    // For branded searches, prioritize branded items
+    const brandedMatches = foods
+      .filter(food => food.dataType === 'Branded')
+      .slice(0, 4); // Show up to 4 branded items
+    
+    if (brandedMatches.length > 0) {
+      groups.push({
+        title: 'Best Matches',
+        items: brandedMatches,
+        maxDisplayed: 4
+      });
+    }
+    
+    // Also show some generic alternatives (1-2 items)
+    const genericAlternatives = foods
+      .filter(food => food.dataType === 'SR Legacy' || food.dataType === 'Foundation')
+      .slice(0, 2);
+    
+    if (genericAlternatives.length > 0) {
+      groups.push({
+        title: 'Generic Alternatives',
+        items: genericAlternatives,
+        maxDisplayed: 2
+      });
+    }
+  } else {
+    // For generic searches, show the MyFitnessPal pattern
+    // Best Matches: Top 3-4 most relevant items (mix of generic and branded)
+    const bestMatches = foods.slice(0, 4);
+    
+    if (bestMatches.length > 0) {
+      groups.push({
+        title: 'Best Matches',
+        items: bestMatches,
+        maxDisplayed: 4
+      });
+    }
+    
+    // Count remaining items by category for "Show More" sections
+    const remainingFoods = foods.slice(4);
+    
+    // Count how many additional items are available
+    const additionalGeneric = remainingFoods
+      .filter(f => f.dataType === 'SR Legacy' || f.dataType === 'Foundation')
+      .length;
+    
+    const additionalBranded = remainingFoods
+      .filter(f => f.dataType === 'Branded')
+      .length;
+    
+    // Add placeholder groups with counts but no items (for "Show More")
+    if (additionalGeneric > 0) {
+      groups.push({
+        title: `More Results (${additionalGeneric} items)`,
+        items: [], // Empty - will be loaded on demand
+        maxDisplayed: 0
+      });
+    }
+    
+    if (additionalBranded > 0) {
+      groups.push({
+        title: `Branded Products (${additionalBranded} items)`,
+        items: [], // Empty - will be loaded on demand
+        maxDisplayed: 0
+      });
+    }
   }
   
-  // Group 2: Branded Products (top 3)
-  const brandedFoods = foods
-    .filter(food => food.dataType === 'Branded' && !food.name.toLowerCase().includes('broth') && !food.name.toLowerCase().includes('bouillon'))
-    .slice(0, 3);
-  
-  if (brandedFoods.length > 0) {
-    groups.push({
-      title: 'Branded Products',
-      items: brandedFoods,
-      maxDisplayed: 3
-    });
-  }
-  
-  // Group 3: Cooking Ingredients (if query might be looking for these)
+  // Always check for cooking ingredients at the end (low priority)
   const ingredients = foods
     .filter(food => {
       const name = food.name.toLowerCase();
-      return name.includes('broth') || name.includes('stock') || name.includes('bouillon') || name.includes('base');
-    })
-    .slice(0, 2);
+      return name.includes('broth') || name.includes('stock') || 
+             name.includes('bouillon') || name.includes('base') ||
+             name.includes('seasoning') || name.includes('powder');
+    });
   
   if (ingredients.length > 0) {
     groups.push({
-      title: 'Cooking Ingredients',
-      items: ingredients,
-      maxDisplayed: 2
+      title: `Cooking Ingredients (${ingredients.length} items)`,
+      items: [], // Empty - will be loaded on demand
+      maxDisplayed: 0
     });
   }
   
@@ -1020,7 +1071,7 @@ Deno.serve(async (req) => {
 
     // 10. Categorize results for progressive disclosure
     checkpoint('categorize-start');
-    const resultGroups = categorizeSearchResults(transformedFoods);
+    const resultGroups = categorizeSearchResults(transformedFoods, query);
     const displayedCount = resultGroups.reduce((sum, group) => sum + group.items.length, 0);
     const totalRemaining = Math.max(0, transformedFoods.length - displayedCount);
     
@@ -1033,6 +1084,7 @@ Deno.serve(async (req) => {
     const endTime = Date.now();
     const processingTime = endTime - startTime;
     
+    // Enhanced response with pagination support for each category
     const response: FoodSearchResponse = {
       resultGroups,
       nextPageToken: totalRemaining > 0 ? `page_${page + 1}` : undefined,
@@ -1042,7 +1094,10 @@ Deno.serve(async (req) => {
         query,
         totalResults: usdaResponse.totalHits || 0,
         currentPage: page,
-        processingTime
+        processingTime,
+        // Include the full food list for client-side progressive loading
+        totalAvailable: transformedFoods.length,
+        initialDisplayed: displayedCount
       }
     };
 

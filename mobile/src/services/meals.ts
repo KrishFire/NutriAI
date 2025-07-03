@@ -43,7 +43,11 @@ export async function getOrCreateDailyLog(userId: string, date: Date): Promise<D
     .select('*')
     .eq('user_id', userId)
     .eq('date', dateStr)
-    .single();
+    .maybeSingle();
+
+  if (fetchError) {
+    throw new Error(`Failed to fetch daily log: ${fetchError.message}`);
+  }
 
   if (existingLog) {
     return existingLog;
@@ -292,11 +296,23 @@ export async function getTodaysNutrition(userId: string): Promise<DailyLog | nul
     .select('*')
     .eq('user_id', userId)
     .eq('date', today)
-    .single();
+    .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 rows gracefully
 
   if (error) {
     console.error('Error fetching daily log:', error);
     return null;
+  }
+
+  // If no daily log exists yet, return a default one
+  if (!data) {
+    return {
+      user_id: userId,
+      date: today,
+      total_calories: 0,
+      total_protein: 0,
+      total_carbs: 0,
+      total_fat: 0,
+    };
   }
 
   return data;
