@@ -391,7 +391,7 @@ function categorizeSearchResults(foods: FoodItemResponse[]): FoodResultGroup[] {
   
   if (commonFoods.length > 0) {
     groups.push({
-      title: 'Common Foods',
+      title: 'Best Matches',
       items: commonFoods,
       maxDisplayed: 4
     });
