@@ -255,12 +255,25 @@ function getCacheKey(query: string, limit: number, page: number): string {
  * Extract nutrient value by code from USDA food nutrients array
  */
 function getNutrientValue(nutrients: USDANutrient[], nutrientCode: string): number {
-  // Some entries may have missing nutrient info; guard against undefined properties
   for (const entry of nutrients) {
-    // Ensure the nested nutrient object with a number exists before comparing
-    if (entry && entry.nutrient && entry.nutrient.number === nutrientCode) {
-      // Ensure amount is a finite number; fallback to 0
-      return typeof entry.amount === 'number' && isFinite(entry.amount) ? entry.amount : 0;
+    if (!entry) continue;
+
+    // Two possible shapes:
+    // 1. Search API: { nutrientNumber: "208", value: 239, unitName: "kcal" }
+    // 2. Details API: { nutrient: { number: "208", ... }, amount: 239 }
+
+    // Shape 1 – flat
+    // @ts-ignore – runtime check for optional field
+    if (entry.nutrientNumber === nutrientCode) {
+      // @ts-ignore – value field only in search payload
+      const val = entry.value ?? entry.amount;
+      return typeof val === 'number' && isFinite(val) ? val : 0;
+    }
+
+    // Shape 2 – nested
+    if (entry.nutrient && entry.nutrient.number === nutrientCode) {
+      const val = entry.amount;
+      return typeof val === 'number' && isFinite(val) ? val : 0;
     }
   }
   return 0;
@@ -452,6 +465,91 @@ function transformUSDAFood(usdaFood: USDAFood, query: string): FoodItemResponse 
     dataType: usdaFood.dataType,
     relevanceScore
   };
+}
+
+// Add helper utilities for server-side de-duplication of near-duplicate items
+
+/**
+ * Canonicalize a food description so that visually similar items collapse to a single key.
+ * Heuristics:
+ *  • Lower-case
+ *  • Remove everything in parentheses
+ *  • Trim brand qualifiers after a comma (common in USDA data)
+ *  • Collapse multiple spaces and non-alphanumeric characters
+ */
+function canonicalizeFoodName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, '')            // drop parenthetical notes
+    .split(',')[0]                          // take text before first comma
+    .replace(/[^a-z0-9]+/g, ' ')            // non-alphanumerics → space
+    .replace(/\s+/g, ' ')                  // collapse whitespace
+    .trim();
+}
+
+/** Priority rank for dataType – higher is better */
+function getDataTypePriority(dataType: string): number {
+  switch (dataType) {
+    case 'Foundation':
+      return 3;
+    case 'SR Legacy':
+      return 2;
+    default:
+      return 1; // Branded, Survey, etc.
+  }
+}
+
+/**
+ * Select the highest-quality representative for each canonical food name.
+ * Quality order:
+ *   1. dataType priority (Foundation > SR Legacy > others)
+ *   2. Number of non-null macro nutrient fields present
+ *   3. Higher relevanceScore (already computed)
+ */
+function deduplicateFoods(foods: FoodItemResponse[]): FoodItemResponse[] {
+  const map = new Map<string, FoodItemResponse>();
+
+  const macroCount = (f: FoodItemResponse) => {
+    let count = 0;
+    if (f.calories !== undefined) count++;
+    if (f.protein !== undefined) count++;
+    if (f.carbs !== undefined) count++;
+    if (f.fat !== undefined) count++;
+    return count;
+  };
+
+  for (const food of foods) {
+    const key = canonicalizeFoodName(food.name);
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, food);
+      continue;
+    }
+
+    // Compare quality between current and existing entry
+    const aPriority = getDataTypePriority(food.dataType);
+    const bPriority = getDataTypePriority(existing.dataType);
+
+    if (aPriority !== bPriority) {
+      if (aPriority > bPriority) map.set(key, food);
+      continue;
+    }
+
+    const aMacro = macroCount(food);
+    const bMacro = macroCount(existing);
+    if (aMacro !== bMacro) {
+      if (aMacro > bMacro) map.set(key, food);
+      continue;
+    }
+
+    const aScore = food.relevanceScore || 0;
+    const bScore = existing.relevanceScore || 0;
+    if (aScore > bScore) {
+      map.set(key, food);
+    }
+  }
+
+  return Array.from(map.values());
 }
 
 /**
@@ -884,9 +982,22 @@ Deno.serve(async (req) => {
       // Transform all foods with relevance scoring
       transformedFoods = (usdaResponse.foods || []).map(food => transformUSDAFood(food, query));
       
+      // Filter out items with no calorie info (broths, seasonings, etc.)
+      const meaningfulFoods = transformedFoods.filter(f => (f.calories ?? 0) > 0);
+
+      // If filtering removes everything, fall back to original list to avoid empty results
+      transformedFoods = meaningfulFoods.length > 0 ? meaningfulFoods : transformedFoods;
+
       // Sort by relevance score (highest first)
       transformedFoods.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
       
+      // De-duplicate similar items to reduce result noise
+      const beforeDedup = transformedFoods.length;
+      transformedFoods = deduplicateFoods(transformedFoods);
+      const afterDedup = transformedFoods.length;
+
+      log('deduplication', { beforeDedup, afterDedup });
+
       log('transformation-success', { 
         originalCount: usdaResponse.foods?.length || 0,
         transformedCount: transformedFoods.length,
