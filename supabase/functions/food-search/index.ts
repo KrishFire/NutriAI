@@ -574,7 +574,7 @@ async function searchUSDAFoods(
   const payload = {
     query: query,
     pageSize: searchLimit,
-    pageNumber: 1, // Always get first page for ranking
+    pageNumber: Math.max(page, 1), // use requested page for pagination
     dataType: ['Foundation', 'SR Legacy', 'Branded'],
     sortBy: 'dataType.keyword',
     sortOrder: 'asc'
