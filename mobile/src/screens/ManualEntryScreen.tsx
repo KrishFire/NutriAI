@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { debounce } from 'lodash';
 import { RootStackParamList } from '../types/navigation';
 import { searchFoodsStructured, FoodItem, foodItemToMealAnalysis } from '../services/foodSearch';
+import { FoodResultGroup, SuggestedQuery } from '../types/foodSearch';
 import { useAuth } from '../hooks/useAuth';
 import FoodSearchResults from '../components/FoodSearchResults';
 
@@ -29,20 +30,11 @@ console.log('[ManualEntryScreen] Imports loaded:', {
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ManualEntry'>;
 
-interface FoodResultGroup {
-  title: string;
-  items: FoodItem[];
-  maxDisplayed?: number;
-}
-
 interface StructuredSearchResult {
   groups: FoodResultGroup[];
-  suggestions: Array<{
-    displayText: string;
-    query: string;
-    reasoning?: string;
-  }>;
+  suggestions: SuggestedQuery[];
   totalRemaining: number;
+  allFoods?: FoodItem[]; // Full list for client-side progressive loading
   meta: {
     query: string;
     totalResults: number;
@@ -127,10 +119,133 @@ export default function ManualEntryScreen() {
     });
   };
 
-  const handleLoadMore = (groupTitle: string) => {
-    // TODO: Implement loading more items for a specific group
-    // For now, we'll just log this
+  const handleLoadMore = async (groupTitle: string) => {
+    // Implement client-side expansion for progressive disclosure
     console.log('[ManualEntryScreen] Load more requested for:', groupTitle);
+    
+    if (!searchResult || !query.trim()) {
+      return;
+    }
+
+    // Prefer client-side expansion if we have the full foods list
+    if (searchResult.allFoods && searchResult.allFoods.length > 0) {
+      // Client-side expansion using pre-loaded data
+      console.log('[ManualEntryScreen] Using client-side expansion with allFoods');
+      
+      // Get items that are already displayed
+      const displayedItems = new Set(
+        searchResult.groups
+          .filter(g => g.items.length > 0)
+          .flatMap(g => g.items)
+          .map(item => item.id)
+      );
+      
+      // Get remaining items that haven't been displayed
+      const remainingItems = searchResult.allFoods.filter(item => !displayedItems.has(item.id));
+      
+      // For branded searches, prioritize branded items; for generic searches, mix them
+      let itemsToShow: FoodItem[] = [];
+      if (groupTitle.toLowerCase().includes('branded')) {
+        itemsToShow = remainingItems.filter(item => item.brand).slice(0, 20);
+      } else if (groupTitle.toLowerCase().includes('result')) {
+        itemsToShow = remainingItems.filter(item => !item.brand).slice(0, 20);
+      } else {
+        itemsToShow = remainingItems.slice(0, 20);
+      }
+      
+      // Update the specific group by replacing placeholder with actual items
+      const updatedGroups = searchResult.groups.map(group => {
+        if (group.title === groupTitle && group.items.length === 0) {
+          return {
+            ...group,
+            items: itemsToShow,
+            maxDisplayed: undefined // Remove display limit after expansion
+          };
+        }
+        return group;
+      });
+
+      // Update the search result with expanded groups
+      setSearchResult({
+        ...searchResult,
+        groups: updatedGroups,
+        totalRemaining: Math.max(0, searchResult.totalRemaining - itemsToShow.length)
+      });
+      
+      return;
+    }
+
+    // Fallback: Server-side expansion with new API call
+    console.log('[ManualEntryScreen] Using server-side expansion (allFoods not available)');
+    
+    try {
+      setIsLoading(true);
+      
+      // Make a call with higher limit to get more results
+      const expandedResponse = await searchFoodsStructured(query, {
+        limit: 100, // Get more results for expansion
+        page: 1,
+      });
+
+      if (!expandedResponse.groups) {
+        return;
+      }
+
+      // Update the specific group by replacing placeholder with actual items
+      const updatedGroups = searchResult.groups.map(group => {
+        if (group.title === groupTitle && group.items.length === 0) {
+          // This is a placeholder group, replace with actual items
+          // Find the corresponding group in the expanded response
+          const expandedGroup = expandedResponse.groups.find(g => 
+            g.title.includes('Results') || g.title.includes('Branded') || g.title.includes(groupTitle)
+          );
+          
+          if (expandedGroup && expandedGroup.items.length > 0) {
+            return {
+              ...group,
+              items: expandedGroup.items,
+              maxDisplayed: undefined // Remove display limit after expansion
+            };
+          }
+          
+          // If no corresponding group found, try to get items from remaining results
+          // This is a fallback - get items from all groups that aren't already displayed
+          const displayedItems = new Set(
+            searchResult.groups
+              .filter(g => g.items.length > 0)
+              .flatMap(g => g.items)
+              .map(item => item.id)
+          );
+          
+          const remainingItems = expandedResponse.groups
+            .flatMap(g => g.items)
+            .filter(item => !displayedItems.has(item.id))
+            .slice(0, 20); // Limit to reasonable number
+          
+          if (remainingItems.length > 0) {
+            return {
+              ...group,
+              items: remainingItems,
+              maxDisplayed: undefined
+            };
+          }
+        }
+        return group;
+      });
+
+      // Update the search result with expanded groups
+      setSearchResult({
+        ...searchResult,
+        groups: updatedGroups,
+        totalRemaining: Math.max(0, searchResult.totalRemaining - 20) // Approximate reduction
+      });
+      
+    } catch (error) {
+      console.error('[ManualEntryScreen] Error expanding results:', error);
+      // Don't show error to user for expansion failures, just log it
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleClearSearch = () => {

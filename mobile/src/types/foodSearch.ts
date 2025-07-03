@@ -75,10 +75,42 @@ export interface FoodSearchMeta {
   fromCache: boolean;
 }
 
+// Result group for structured search responses
+export interface FoodResultGroup {
+  title: string;
+  items: FoodSearchItem[];
+  maxDisplayed?: number;
+}
+
+// Enhanced search response with full foods list for client-side expansion
+export interface StructuredFoodSearchResponse {
+  groups: FoodResultGroup[];
+  suggestions: SuggestedQuery[];
+  totalRemaining: number;
+  allFoods?: FoodSearchItem[]; // Full list for client-side progressive loading
+  meta: {
+    query: string;
+    totalResults: number;
+    currentPage: number;
+    processingTime?: number;
+  };
+}
+
+// Suggested query for search enhancement
+export interface SuggestedQuery {
+  displayText: string;
+  query: string;
+  reasoning?: string;
+}
+
 // Complete search result with metadata
 export interface FoodSearchResult {
   foods: FoodSearchItem[];
   meta: FoodSearchMeta;
+  // Optional structured fields for progressive disclosure UX
+  resultGroups?: FoodResultGroup[];
+  suggestedQueries?: SuggestedQuery[];
+  totalRemaining?: number;
 }
 
 // Utility type for converting search items to FoodItem interface

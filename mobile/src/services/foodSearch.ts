@@ -17,6 +17,8 @@ import {
   FoodSearchOptions,
   FoodSearchResult,
   FoodSearchMeta,
+  FoodResultGroup,
+  SuggestedQuery,
   FOOD_SEARCH_CONSTRAINTS,
   FOOD_SEARCH_ERROR_CODES,
   isFoodSearchResponse,
@@ -520,25 +522,28 @@ class FoodSearchService {
     fromCache: boolean,
     processingTime?: number
   ): FoodSearchResult {
-    // Support both legacy (flat foods array) and new structured format
-    let foods: FoodSearchItem[] = [];
+    const isStructured = 'resultGroups' in response && Array.isArray(response.resultGroups);
+    
+    // Extract metadata from either format
     let totalResults = 0;
     let currentPage = 1;
     let hasNextPage = false;
+    let foods: FoodSearchItem[] = [];
 
-    if (Array.isArray(response.foods)) {
+    if (isStructured) {
+      // Structured format - preserve structure AND provide flattened foods for backward compatibility
+      totalResults = response.meta?.totalResults ?? 0;
+      currentPage = response.meta?.currentPage ?? 1;
+      hasNextPage = (response.totalRemaining ?? 0) > 0;
+      // Flatten foods for backward compatibility while preserving structured data
+      foods = response.resultGroups.reduce((acc: FoodSearchItem[], group: any) => 
+        acc.concat(group.items || []), []);
+    } else {
       // Legacy format
-      foods = response.foods;
-      totalResults = response.total;
-      currentPage = response.page;
-      hasNextPage = response.hasMore;
-    } else if ('resultGroups' in response && Array.isArray(response.resultGroups)) {
-      // Structured format
-      const structured: any = response;
-      foods = structured.resultGroups.reduce((acc: FoodSearchItem[], group: any) => acc.concat(group.items || []), []);
-      totalResults = structured.meta?.totalResults ?? foods.length;
-      currentPage = structured.meta?.currentPage ?? 1;
-      hasNextPage = structured.totalRemaining > 0;
+      foods = response.foods || [];
+      totalResults = response.total ?? 0;
+      currentPage = response.page ?? 1;
+      hasNextPage = response.hasMore ?? false;
     }
 
     const totalPages = Math.max(1, Math.ceil(totalResults / Math.max(foods.length, 1)));
@@ -554,10 +559,19 @@ class FoodSearchService {
       fromCache
     };
 
-    return {
+    const result: FoodSearchResult = {
       foods,
-      meta
+      meta,
     };
+
+    // Add structured fields if available (now type-safe!)
+    if (isStructured) {
+      result.resultGroups = response.resultGroups;
+      result.suggestedQueries = response.suggestedQueries ?? [];
+      result.totalRemaining = response.totalRemaining ?? 0;
+    }
+
+    return result;
   }
 }
 
@@ -669,17 +683,10 @@ export async function searchFoodsStructured(
   query: string, 
   options: FoodSearchOptions = {}
 ): Promise<{
-  groups: Array<{
-    title: string;
-    items: FoodSearchItem[];
-    maxDisplayed?: number;
-  }>;
-  suggestions: Array<{
-    displayText: string;
-    query: string;
-    reasoning?: string;
-  }>;
+  groups: FoodResultGroup[];
+  suggestions: SuggestedQuery[];
   totalRemaining: number;
+  allFoods?: FoodSearchItem[]; // Full list for client-side progressive loading
   meta: {
     query: string;
     totalResults: number;
@@ -695,35 +702,35 @@ export async function searchFoodsStructured(
   
   const responseData = result.data!;
   
-  // Handle new structured format
-  if ('resultGroups' in responseData && Array.isArray((responseData as any).resultGroups)) {
-    const structured: any = responseData;
+  // Check if we have structured data (now properly typed)
+  if (responseData.resultGroups && responseData.resultGroups.length > 0) {
     return {
-      groups: structured.resultGroups.map((group: any) => ({
-        title: group.title,
-        items: group.items || [],
-        maxDisplayed: group.maxDisplayed
-      })),
-      suggestions: structured.suggestedQueries || [],
-      totalRemaining: structured.totalRemaining || 0,
-      meta: structured.meta
+      groups: responseData.resultGroups,
+      suggestions: responseData.suggestedQueries || [],
+      totalRemaining: responseData.totalRemaining || 0,
+      allFoods: (responseData as any).allFoods || undefined, // Include full foods list if available
+      meta: {
+        query: responseData.meta.query,
+        totalResults: responseData.meta.totalResults,
+        currentPage: responseData.meta.currentPage,
+        processingTime: responseData.meta.processingTime
+      }
     };
   } else {
     // Fallback: convert legacy format to structured
-    const { foods, meta } = responseData as any;
-    
     return {
       groups: [{
         title: 'Search Results',
-        items: foods || []
+        items: responseData.foods || []
       }],
       suggestions: [],
       totalRemaining: 0,
+      allFoods: responseData.foods || undefined, // Include foods as allFoods for consistency
       meta: {
         query,
-        totalResults: meta.totalResults,
-        currentPage: meta.currentPage,
-        processingTime: meta.processingTime
+        totalResults: responseData.meta.totalResults,
+        currentPage: responseData.meta.currentPage,
+        processingTime: responseData.meta.processingTime
       }
     };
   }

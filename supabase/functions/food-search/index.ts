@@ -144,6 +144,8 @@ interface FoodSearchResponse {
   nextPageToken?: string;
   totalRemaining: number;
   suggestedQueries: SearchSuggestion[];
+  // Include full foods list for client-side progressive loading
+  allFoods?: FoodItemResponse[];
   meta: {
     query: string;
     totalResults: number;
@@ -1090,12 +1092,13 @@ Deno.serve(async (req) => {
       nextPageToken: totalRemaining > 0 ? `page_${page + 1}` : undefined,
       totalRemaining,
       suggestedQueries,
+      // Include the full food list for client-side progressive loading
+      allFoods: transformedFoods,
       meta: {
         query,
         totalResults: usdaResponse.totalHits || 0,
         currentPage: page,
         processingTime,
-        // Include the full food list for client-side progressive loading
         totalAvailable: transformedFoods.length,
         initialDisplayed: displayedCount
       }
