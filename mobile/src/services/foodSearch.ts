@@ -8,7 +8,7 @@
 // Debug log to verify module loading
 console.log('[FoodSearchService] Module loading...');
 
-import { supabase } from '../config/supabase';
+import { supabase, supabaseConfig } from '../config/supabase';
 import {
   FoodSearchRequest,
   FoodSearchResponse,
@@ -23,6 +23,20 @@ import {
   isFoodSearchError
 } from '../types/foodSearch';
 import { MealAnalysis, FoodItem as MealFoodItem } from '../services/openai';
+
+/**
+ * Generates a correlation ID for request tracking.
+ * Uses timestamp + random string for uniqueness without requiring crypto APIs.
+ * This avoids the React Native crypto.getRandomValues() issue.
+ * Format: "fs-<timestamp>-<random>"
+ * Example: "fs-1a2b3c4d-x7y8z9"
+ */
+function generateCorrelationId(): string {
+  const timestamp = Date.now().toString(36); // Base36 timestamp
+  const random = Math.random().toString(36).substring(2, 8); // 6-char random string
+  const counter = Math.floor(Math.random() * 1000).toString(36); // Additional uniqueness
+  return `fs-${timestamp}-${random}-${counter}`;
+}
 
 /**
  * Custom error class for food search operations
@@ -49,6 +63,71 @@ export interface ServiceResult<T> {
 }
 
 /**
+ * Debug mode detection - can be toggled via env variable
+ */
+const DEBUG_MODE = process.env.EXPO_PUBLIC_DEBUG_FOOD_SEARCH === 'true' || __DEV__;
+
+/**
+ * Structured logger for better debugging
+ */
+const logger = {
+  debug: (correlationId: string, stage: string, message: string, context?: any) => {
+    if (!DEBUG_MODE) return;
+    
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      correlationId,
+      stage,
+      message,
+      ...context
+    };
+    
+    if (__DEV__) {
+      // Pretty print for development
+      console.log(`🔍 [${stage}] ${message}`, context || '');
+    } else {
+      // Structured JSON for production debugging
+      console.log(JSON.stringify(logEntry));
+    }
+  },
+  
+  error: (correlationId: string, stage: string, message: string, error?: any) => {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      correlationId,
+      stage,
+      level: 'error',
+      message,
+      error: error?.message || error,
+      stack: error?.stack
+    };
+    
+    if (__DEV__) {
+      console.error(`❌ [${stage}] ${message}`, error || '');
+    } else {
+      console.error(JSON.stringify(logEntry));
+    }
+  },
+  
+  info: (correlationId: string, stage: string, message: string, context?: any) => {
+    if (!DEBUG_MODE && !__DEV__) return;
+    
+    if (__DEV__) {
+      console.log(`ℹ️ [${stage}] ${message}`, context || '');
+    } else {
+      console.log(JSON.stringify({
+        timestamp: new Date().toISOString(),
+        correlationId,
+        stage,
+        level: 'info',
+        message,
+        ...context
+      }));
+    }
+  }
+};
+
+/**
  * Food Search Service Class
  */
 class FoodSearchService {
@@ -62,47 +141,88 @@ class FoodSearchService {
     query: string,
     options: FoodSearchOptions = {}
   ): Promise<ServiceResult<FoodSearchResult>> {
+    // Generate correlation ID for this request
+    const correlationId = generateCorrelationId();
+    const startTime = Date.now();
+    
+    logger.info(correlationId, 'SEARCH_START', 'Starting food search', {
+      query,
+      options,
+      debugMode: DEBUG_MODE
+    });
+    
     try {
       // Validate input
+      logger.debug(correlationId, 'VALIDATION', 'Validating search input');
       const validationError = this.validateSearchInput(query, options);
       if (validationError) {
+        logger.error(correlationId, 'VALIDATION_FAILED', validationError);
         return {
           success: false,
           error: new FoodSearchApiError(
             FOOD_SEARCH_ERROR_CODES.INVALID_QUERY,
             'validation',
-            'client-validation',
+            correlationId,
             validationError
           )
         };
       }
+      logger.debug(correlationId, 'VALIDATION_PASSED', 'Input validation successful');
 
       const limit = options.limit || FOOD_SEARCH_CONSTRAINTS.DEFAULT_LIMIT;
       const page = options.page || FOOD_SEARCH_CONSTRAINTS.DEFAULT_PAGE;
 
       // Check cache first
       const cacheKey = this.getCacheKey(query, limit, page);
+      logger.debug(correlationId, 'CACHE_CHECK', 'Checking cache', { cacheKey });
+      
       const cachedResult = this.getFromCache(cacheKey);
       if (cachedResult) {
+        logger.info(correlationId, 'CACHE_HIT', 'Found cached result', {
+          cacheKey,
+          resultCount: cachedResult.foods?.length
+        });
         return {
           success: true,
           data: this.createSearchResult(cachedResult, query, true)
         };
       }
+      logger.debug(correlationId, 'CACHE_MISS', 'No cached result found');
 
       // Get current session
+      logger.debug(correlationId, 'AUTH_CHECK', 'Checking authentication status');
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
+      
+      if (sessionError) {
+        logger.error(correlationId, 'AUTH_ERROR', 'Session error', sessionError);
         return {
           success: false,
           error: new FoodSearchApiError(
             FOOD_SEARCH_ERROR_CODES.MISSING_AUTH,
             'authentication',
-            'session-check',
+            correlationId,
+            'Authentication error. Please log in again.'
+          )
+        };
+      }
+      
+      if (!session) {
+        logger.error(correlationId, 'AUTH_MISSING', 'No active session found');
+        return {
+          success: false,
+          error: new FoodSearchApiError(
+            FOOD_SEARCH_ERROR_CODES.MISSING_AUTH,
+            'authentication',
+            correlationId,
             'Not authenticated. Please log in.'
           )
         };
       }
+      
+      logger.info(correlationId, 'AUTH_SUCCESS', 'Authentication successful', {
+        userId: session.user?.id,
+        tokenType: session.access_token ? 'present' : 'missing'
+      });
 
       // Prepare request payload
       const requestPayload: FoodSearchRequest = {
@@ -110,34 +230,76 @@ class FoodSearchService {
         limit,
         page
       };
-
-      // Make API call
-      const startTime = Date.now();
-      const { data, error } = await supabase.functions.invoke('food-search', {
-        body: requestPayload,
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
+      
+      logger.debug(correlationId, 'REQUEST_BUILD', 'Built request payload', {
+        payload: requestPayload
       });
 
-      const processingTime = Date.now() - startTime;
+      // Make API call
+      const apiStartTime = Date.now();
+      logger.info(correlationId, 'API_CALL_START', 'Calling food-search Edge Function', {
+        functionName: 'food-search',
+        hasToken: !!session.access_token
+      });
+      
+      // Call Edge Function via fetch so we can always read body, even on 500
+      const edgeUrl = `${supabaseConfig.url}/functions/v1/food-search`;
 
-      // Handle API errors
-      if (error) {
-        console.error('Food search API error:', error);
+      const resp = await fetch(edgeUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+          'X-Correlation-ID': correlationId,
+          ...(DEBUG_MODE ? { 'X-Debug-Mode': 'true' } : {})
+        },
+        body: JSON.stringify(requestPayload)
+      });
+
+      const apiProcessingTime = Date.now() - apiStartTime;
+      logger.info(correlationId, 'API_CALL_COMPLETE', 'Edge Function call completed', {
+        duration: apiProcessingTime,
+        status: resp.status
+      });
+
+      const rawText = await resp.text();
+      let parsedBody: any = null;
+      try {
+        parsedBody = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        /* non-JSON body */
+      }
+
+      if (!resp.ok) {
+        console.error('⚠️  Edge Function error details', {
+          status: resp.status,
+          parsedBody,
+          rawBody: parsedBody ? undefined : rawText?.slice(0, 500)
+        });
+
         return {
           success: false,
           error: new FoodSearchApiError(
             FOOD_SEARCH_ERROR_CODES.SERVER_ERROR,
-            'api-call',
-            'unknown',
-            'Failed to search foods. Please try again.'
+            parsedBody?.details?.lastStage || 'api-call',
+            parsedBody?.details?.requestId || correlationId,
+            parsedBody?.details?.message || 'Failed to search foods. Please try again.'
           )
         };
       }
 
+      // At this point resp.ok === true, parsedBody must contain data
+      const data = parsedBody;
+
       // Validate response format
+      logger.debug(correlationId, 'RESPONSE_PARSE', 'Parsing API response', {
+        dataType: typeof data,
+        hasResultGroups: data && 'resultGroups' in data,
+        hasFoods: data && 'foods' in data
+      });
+      
       if (isFoodSearchError(data)) {
+        logger.error(correlationId, 'RESPONSE_ERROR', 'API returned error response', data);
         return {
           success: false,
           error: new FoodSearchApiError(
@@ -149,35 +311,64 @@ class FoodSearchService {
         };
       }
 
-      if (!isFoodSearchResponse(data)) {
+      const isStructuredResponse = data && 'resultGroups' in data && Array.isArray((data as any).resultGroups);
+
+      if (!isFoodSearchResponse(data) && !isStructuredResponse) {
+        logger.error(correlationId, 'RESPONSE_INVALID', 'Invalid response format', {
+          actualKeys: data ? Object.keys(data) : null
+        });
         return {
           success: false,
           error: new FoodSearchApiError(
             FOOD_SEARCH_ERROR_CODES.TRANSFORMATION_ERROR,
             'response-validation',
-            'unknown',
+            correlationId,
             'Invalid response format from search API'
           )
         };
       }
+      
+      logger.info(correlationId, 'RESPONSE_VALID', 'Response validation successful', {
+        totalResults: data.total || data.meta?.totalResults,
+        foodCount: data.foods?.length || data.resultGroups?.reduce((sum: number, g: any) => sum + (g.items?.length || 0), 0)
+      });
 
       // Cache successful result
       this.setCache(cacheKey, data);
+      logger.debug(correlationId, 'CACHE_SET', 'Cached successful result');
 
+      // Calculate total processing time
+      const totalProcessingTime = Date.now() - startTime;
+      
       // Return structured result
+      const result = this.createSearchResult(data, query, false, totalProcessingTime);
+      
+      logger.info(correlationId, 'SEARCH_SUCCESS', 'Food search completed successfully', {
+        totalDuration: totalProcessingTime,
+        apiDuration: apiProcessingTime,
+        resultCount: result.foods.length,
+        fromCache: false
+      });
+      
       return {
         success: true,
-        data: this.createSearchResult(data, query, false, processingTime)
+        data: result
       };
 
     } catch (error) {
-      console.error('Unexpected error in food search:', error);
+      const duration = Date.now() - startTime;
+      logger.error(correlationId, 'SEARCH_FATAL_ERROR', 'Unexpected error in food search', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+        duration
+      });
+      
       return {
         success: false,
         error: new FoodSearchApiError(
           FOOD_SEARCH_ERROR_CODES.FATAL_ERROR,
           'client-error',
-          'unknown',
+          correlationId,
           'Unexpected error occurred during search'
         )
       };
@@ -324,26 +515,47 @@ class FoodSearchService {
   }
 
   private createSearchResult(
-    response: FoodSearchResponse,
+    response: any,
     query: string,
     fromCache: boolean,
     processingTime?: number
   ): FoodSearchResult {
-    const totalPages = Math.ceil(response.total / response.foods.length) || 1;
+    // Support both legacy (flat foods array) and new structured format
+    let foods: FoodSearchItem[] = [];
+    let totalResults = 0;
+    let currentPage = 1;
+    let hasNextPage = false;
+
+    if (Array.isArray(response.foods)) {
+      // Legacy format
+      foods = response.foods;
+      totalResults = response.total;
+      currentPage = response.page;
+      hasNextPage = response.hasMore;
+    } else if ('resultGroups' in response && Array.isArray(response.resultGroups)) {
+      // Structured format
+      const structured: any = response;
+      foods = structured.resultGroups.reduce((acc: FoodSearchItem[], group: any) => acc.concat(group.items || []), []);
+      totalResults = structured.meta?.totalResults ?? foods.length;
+      currentPage = structured.meta?.currentPage ?? 1;
+      hasNextPage = structured.totalRemaining > 0;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(totalResults / Math.max(foods.length, 1)));
 
     const meta: FoodSearchMeta = {
       query,
-      totalResults: response.total,
-      currentPage: response.page,
+      totalResults,
+      currentPage,
       totalPages,
-      hasNextPage: response.hasMore,
-      hasPreviousPage: response.page > 1,
+      hasNextPage,
+      hasPreviousPage: currentPage > 1,
       processingTime,
       fromCache
     };
 
     return {
-      foods: response.foods,
+      foods,
       meta
     };
   }
@@ -397,29 +609,123 @@ export type FoodItem = FoodSearchItem;
 /**
  * Convenience wrapper for searchFoods that throws on error
  * This matches the expected API from ManualEntryScreen
+ * Handles both legacy and new structured response formats
  */
 export async function searchFoods(options: FoodSearchOptions & { query: string }): Promise<FoodSearchResponse> {
-  console.log('[searchFoods] Called with options:', options);
+  const wrapperCorrelationId = generateCorrelationId();
+  logger.debug(wrapperCorrelationId, 'WRAPPER_SEARCH_FOODS', 'Legacy wrapper called', options);
   
   try {
     const result = await foodSearchService.searchFoodsWithRetry(options.query, options);
+  
+    if (!result.success) {
+      throw new Error(formatSearchErrorMessage(result.error!));
+    }
+    
+    const responseData = result.data!;
+    
+    // Check if this is the new structured response format
+    if ('resultGroups' in responseData && Array.isArray((responseData as any).resultGroups)) {
+      const structured: any = responseData;
+      // New structured format - flatten to maintain backward compatibility
+      const allFoods: FoodSearchItem[] = structured.resultGroups.reduce((acc: FoodSearchItem[], group: any) => {
+        return acc.concat(group.items || []);
+      }, []);
+      
+      logger.info(wrapperCorrelationId, 'STRUCTURED_FORMAT', 'Using new structured response format', {
+        groupCount: structured.resultGroups.length,
+        totalFoods: allFoods.length,
+        totalRemaining: structured.totalRemaining
+      });
+      
+      return {
+        foods: allFoods,
+        hasMore: structured.totalRemaining > 0,
+        total: structured.meta.totalResults,
+        page: structured.meta.currentPage
+      };
+    } else {
+      // Legacy format - use as-is
+      const { foods, meta } = responseData as any;
+      
+      return {
+        foods,
+        hasMore: meta.hasNextPage,
+        total: meta.totalResults,
+        page: meta.currentPage
+      };
+    }
+  } catch (error) {
+    logger.error(wrapperCorrelationId, 'WRAPPER_ERROR', 'Error in searchFoods wrapper', error);
+    throw error;
+  }
+}
+
+/**
+ * Get structured search results with categorization (new UX)
+ * Returns the full structured response for components that can handle it
+ */
+export async function searchFoodsStructured(
+  query: string, 
+  options: FoodSearchOptions = {}
+): Promise<{
+  groups: Array<{
+    title: string;
+    items: FoodSearchItem[];
+    maxDisplayed?: number;
+  }>;
+  suggestions: Array<{
+    displayText: string;
+    query: string;
+    reasoning?: string;
+  }>;
+  totalRemaining: number;
+  meta: {
+    query: string;
+    totalResults: number;
+    currentPage: number;
+    processingTime?: number;
+  };
+}> {
+  const result = await foodSearchService.searchFoodsWithRetry(query, options);
   
   if (!result.success) {
     throw new Error(formatSearchErrorMessage(result.error!));
   }
   
-  // Extract the foods array and metadata from the result
-  const { foods, meta } = result.data!;
+  const responseData = result.data!;
   
-  return {
-    foods,
-    hasMore: meta.hasNextPage,
-    total: meta.totalResults,
-    page: meta.currentPage
-  };
-  } catch (error) {
-    console.error('[searchFoods] Error during search:', error);
-    throw error;
+  // Handle new structured format
+  if ('resultGroups' in responseData && Array.isArray((responseData as any).resultGroups)) {
+    const structured: any = responseData;
+    return {
+      groups: structured.resultGroups.map((group: any) => ({
+        title: group.title,
+        items: group.items || [],
+        maxDisplayed: group.maxDisplayed
+      })),
+      suggestions: structured.suggestedQueries || [],
+      totalRemaining: structured.totalRemaining || 0,
+      meta: structured.meta
+    };
+  } else {
+    // Fallback: convert legacy format to structured
+    const { foods, meta } = responseData as any;
+    
+    return {
+      groups: [{
+        title: 'Search Results',
+        items: foods || []
+      }],
+      suggestions: [],
+      totalRemaining: 0,
+      meta: {
+        query,
+        totalResults: meta.totalResults,
+        currentPage: meta.currentPage,
+        processingTime: meta.processingTime
+      }
+    };
   }
 }
 
@@ -471,8 +777,11 @@ export default foodSearchService;
 export { formatSearchErrorMessage, shouldRetrySearch };
 
 // Debug log to verify exports
-console.log('[FoodSearchService] Module loaded successfully', {
-  searchFoods: typeof searchFoods,
-  foodItemToMealAnalysis: typeof foodItemToMealAnalysis,
-  default: typeof foodSearchService
-});
+if (DEBUG_MODE) {
+  console.log('[FoodSearchService] Module loaded successfully', {
+    searchFoods: typeof searchFoods,
+    foodItemToMealAnalysis: typeof foodItemToMealAnalysis,
+    default: typeof foodSearchService,
+    debugMode: DEBUG_MODE
+  });
+}
