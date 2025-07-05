@@ -569,6 +569,7 @@ class FoodSearchService {
       result.resultGroups = response.resultGroups;
       result.suggestedQueries = response.suggestedQueries ?? [];
       result.totalRemaining = response.totalRemaining ?? 0;
+      result.allFoods = response.allFoods ?? [];
     }
 
     return result;

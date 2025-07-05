@@ -206,12 +206,25 @@ const NUTRIENT_CODES = {
 
 // Search ranking configuration
 const RANKING_CONFIG = {
-  // Base score boosts by data type
+  // Base score boosts by data type (prioritizing Foundation per GPT-o3's strategy)
   DATA_TYPE_SCORES: {
-    'SR Legacy': 1000,      // Government nutrition data - highest priority
-    'Foundation': 900,      // Scientific foundation foods  
-    'Branded': 100          // Commercial products - lower priority
+    'Foundation': 1000,     // Primary generics (1k items) - highest priority
+    'SR Legacy': 900,       // Fallback generics (7k items)
+    'Survey (FNDDS)': 500,  // Mixed dishes (26k items) 
+    'Branded': 100          // Commercial products (430k items) - only on brand intent
   },
+  
+  // Brand intent detection keywords
+  BRAND_KEYWORDS: [
+    'mcdonald', 'mcdonalds', 'burger king', 'kfc', 'taco bell', 'subway',
+    'starbucks', 'dunkin', 'pizza hut', 'dominos', 'papa johns',
+    'tyson', 'perdue', 'foster farms', 'oscar mayer', 'hebrew national',
+    'kraft', 'heinz', 'campbells', 'progresso', 'hunts',
+    'lays', 'doritos', 'cheetos', 'pringles', 'ruffles',
+    'coca cola', 'pepsi', 'sprite', 'fanta', 'dr pepper',
+    'nestle', 'hershey', 'mars', 'snickers', 'kit kat',
+    'kellogg', 'general mills', 'quaker', 'post', 'nabisco'
+  ],
   
   // Penalty keywords for reducing relevance of non-food items
   PENALTY_KEYWORDS: {
@@ -225,7 +238,24 @@ const RANKING_CONFIG = {
     'flavoring': 250,
     'extract': 200,
     'sauce': 50,  // Light penalty - sauces are food
-    'soup': 50    // Light penalty - soups are food
+    'soup': 50,   // Light penalty - soups are food
+    // NEW: processed food penalties
+    'juice': 300,
+    'spread': 300,
+    'canned': 150,
+    'bottled': 150,
+    'unsweetened': 100,
+    'sweetened': 200,
+    'concentrate': 250,
+    'frozen': 50,    // Light penalty - frozen can be good
+    'dried': 75,     // Light penalty - dried can be good
+    // NEW: problematic food parts and processed items
+    'feet': 400,     // Chicken feet should not be top results
+    'giblets': 400,  // Organ meats are niche
+    'organ': 300,    // General organ penalty
+    'offal': 400,    // Organ meat penalty
+    'ground': 200,   // Ground versions are less common for basic searches
+    'meatless': 300  // Meat substitutes should be clearly marked
   },
   
   // Search suggestion mappings
@@ -245,6 +275,30 @@ const RANKING_CONFIG = {
  */
 function normalizeQuery(query: string): string {
   return query.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+/**
+ * Detect brand intent in search query using GPT-o3's strategy
+ */
+function detectBrandIntent(query: string): boolean {
+  const queryLower = normalizeQuery(query);
+  
+  // Check for explicit brand keywords
+  for (const brand of RANKING_CONFIG.BRAND_KEYWORDS) {
+    if (queryLower.includes(brand.toLowerCase())) {
+      return true;
+    }
+  }
+  
+  // Check for uppercase words longer than 2 characters (likely brand names)
+  const words = query.split(/\s+/);
+  for (const word of words) {
+    if (word.length > 2 && word === word.toUpperCase() && /^[A-Z]+$/.test(word)) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 /**
@@ -284,57 +338,44 @@ function getNutrientValue(nutrients: USDANutrient[], nutrientCode: string): numb
 }
 
 /**
- * Calculate relevance score for a food item based on query and characteristics
+ * HYBRID RELEVANCE SCORING MODEL
+ * Uses USDA's original ranking as base score with gentle multiplicative modifiers.
+ * This preserves USDA's sophisticated ranking while allowing targeted adjustments.
  */
-function calculateRelevanceScore(food: USDAFood, query: string): number {
-  let score = 0;
+function calculateRelevanceScore(
+  food: USDAFood, 
+  query: string, 
+  index: number, 
+  totalResults: number
+): number {
+  // 1. Base score from USDA's rank - preserves their sophisticated relevance algorithm
+  let score = totalResults - index;
+  
   const description = food.description.toLowerCase();
   const queryLower = query.toLowerCase();
   
-  // 1. Data type boost (most important factor)
-  score += RANKING_CONFIG.DATA_TYPE_SCORES[food.dataType as keyof typeof RANKING_CONFIG.DATA_TYPE_SCORES] || 0;
+  // 2. Conservative data type multipliers (gentle nudges, not sledgehammers)
+  const dataTypeMultipliers = {
+    'Foundation': 1.05,       // 5% boost - highest quality generic foods
+    'SR Legacy': 1.02,        // 2% boost - established generic foods
+    'Survey (FNDDS)': 1.0,    // Neutral - mixed dishes
+    'Branded': 0.98           // 2% penalty - prioritize generics for basic searches
+  };
   
-  // 2. String relevance scoring (BM25-like)
-  const queryWords = queryLower.split(/\s+/).filter(word => word.length > 1);
+  const multiplier = dataTypeMultipliers[food.dataType as keyof typeof dataTypeMultipliers] || 1.0;
+  score *= multiplier;
   
-  for (const word of queryWords) {
-    if (description.includes(word)) {
-      // Exact word match bonus
-      score += 200;
-      
-      // Position bonus (earlier in description = more relevant)
-      const position = description.indexOf(word);
-      const positionBonus = Math.max(0, 100 - (position * 2));
-      score += positionBonus;
-      
-      // Word boundary bonus (whole word matches)
-      const wordBoundaryRegex = new RegExp(`\\b${word}\\b`);
-      if (wordBoundaryRegex.test(description)) {
-        score += 100;
-      }
-    }
+  // 3. Small bonus for exact prefix match (users often type incrementally)
+  if (description.startsWith(queryLower)) {
+    score *= 1.05; // 5% boost
   }
   
-  // 3. Exact phrase match bonus
-  if (description.includes(queryLower)) {
-    score += 300;
+  // 4. Penalty for undesirable food parts/preparations
+  const penaltyKeywords = ['feet', 'giblets', 'neck', 'back', 'gizzard', 'offal'];
+  const hasPenaltyKeyword = penaltyKeywords.some(keyword => description.includes(keyword));
+  if (hasPenaltyKeyword) {
+    score *= 0.80; // 20% penalty
   }
-  
-  // 4. Penalty for non-food keywords
-  for (const [keyword, penalty] of Object.entries(RANKING_CONFIG.PENALTY_KEYWORDS)) {
-    if (description.includes(keyword)) {
-      score -= penalty;
-    }
-  }
-  
-  // 5. Brand penalty for generic queries (prefer unbranded basics)
-  if (food.brandOwner && queryWords.length === 1 && queryWords[0].length < 8) {
-    score -= 50;
-  }
-  
-  // 6. Length penalty (shorter descriptions are often more fundamental)
-  const lengthPenalty = Math.max(0, (description.length - 50) * 0.5);
-  score -= lengthPenalty;
   
   return Math.max(0, score);
 }
@@ -384,45 +425,52 @@ function generateSearchSuggestions(query: string): SearchSuggestion[] {
 
 /**
  * Categorize and group search results for progressive disclosure
- * Following MyFitnessPal pattern: Show 3-4 best matches, hide rest
+ * Updated for GPT-o3's prioritized data type strategy
  */
 function categorizeSearchResults(foods: FoodItemResponse[], query: string): FoodResultGroup[] {
   const groups: FoodResultGroup[] = [];
   
-  // Check if this is a branded search (user looking for specific brand)
-  const queryLower = query.toLowerCase();
-  const isBrandedSearch = foods.some(f => f.brand && queryLower.includes(f.brand.toLowerCase()));
+  // Check if this is a branded search using our brand intent detection
+  const hasBrandIntent = detectBrandIntent(query);
   
-  if (isBrandedSearch) {
-    // For branded searches, prioritize branded items
+  if (hasBrandIntent) {
+    // For branded searches, prioritize branded items first
     const brandedMatches = foods
       .filter(food => food.dataType === 'Branded')
-      .slice(0, 4); // Show up to 4 branded items
+      .slice(0, 6); // Show more branded items when intent is detected
     
     if (brandedMatches.length > 0) {
       groups.push({
         title: 'Best Matches',
         items: brandedMatches,
-        maxDisplayed: 4
+        maxDisplayed: 6
       });
     }
     
-    // Also show some generic alternatives (1-2 items)
+    // Show Foundation/SR Legacy as alternatives (2-3 items)
     const genericAlternatives = foods
-      .filter(food => food.dataType === 'SR Legacy' || food.dataType === 'Foundation')
-      .slice(0, 2);
+      .filter(food => food.dataType === 'Foundation' || food.dataType === 'SR Legacy')
+      .slice(0, 3);
     
     if (genericAlternatives.length > 0) {
       groups.push({
         title: 'Generic Alternatives',
         items: genericAlternatives,
-        maxDisplayed: 2
+        maxDisplayed: 3
       });
     }
   } else {
-    // For generic searches, show the MyFitnessPal pattern
-    // Best Matches: Top 3-4 most relevant items (mix of generic and branded)
-    const bestMatches = foods.slice(0, 4);
+    // For generic searches, prioritize Foundation then SR Legacy
+    const foundationFoods = foods.filter(f => f.dataType === 'Foundation');
+    const srLegacyFoods = foods.filter(f => f.dataType === 'SR Legacy');
+    const surveyFoods = foods.filter(f => f.dataType === 'Survey (FNDDS)');
+    const brandedFoods = foods.filter(f => f.dataType === 'Branded');
+    
+    // Best Matches: Top Foundation + SR Legacy (prioritizing Foundation)
+    const bestMatches = [
+      ...foundationFoods.slice(0, 3),
+      ...srLegacyFoods.slice(0, 2)
+    ].slice(0, 4); // Cap at 4 total
     
     if (bestMatches.length > 0) {
       groups.push({
@@ -432,46 +480,50 @@ function categorizeSearchResults(foods: FoodItemResponse[], query: string): Food
       });
     }
     
-    // Count remaining items by category for "Show More" sections
-    const remainingFoods = foods.slice(4);
+    // Remaining Foundation and SR Legacy foods
+    const remainingGenerics = [
+      ...foundationFoods.slice(3),
+      ...srLegacyFoods.slice(2)
+    ];
     
-    // Count how many additional items are available
-    const additionalGeneric = remainingFoods
-      .filter(f => f.dataType === 'SR Legacy' || f.dataType === 'Foundation')
-      .length;
-    
-    const additionalBranded = remainingFoods
-      .filter(f => f.dataType === 'Branded')
-      .length;
-    
-    // Add placeholder groups with counts but no items (for "Show More")
-    if (additionalGeneric > 0) {
+    if (remainingGenerics.length > 0) {
       groups.push({
-        title: `More Results (${additionalGeneric} items)`,
+        title: `More Results (${remainingGenerics.length} items)`,
         items: [], // Empty - will be loaded on demand
         maxDisplayed: 0
       });
     }
     
-    if (additionalBranded > 0) {
+    // Survey foods (mixed dishes) as separate group
+    if (surveyFoods.length > 0) {
       groups.push({
-        title: `Branded Products (${additionalBranded} items)`,
+        title: `Mixed Dishes (${surveyFoods.length} items)`,
+        items: [], // Empty - will be loaded on demand
+        maxDisplayed: 0
+      });
+    }
+    
+    // Branded foods only if we fetched them (due to low generic results)
+    if (brandedFoods.length > 0) {
+      groups.push({
+        title: `Branded Products (${brandedFoods.length} items)`,
         items: [], // Empty - will be loaded on demand
         maxDisplayed: 0
       });
     }
   }
   
-  // Always check for cooking ingredients at the end (low priority)
+  // Cooking ingredients detection (lower priority items)
   const ingredients = foods
     .filter(food => {
       const name = food.name.toLowerCase();
       return name.includes('broth') || name.includes('stock') || 
              name.includes('bouillon') || name.includes('base') ||
-             name.includes('seasoning') || name.includes('powder');
+             name.includes('seasoning') || name.includes('powder') ||
+             name.includes('mix');
     });
   
-  if (ingredients.length > 0) {
+  if (ingredients.length > 0 && !hasBrandIntent) {
     groups.push({
       title: `Cooking Ingredients (${ingredients.length} items)`,
       items: [], // Empty - will be loaded on demand
@@ -485,7 +537,7 @@ function categorizeSearchResults(foods: FoodItemResponse[], query: string): Food
 /**
  * Transform USDA food item to our FoodItem format with relevance scoring
  */
-function transformUSDAFood(usdaFood: USDAFood, query: string): FoodItemResponse {
+function transformUSDAFood(usdaFood: USDAFood, query: string, index: number, totalResults: number): FoodItemResponse {
   const nutrients: USDANutrient[] = Array.isArray(usdaFood.foodNutrients) ? usdaFood.foodNutrients : [];
   
   // Default serving size handling
@@ -499,7 +551,7 @@ function transformUSDAFood(usdaFood: USDAFood, query: string): FoodItemResponse 
     servingUnit = 'oz';
   }
 
-  const relevanceScore = calculateRelevanceScore(usdaFood, query);
+  const relevanceScore = calculateRelevanceScore(usdaFood, query, index, totalResults);
 
   return {
     id: usdaFood.fdcId.toString(),
@@ -527,16 +579,27 @@ function transformUSDAFood(usdaFood: USDAFood, query: string): FoodItemResponse 
  * Heuristics:
  *  • Lower-case
  *  • Remove everything in parentheses
- *  • Trim brand qualifiers after a comma (common in USDA data)
+ *  • Include second comma segment for food cuts (e.g., "chicken breast" vs "chicken drumstick")
  *  • Collapse multiple spaces and non-alphanumeric characters
  */
 function canonicalizeFoodName(name: string): string {
-  return name
+  let cleaned = name
     .toLowerCase()
-    .replace(/\([^)]*\)/g, '')            // drop parenthetical notes
-    .split(',')[0]                          // take text before first comma
-    .replace(/[^a-z0-9]+/g, ' ')            // non-alphanumerics → space
-    .replace(/\s+/g, ' ')                  // collapse whitespace
+    .replace(/\([^)]*\)/g, '');           // drop parenthetical notes
+  
+  const parts = cleaned.split(',').map(p => p.trim()).filter(Boolean);
+
+  // If the first part is only the bare query word (e.g. "chicken"),
+  // include the next descriptor ("breast", "drumstick", etc.) so
+  // different cuts don't collapse into one key.
+  let key = parts[0];
+  if (parts.length > 1 && key.split(/\s+/).length === 1) {
+    key = `${key} ${parts[1]}`;             // "chicken breast"
+  }
+
+  return key
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -606,34 +669,37 @@ function deduplicateFoods(foods: FoodItemResponse[]): FoodItemResponse[] {
 }
 
 /**
- * Call USDA FoodData Central API with retry logic and enhanced error handling
+ * Call USDA API for a specific data type with retry logic
  */
-async function searchUSDAFoods(
-  query: string, 
-  limit: number, 
+async function searchUSDAByDataType(
+  query: string,
+  dataTypes: string[],
+  limit: number,
   page: number,
   apiKey: string,
-  requestId: string
+  requestId: string,
+  testVariant?: string
 ): Promise<USDASearchResponse> {
   const log = (stage: string, msg: unknown) =>
     console.log(`[food-search][${requestId}][usda-api][${stage}]`, JSON.stringify(msg));
 
   const url = 'https://api.nal.usda.gov/fdc/v1/foods/search';
   
-  // Request more results than needed so we can apply sophisticated ranking
-  // We'll rank and filter on our end for better UX
-  const searchLimit = Math.min(limit * 4, 200); // Request 4x more for ranking, cap at 200
-  
-  const payload = {
+  // RELEASE: Always use USDA's natural relevance scoring (removes alphabetical override)
+  const payload: any = {
     query: query,
-    pageSize: searchLimit,
-    pageNumber: Math.max(page, 1), // use requested page for pagination
-    dataType: ['Foundation', 'SR Legacy', 'Branded'],
-    sortBy: 'dataType.keyword',
-    sortOrder: 'asc'
+    pageSize: limit,
+    pageNumber: Math.max(page, 1),
+    dataType: dataTypes
+    // No sortBy/sortOrder - let USDA's relevance algorithm work naturally
   };
-
-  log('request', { url, payload });
+  
+  // Log the fix for monitoring
+  if (testVariant === 'usda_relevance') {
+    log('test-variant-active', 'Using USDA relevance (test mode)');
+  }
+  
+  log('request', { url, payload, dataTypes, usingUSDARelevance: true });
 
   const maxRetries = 3;
   let lastError: Error | null = null;
@@ -655,7 +721,8 @@ async function searchUSDAFoods(
           attempt, 
           status: response.status, 
           statusText: response.statusText,
-          error: errorText 
+          error: errorText,
+          dataTypes
         });
         
         if (response.status === 429) {
@@ -679,7 +746,8 @@ async function searchUSDAFoods(
       log('success', { 
         attempt, 
         totalHits: data.totalHits, 
-        foodsReturned: data.foods?.length || 0 
+        foodsReturned: data.foods?.length || 0,
+        dataTypes 
       });
       
       return data;
@@ -692,7 +760,7 @@ async function searchUSDAFoods(
       
       // Otherwise, wrap it
       lastError = error as Error;
-      log('attempt-failed', { attempt, error: error.message });
+      log('attempt-failed', { attempt, error: error.message, dataTypes });
       
       if (attempt < maxRetries) {
         // Exponential backoff
@@ -710,6 +778,166 @@ async function searchUSDAFoods(
     'usda-api-network',
     lastError
   );
+}
+
+/**
+ * Prioritised fetching strategy (2025-07 refactor)
+ * 1. SR Legacy (core generics users expect)
+ * 2. Survey/FNDDS (mixed dishes) – if still needed
+ * 3. Foundation (only as a tiny fallback when very few hits)
+ * 4. Branded (only on brand intent or very few total hits)
+ */
+async function searchUSDAFoodsPrioritized(
+  query: string, 
+  limit: number, 
+  page: number,
+  apiKey: string,
+  requestId: string,
+  testVariant?: string
+): Promise<USDASearchResponse> {
+  const log = (stage: string, msg: unknown) =>
+    console.log(`[food-search][${requestId}][prioritized-search][${stage}]`, JSON.stringify(msg));
+
+  const hasBrandIntent = detectBrandIntent(query);
+  log('brand-intent-detection', { query, hasBrandIntent });
+
+  let allFoods: USDAFood[] = [];
+  let totalHits = 0;
+  let currentPage = page;
+  const targetResults = Math.min(limit * 2, 200); // Get 2x what we need for better ranking
+
+  try {
+    // Step 1: SR Legacy – primary generic foods (~7k items)
+    log('step-1-sr-legacy', 'Fetching SR Legacy Foods');
+    const legacyResponse = await searchUSDAByDataType(
+      query,
+      ['SR Legacy'],
+      Math.min(targetResults, 100),
+      currentPage,
+      apiKey,
+      requestId,
+      testVariant
+    );
+
+    if (legacyResponse.foods && legacyResponse.foods.length > 0) {
+      allFoods.push(...legacyResponse.foods);
+      totalHits += legacyResponse.totalHits || 0;
+    }
+
+    log('sr-legacy-results', {
+      found: legacyResponse.foods?.length || 0,
+      totalSoFar: allFoods.length
+    });
+
+    // Step 2: Survey/FNDDS – mixed dishes, if we still need more breadth
+    if (allFoods.length < targetResults / 2) {
+      log('step-2-survey', 'Fetching Survey (FNDDS) Foods');
+      try {
+        const surveyResponse = await searchUSDAByDataType(
+          query,
+          ['Survey (FNDDS)'],
+          Math.min(targetResults - allFoods.length, 100),
+          currentPage,
+          apiKey,
+          requestId,
+          testVariant
+        );
+
+        if (surveyResponse.foods && surveyResponse.foods.length > 0) {
+          allFoods.push(...surveyResponse.foods);
+          totalHits += surveyResponse.totalHits || 0;
+        }
+
+        log('survey-results', {
+          found: surveyResponse.foods?.length || 0,
+          totalSoFar: allFoods.length
+        });
+      } catch (error) {
+        log('survey-optional-error', 'Survey fetch failed, continuing without it');
+      }
+    }
+
+    // Step 3: Foundation fallback – only when we still have < 10 results total
+    if (allFoods.length < 10) {
+      log('step-3-foundation-fallback', 'Fetching Foundation Foods as fallback');
+      try {
+        const foundationResponse = await searchUSDAByDataType(
+          query,
+          ['Foundation'],
+          Math.min(targetResults - allFoods.length, 50),
+          currentPage,
+          apiKey,
+          requestId,
+          testVariant
+        );
+
+        if (foundationResponse.foods && foundationResponse.foods.length > 0) {
+          allFoods.push(...foundationResponse.foods);
+          totalHits += foundationResponse.totalHits || 0;
+        }
+
+        log('foundation-fallback-results', {
+          found: foundationResponse.foods?.length || 0,
+          totalSoFar: allFoods.length
+        });
+      } catch (error) {
+        log('foundation-optional-error', 'Foundation fetch failed, continuing without it');
+      }
+    }
+
+    // Step 4: Branded (only if brand intent detected OR we have very few results)
+    if (hasBrandIntent || allFoods.length < 10) {
+      log('step-4-branded', { reason: hasBrandIntent ? 'brand-intent' : 'few-results' });
+      try {
+        const brandedResponse = await searchUSDAByDataType(
+          query,
+          ['Branded'],
+          Math.min(hasBrandIntent ? targetResults : 20, 100), // More if brand intent
+          currentPage,
+          apiKey,
+          requestId,
+          testVariant
+        );
+        
+        if (brandedResponse.foods && brandedResponse.foods.length > 0) {
+          allFoods.push(...brandedResponse.foods);
+          totalHits += brandedResponse.totalHits || 0;
+        }
+        
+        log('branded-results', { 
+          found: brandedResponse.foods?.length || 0,
+          totalSoFar: allFoods.length 
+        });
+      } catch (error) {
+        log('branded-optional-error', 'Branded fetch failed, continuing without it');
+        // Continue without Branded data if it fails
+      }
+    } else {
+      log('step-4-skipped', 'Skipping branded foods (no brand intent, sufficient results)');
+    }
+
+    log('prioritized-search-complete', {
+      totalFoods: allFoods.length,
+      totalHits,
+      hasBrandIntent,
+      dataTypeDistribution: allFoods.reduce((acc, food) => {
+        acc[food.dataType] = (acc[food.dataType] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    });
+
+    // Return in the expected format
+    return {
+      totalHits,
+      currentPage,
+      totalPages: Math.ceil(totalHits / limit),
+      foods: allFoods
+    };
+
+  } catch (error) {
+    log('prioritized-search-error', { error: error.message });
+    throw error;
+  }
 }
 
 /**
@@ -742,9 +970,16 @@ Deno.serve(async (req) => {
       rateLimiter.cleanup();
     }
 
-    // 2. Parse request payload
+    // 2. Parse request payload and check test variant
     checkpoint('parse-payload-start');
     let searchRequest: SearchRequest;
+    
+    // 2.5. Check for test variant header (dark deployment)
+    const testVariant = req.headers.get('X-NutriAI-Test-Variant');
+    if (testVariant) {
+      log('test-variant-detected', { variant: testVariant });
+    }
+    
     try {
       searchRequest = await req.json();
       log('payload', {
@@ -957,11 +1192,11 @@ Deno.serve(async (req) => {
 
     log('cache-miss', { cacheKey });
 
-    // 8. Call USDA API with enhanced error handling
+    // 8. Call USDA API with GPT-o3's prioritized sequential fetching
     checkpoint('usda-api-call');
     let usdaResponse: USDASearchResponse;
     try {
-      usdaResponse = await searchUSDAFoods(query, limit, page, usdaApiKey, requestId);
+      usdaResponse = await searchUSDAFoodsPrioritized(query, limit, page, usdaApiKey, requestId, testVariant);
     } catch (error) {
       if (error instanceof ApiError) {
         log('usda-api-error', { 
@@ -1032,8 +1267,11 @@ Deno.serve(async (req) => {
     checkpoint('transform-start');
     let transformedFoods: FoodItemResponse[];
     try {
-      // Transform all foods with relevance scoring
-      transformedFoods = (usdaResponse.foods || []).map(food => transformUSDAFood(food, query));
+      // Transform all foods with relevance scoring using hybrid model
+      const totalResults = (usdaResponse.foods || []).length;
+      transformedFoods = (usdaResponse.foods || []).map((food, index) => 
+        transformUSDAFood(food, query, index, totalResults)
+      );
       
       // Filter out items with no calorie info (broths, seasonings, etc.)
       const meaningfulFoods = transformedFoods.filter(f => (f.calories ?? 0) > 0);

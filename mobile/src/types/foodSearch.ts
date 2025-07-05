@@ -111,6 +111,7 @@ export interface FoodSearchResult {
   resultGroups?: FoodResultGroup[];
   suggestedQueries?: SuggestedQuery[];
   totalRemaining?: number;
+  allFoods?: FoodSearchItem[]; // Full list for client-side progressive loading
 }
 
 // Utility type for converting search items to FoodItem interface

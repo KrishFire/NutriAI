@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 // Request interface for meal refinement
 interface RefineMealRequest {
-  mealId: string;
+  mealId: string; // This is actually the meal_group_id from log-meal-ai
   correctionText: string;
 }
 
@@ -151,19 +151,25 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log(`[refine-meal-analysis] Processing refinement for meal ${mealId}: "${correctionText}"`);
+    console.log(`[refine-meal-analysis] Processing refinement for meal group ${mealId}: "${correctionText}"`);
+    console.log(`[refine-meal-analysis] Looking up meal_entries with meal_group_id: ${mealId}`);
 
-    // 1. Fetch the meal and its current correction history
-    const { data: meal, error: fetchError } = await supabase
+    // 1. Fetch all meal entries in this group and use the first one's correction history
+    const { data: mealEntries, error: fetchError } = await supabase
       .from('meal_entries')
       .select('*')
-      .eq('id', mealId)
-      .single();
+      .eq('meal_group_id', mealId);
 
     if (fetchError) {
-      console.error('[refine-meal-analysis] Fetch error:', fetchError);
+      console.error('[refine-meal-analysis] Fetch error:', {
+        error: fetchError,
+        mealGroupId: mealId,
+        code: fetchError.code,
+        message: fetchError.message,
+        details: fetchError.details
+      });
       return new Response(
-        JSON.stringify({ success: false, error: 'Meal not found' }),
+        JSON.stringify({ success: false, error: 'Meal group not found', debug: { mealGroupId: mealId, fetchError } }),
         { 
           status: 404, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -171,7 +177,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    let currentHistory: ChatMessage[] = meal.correction_history || [];
+    if (!mealEntries || mealEntries.length === 0) {
+      console.error('[refine-meal-analysis] No meal entries found for group ID:', mealId);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Meal group not found - no entries returned', debug: { mealGroupId: mealId } }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Use the first entry's correction history (all entries in a group share the same conversation)
+    const primaryEntry = mealEntries[0];
+    let currentHistory: ChatMessage[] = primaryEntry.correction_history || [];
+    
+    console.log(`[refine-meal-analysis] Found ${mealEntries.length} meal entries in group`);
 
     // 2. Create the new user message
     const userMessage: ChatMessage = { 
@@ -194,26 +215,25 @@ Deno.serve(async (req) => {
       
       const updatedHistory = [...newHistoryForAPI, assistantMessage];
 
-      // 5. Update meal_entries with new analysis and history (transactional)
-      const { error: updateError } = await supabase
+      // 5. Update all meal entries in the group with new analysis and history
+      // First, update the shared correction history for all entries in the group
+      const { error: historyUpdateError } = await supabase
         .from('meal_entries')
         .update({
-          // Update nutrition fields from refined analysis
-          calories: refinedAnalysis.totalCalories || refinedAnalysis.calories || meal.calories,
-          protein: refinedAnalysis.totalProtein || refinedAnalysis.protein || meal.protein,
-          carbs: refinedAnalysis.totalCarbs || refinedAnalysis.carbs || meal.carbs,
-          fat: refinedAnalysis.totalFat || refinedAnalysis.fat || meal.fat,
-          notes: refinedAnalysis.notes || meal.notes,
           correction_history: updatedHistory,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', mealId);
+        .eq('meal_group_id', mealId);
 
-      if (updateError) {
-        throw new Error(`Failed to update meal entry: ${updateError.message}`);
+      if (historyUpdateError) {
+        throw new Error(`Failed to update correction history: ${historyUpdateError.message}`);
       }
 
-      console.log(`[refine-meal-analysis] Successfully refined meal ${mealId} with ${refinedAnalysis.foods?.length || 0} foods`);
+      // 6. If we have individual foods in the refined analysis, we could optionally
+      // update individual meal entries to match the new food breakdown
+      // For now, we keep the original food breakdown but update the conversation history
+      
+      console.log(`[refine-meal-analysis] Successfully refined meal group ${mealId} with ${refinedAnalysis.foods?.length || 0} foods, updated ${mealEntries.length} entries`);
 
       // 6. Return success response
       const response: RefineMealResponse = {

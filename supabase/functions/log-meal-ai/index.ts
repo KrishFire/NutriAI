@@ -192,6 +192,10 @@ async function saveMealToDatabase(
   request: LogMealRequest
 ): Promise<string> {
   try {
+    // Generate unique meal group ID for this analysis
+    const mealGroupId = crypto.randomUUID();
+    console.log(`[log-meal-ai] Generated meal group ID: ${mealGroupId} for ${analysis.foods.length} foods`);
+
     // 1. Get or create daily_logs record for user + date
     const { data: existingDailyLog } = await supabase
       .from('daily_logs')
@@ -266,13 +270,14 @@ async function saveMealToDatabase(
         foodItemId = newFoodItem.id;
       }
 
-      // Create meal_entry with initial correction_history seeded
+      // Create meal_entry with meal group ID and initial correction_history seeded
       const { data: mealEntry, error: entryError } = await supabase
         .from('meal_entries')
         .insert({
           user_id: request.userId,
           daily_log_id: dailyLogId,
           food_item_id: foodItemId,
+          meal_group_id: mealGroupId,
           meal_type: request.mealType,
           quantity: food.quantity,
           unit: food.unit,
@@ -295,6 +300,7 @@ async function saveMealToDatabase(
         throw new Error(`Failed to create meal entry: ${entryError.message}`);
       }
       
+      console.log(`[log-meal-ai] Created meal entry with ID: ${mealEntry.id} for food: ${food.name}`);
       mealEntryIds.push(mealEntry.id);
     }
 
@@ -315,9 +321,11 @@ async function saveMealToDatabase(
     }
 
     console.log(`[log-meal-ai] Created ${mealEntryIds.length} meal entries for daily log ${dailyLogId}`);
+    console.log(`[log-meal-ai] Meal entry IDs: ${JSON.stringify(mealEntryIds)}`);
+    console.log(`[log-meal-ai] Returning meal group ID: ${mealGroupId} for corrections`);
     
-    // Return the first meal entry ID for corrections (represents the primary meal entry)
-    return mealEntryIds[0] || dailyLogId;
+    // Return the meal group ID for corrections (identifies the entire meal)
+    return mealGroupId;
 
   } catch (error) {
     console.error('Database save error:', error);
