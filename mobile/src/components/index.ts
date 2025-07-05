@@ -18,6 +18,5 @@ export { default as DailyProgress } from './tracking/DailyProgress';
 // export * from './auth/LoginForm';
 // export * from './auth/SignupForm';
 
-// Meal components (to be implemented)
-// export * from './meals/MealCard';
-// export * from './meals/FoodItem';
+// Meal components
+export { default as MealCorrectionModal } from './meals/MealCorrectionModal';
