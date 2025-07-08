@@ -333,15 +333,10 @@ export default function MealDetailsScreen({
           </View>
         )}
 
-        {/* AI Analysis Confidence */}
-        {analysisData && (
+        {/* AI Analysis Notes */}
+        {analysisData?.notes && (
           <View style={styles.confidenceContainer}>
-            <Text style={styles.confidenceLabel}>
-              AI Confidence: {Math.round(analysisData.confidence * 100)}%
-            </Text>
-            {analysisData.notes && (
-              <Text style={styles.confidenceNotes}>{analysisData.notes}</Text>
-            )}
+            <Text style={styles.confidenceNotes}>{analysisData.notes}</Text>
           </View>
         )}
 
@@ -681,11 +676,6 @@ function FoodItemCard({ food, onUpdate, onRemove }: FoodItemCardProps) {
           <Text style={styles.foodName}>{food.name}</Text>
           <Text style={styles.foodQuantity}>{food.quantity}</Text>
         </View>
-        <View style={styles.confidenceBadge}>
-          <Text style={styles.confidenceText}>
-            {Math.round(food.confidence * 100)}%
-          </Text>
-        </View>
       </View>
 
       <View style={styles.nutritionGrid}>
@@ -830,13 +820,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 12,
     borderLeftWidth: 4,
-    borderLeftColor: '#28a745',
-  },
-  confidenceLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#28a745',
-    marginBottom: 4,
+    borderLeftColor: '#6c757d',
   },
   confidenceNotes: {
     fontSize: 14,
