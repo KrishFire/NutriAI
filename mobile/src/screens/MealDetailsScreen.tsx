@@ -7,21 +7,32 @@ import {
   Alert,
   TextInput,
   TouchableOpacity,
+  Modal,
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Button, LoadingSpinner } from '../components';
+import { Button, LoadingSpinner, MealCorrectionModal } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import { RootStackParamList } from '../types/navigation';
 import { MealAnalysis, FoodItem, NutritionData } from '../services/openai';
 import { saveMealAnalysis } from '../services/meals';
+import {
+  MealAnalysis as SharedMealAnalysis,
+  ChatMessage,
+} from '../../../shared/types';
 
-type MealDetailsScreenProps = NativeStackScreenProps<RootStackParamList, 'MealDetails'>;
+type MealDetailsScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  'MealDetails'
+>;
 
-export default function MealDetailsScreen({ navigation, route }: MealDetailsScreenProps) {
+export default function MealDetailsScreen({
+  navigation,
+  route,
+}: MealDetailsScreenProps) {
   const { user } = useAuth();
-  const { imageUri, analysisData, uploadedImageUrl } = route.params;
+  const { imageUri, analysisData, uploadedImageUrl, mealId, newFoodItems } = route.params;
 
   const [editedAnalysis, setEditedAnalysis] = useState<MealAnalysis>(
     analysisData || {
@@ -31,11 +42,54 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
     }
   );
   const [saving, setSaving] = useState(false);
+  const [showCorrectionModal, setShowCorrectionModal] = useState(false);
+  const [showAddFoodModal, setShowAddFoodModal] = useState(false);
+
+  // Handle new food items returned from add food flow
+  useEffect(() => {
+    if (newFoodItems && newFoodItems.length > 0) {
+      console.log('[MealDetailsScreen] Merging new food items:', newFoodItems);
+      
+      // Add new food items to existing analysis
+      const updatedFoods = [...editedAnalysis.foods, ...newFoodItems];
+      
+      // Recalculate total nutrition
+      const totalNutrition = updatedFoods.reduce(
+        (total, food) => ({
+          calories: (total.calories || 0) + (food.nutrition.calories || 0),
+          protein: (total.protein || 0) + (food.nutrition.protein || 0),
+          carbs: (total.carbs || 0) + (food.nutrition.carbs || 0),
+          fat: (total.fat || 0) + (food.nutrition.fat || 0),
+          fiber: (total.fiber || 0) + (food.nutrition.fiber || 0),
+          sugar: (total.sugar || 0) + (food.nutrition.sugar || 0),
+          sodium: (total.sodium || 0) + (food.nutrition.sodium || 0),
+        }),
+        {
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+          fiber: 0,
+          sugar: 0,
+          sodium: 0,
+        }
+      );
+
+      setEditedAnalysis({
+        ...editedAnalysis,
+        foods: updatedFoods,
+        totalNutrition,
+      });
+
+      // Clear navigation param to prevent re-adding on re-render
+      navigation.setParams({ newFoodItems: undefined });
+    }
+  }, [newFoodItems]);
 
   const updateFoodItem = (index: number, updatedFood: FoodItem) => {
     const newFoods = [...editedAnalysis.foods];
     newFoods[index] = updatedFood;
-    
+
     // Recalculate total nutrition with null safety
     const totalNutrition = newFoods.reduce(
       (total, food) => ({
@@ -47,7 +101,15 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
         sugar: (total.sugar || 0) + (food.nutrition.sugar || 0),
         sodium: (total.sodium || 0) + (food.nutrition.sodium || 0),
       }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 }
+      {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        fiber: 0,
+        sugar: 0,
+        sodium: 0,
+      }
     );
 
     setEditedAnalysis({
@@ -59,7 +121,7 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
 
   const removeFoodItem = (index: number) => {
     const newFoods = editedAnalysis.foods.filter((_, i) => i !== index);
-    
+
     const totalNutrition = newFoods.reduce(
       (total, food) => ({
         calories: (total.calories || 0) + (food.nutrition.calories || 0),
@@ -70,7 +132,15 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
         sugar: (total.sugar || 0) + (food.nutrition.sugar || 0),
         sodium: (total.sodium || 0) + (food.nutrition.sodium || 0),
       }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 }
+      {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        fiber: 0,
+        sugar: 0,
+        sodium: 0,
+      }
     );
 
     setEditedAnalysis({
@@ -80,7 +150,7 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
     });
   };
 
-  const addFoodItem = () => {
+  const addFoodItemManual = () => {
     const newFood: FoodItem = {
       name: '',
       quantity: '',
@@ -91,6 +161,34 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
     setEditedAnalysis({
       ...editedAnalysis,
       foods: [...editedAnalysis.foods, newFood],
+    });
+  };
+
+  const addFoodItemPhoto = () => {
+    if (!mealId) {
+      Alert.alert('Error', 'Cannot add food item - meal ID not available');
+      return;
+    }
+
+    navigation.navigate('Camera', {
+      addToMeal: {
+        mealId,
+        existingAnalysis: editedAnalysis,
+      },
+    });
+  };
+
+  const addFoodItemText = () => {
+    if (!mealId) {
+      Alert.alert('Error', 'Cannot add food item - meal ID not available');
+      return;
+    }
+
+    navigation.navigate('ManualEntry', {
+      addToMeal: {
+        mealId,
+        existingAnalysis: editedAnalysis,
+      },
     });
   };
 
@@ -108,33 +206,29 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
     setSaving(true);
     try {
       // Show meal type selection
-      Alert.alert(
-        'Select Meal Type',
-        'What type of meal is this?',
-        [
-          {
-            text: 'Breakfast',
-            onPress: () => saveMealWithType('breakfast'),
-          },
-          {
-            text: 'Lunch',
-            onPress: () => saveMealWithType('lunch'),
-          },
-          {
-            text: 'Dinner',
-            onPress: () => saveMealWithType('dinner'),
-          },
-          {
-            text: 'Snack',
-            onPress: () => saveMealWithType('snack'),
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => setSaving(false),
-          },
-        ]
-      );
+      Alert.alert('Select Meal Type', 'What type of meal is this?', [
+        {
+          text: 'Breakfast',
+          onPress: () => saveMealWithType('breakfast'),
+        },
+        {
+          text: 'Lunch',
+          onPress: () => saveMealWithType('lunch'),
+        },
+        {
+          text: 'Dinner',
+          onPress: () => saveMealWithType('dinner'),
+        },
+        {
+          text: 'Snack',
+          onPress: () => saveMealWithType('snack'),
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => setSaving(false),
+        },
+      ]);
     } catch (error) {
       Alert.alert('Error', 'Failed to save meal');
       console.error('Save meal error:', error);
@@ -142,7 +236,9 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
     }
   };
 
-  const saveMealWithType = async (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
+  const saveMealWithType = async (
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  ) => {
     try {
       const result = await saveMealAnalysis(
         user!.id,
@@ -153,16 +249,12 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
       );
 
       if (result.success) {
-        Alert.alert(
-          'Success!', 
-          'Meal saved successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.navigate('AppTabs'),
-            },
-          ]
-        );
+        Alert.alert('Success!', 'Meal saved successfully!', [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('AppTabs'),
+          },
+        ]);
       } else {
         Alert.alert('Error', result.error || 'Failed to save meal');
       }
@@ -172,6 +264,49 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCorrectAnalysis = () => {
+    if (!mealId) {
+      Alert.alert('Error', 'Cannot refine analysis - meal ID not available');
+      return;
+    }
+    setShowCorrectionModal(true);
+  };
+
+  const handleCorrectionComplete = (
+    newAnalysis: SharedMealAnalysis,
+    newHistory: ChatMessage[]
+  ) => {
+    // Convert shared meal analysis back to openai service format
+    const convertedAnalysis: MealAnalysis = {
+      foods: newAnalysis.foods.map(food => ({
+        name: food.name,
+        quantity: `${food.quantity} ${food.unit}`,
+        nutrition: {
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          fat: food.fat,
+          fiber: food.fiber || 0,
+          sugar: food.sugar || 0,
+          sodium: food.sodium || 0,
+        },
+        confidence: newAnalysis.confidence,
+      })),
+      totalNutrition: {
+        calories: newAnalysis.totalCalories,
+        protein: newAnalysis.totalProtein,
+        carbs: newAnalysis.totalCarbs,
+        fat: newAnalysis.totalFat,
+      },
+      confidence: newAnalysis.confidence,
+      notes: newAnalysis.notes,
+    };
+
+    setEditedAnalysis(convertedAnalysis);
+    setShowCorrectionModal(false);
+    console.log('[MealDetailsScreen] Analysis corrected:', convertedAnalysis);
   };
 
   return (
@@ -187,7 +322,10 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Meal Image */}
         {imageUri && (
           <View style={styles.imageContainer}>
@@ -207,11 +345,17 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
           </View>
         )}
 
+        {/* Meal Nutrition Summary */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>This Meal</Text>
+          <NutritionSummary nutrition={editedAnalysis.totalNutrition} />
+        </View>
+
         {/* Food Items */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Food Items</Text>
-            <TouchableOpacity onPress={addFoodItem} style={styles.addButton}>
+            <TouchableOpacity onPress={() => setShowAddFoodModal(true)} style={styles.addButton}>
               <Text style={styles.addButtonText}>+ Add Item</Text>
             </TouchableOpacity>
           </View>
@@ -220,7 +364,7 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
             <FoodItemCard
               key={index}
               food={food}
-              onUpdate={(updatedFood) => updateFoodItem(index, updatedFood)}
+              onUpdate={updatedFood => updateFoodItem(index, updatedFood)}
               onRemove={() => removeFoodItem(index)}
             />
           ))}
@@ -232,16 +376,40 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
               </Text>
             </View>
           )}
+
+          {/* Bottom Add Item Button - only show if there are existing items */}
+          {editedAnalysis.foods.length > 0 && (
+            <TouchableOpacity 
+              onPress={() => setShowAddFoodModal(true)} 
+              style={styles.bottomAddButton}
+            >
+              <Text style={styles.bottomAddButtonText}>+ Add Another Item</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Total Nutrition */}
+        {/* Daily Nutrition Progress */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Total Nutrition</Text>
-          <NutritionSummary nutrition={editedAnalysis.totalNutrition} />
+          <Text style={styles.sectionTitle}>Daily Progress</Text>
+          <View style={styles.dailyProgressContainer}>
+            <Text style={styles.dailyProgressNote}>
+              Track your daily goals in the main dashboard
+            </Text>
+            {/* TODO: Add actual daily progress calculation */}
+          </View>
         </View>
 
-        {/* Save Button */}
+        {/* Action Buttons */}
         <View style={styles.actionContainer}>
+          {mealId && (
+            <Button
+              title="Refine with AI"
+              onPress={handleCorrectAnalysis}
+              variant="outline"
+              size="large"
+              style={styles.refineButton}
+            />
+          )}
           <Button
             title="Save Meal"
             onPress={saveMeal}
@@ -251,6 +419,102 @@ export default function MealDetailsScreen({ navigation, route }: MealDetailsScre
           />
         </View>
       </ScrollView>
+
+      {/* AI Correction Modal */}
+      {mealId && showCorrectionModal && (
+        <MealCorrectionModal
+          visible={showCorrectionModal}
+          onClose={() => setShowCorrectionModal(false)}
+          mealId={mealId}
+          currentAnalysis={{
+            foods: editedAnalysis.foods.map(food => ({
+              name: food.name,
+              quantity: parseFloat(food.quantity) || 1,
+              unit: food.quantity.replace(/[0-9.]/g, '').trim() || 'serving',
+              calories: food.nutrition.calories,
+              protein: food.nutrition.protein,
+              carbs: food.nutrition.carbs,
+              fat: food.nutrition.fat,
+              fiber: food.nutrition.fiber || 0,
+              sugar: food.nutrition.sugar || 0,
+              sodium: food.nutrition.sodium || 0,
+            })),
+            totalCalories: editedAnalysis.totalNutrition.calories,
+            totalProtein: editedAnalysis.totalNutrition.protein,
+            totalCarbs: editedAnalysis.totalNutrition.carbs,
+            totalFat: editedAnalysis.totalNutrition.fat,
+            confidence: editedAnalysis.confidence,
+            notes: editedAnalysis.notes,
+          }}
+          onCorrectionComplete={handleCorrectionComplete}
+        />
+      )}
+
+      {/* Add Food Method Selection Modal */}
+      <Modal
+        visible={showAddFoodModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAddFoodModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Food Item</Text>
+              <TouchableOpacity
+                onPress={() => setShowAddFoodModal(false)}
+                style={styles.modalCloseButton}
+              >
+                <Text style={styles.modalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.methodOptions}>
+              <TouchableOpacity
+                style={styles.methodOption}
+                onPress={() => {
+                  setShowAddFoodModal(false);
+                  addFoodItemPhoto();
+                }}
+              >
+                <Text style={styles.methodIcon}>📷</Text>
+                <View style={styles.methodContent}>
+                  <Text style={styles.methodTitle}>Take Photo</Text>
+                  <Text style={styles.methodDescription}>Capture an image of your food</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.methodOption}
+                onPress={() => {
+                  setShowAddFoodModal(false);
+                  addFoodItemText();
+                }}
+              >
+                <Text style={styles.methodIcon}>💬</Text>
+                <View style={styles.methodContent}>
+                  <Text style={styles.methodTitle}>Describe Food</Text>
+                  <Text style={styles.methodDescription}>Type what you ate</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.methodOption}
+                onPress={() => {
+                  setShowAddFoodModal(false);
+                  addFoodItemManual();
+                }}
+              >
+                <Text style={styles.methodIcon}>✏️</Text>
+                <View style={styles.methodContent}>
+                  <Text style={styles.methodTitle}>Manual Entry</Text>
+                  <Text style={styles.methodDescription}>Enter nutrition manually</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -291,7 +555,9 @@ function FoodItemCard({ food, onUpdate, onRemove }: FoodItemCardProps) {
             <TextInput
               style={styles.textInput}
               value={editedFood.name}
-              onChangeText={(text) => setEditedFood({ ...editedFood, name: text })}
+              onChangeText={text =>
+                setEditedFood({ ...editedFood, name: text })
+              }
               placeholder="Enter food name"
             />
           </View>
@@ -301,7 +567,9 @@ function FoodItemCard({ food, onUpdate, onRemove }: FoodItemCardProps) {
             <TextInput
               style={styles.textInput}
               value={editedFood.quantity}
-              onChangeText={(text) => setEditedFood({ ...editedFood, quantity: text })}
+              onChangeText={text =>
+                setEditedFood({ ...editedFood, quantity: text })
+              }
               placeholder="e.g., 1 cup, 150g"
             />
           </View>
@@ -313,10 +581,13 @@ function FoodItemCard({ food, onUpdate, onRemove }: FoodItemCardProps) {
                 <TextInput
                   style={styles.numberInput}
                   value={editedFood.nutrition.calories.toString()}
-                  onChangeText={(text) => 
+                  onChangeText={text =>
                     setEditedFood({
                       ...editedFood,
-                      nutrition: { ...editedFood.nutrition, calories: parseInt(text) || 0 }
+                      nutrition: {
+                        ...editedFood.nutrition,
+                        calories: parseInt(text) || 0,
+                      },
                     })
                   }
                   keyboardType="numeric"
@@ -327,10 +598,13 @@ function FoodItemCard({ food, onUpdate, onRemove }: FoodItemCardProps) {
                 <TextInput
                   style={styles.numberInput}
                   value={editedFood.nutrition.protein.toString()}
-                  onChangeText={(text) => 
+                  onChangeText={text =>
                     setEditedFood({
                       ...editedFood,
-                      nutrition: { ...editedFood.nutrition, protein: parseFloat(text) || 0 }
+                      nutrition: {
+                        ...editedFood.nutrition,
+                        protein: parseFloat(text) || 0,
+                      },
                     })
                   }
                   keyboardType="numeric"
@@ -344,10 +618,13 @@ function FoodItemCard({ food, onUpdate, onRemove }: FoodItemCardProps) {
                 <TextInput
                   style={styles.numberInput}
                   value={editedFood.nutrition.carbs.toString()}
-                  onChangeText={(text) => 
+                  onChangeText={text =>
                     setEditedFood({
                       ...editedFood,
-                      nutrition: { ...editedFood.nutrition, carbs: parseFloat(text) || 0 }
+                      nutrition: {
+                        ...editedFood.nutrition,
+                        carbs: parseFloat(text) || 0,
+                      },
                     })
                   }
                   keyboardType="numeric"
@@ -358,10 +635,13 @@ function FoodItemCard({ food, onUpdate, onRemove }: FoodItemCardProps) {
                 <TextInput
                   style={styles.numberInput}
                   value={editedFood.nutrition.fat.toString()}
-                  onChangeText={(text) => 
+                  onChangeText={text =>
                     setEditedFood({
                       ...editedFood,
-                      nutrition: { ...editedFood.nutrition, fat: parseFloat(text) || 0 }
+                      nutrition: {
+                        ...editedFood.nutrition,
+                        fat: parseFloat(text) || 0,
+                      },
                     })
                   }
                   keyboardType="numeric"
@@ -392,7 +672,10 @@ function FoodItemCard({ food, onUpdate, onRemove }: FoodItemCardProps) {
   }
 
   return (
-    <TouchableOpacity style={styles.foodCard} onPress={() => setIsEditing(true)}>
+    <TouchableOpacity
+      style={styles.foodCard}
+      onPress={() => setIsEditing(true)}
+    >
       <View style={styles.foodHeader}>
         <View style={styles.foodInfo}>
           <Text style={styles.foodName}>{food.name}</Text>
@@ -466,21 +749,29 @@ function NutritionSummary({ nutrition }: NutritionSummaryProps) {
         </View>
       </View>
 
-      {(safeNutrition.fiber > 0 || safeNutrition.sugar > 0 || safeNutrition.sodium > 0) && (
+      {(safeNutrition.fiber > 0 ||
+        safeNutrition.sugar > 0 ||
+        safeNutrition.sodium > 0) && (
         <View style={styles.microRow}>
           {safeNutrition.fiber > 0 && (
             <View style={styles.microItem}>
-              <Text style={styles.microValue}>{safeNutrition.fiber}g fiber</Text>
+              <Text style={styles.microValue}>
+                {safeNutrition.fiber}g fiber
+              </Text>
             </View>
           )}
           {safeNutrition.sugar > 0 && (
             <View style={styles.microItem}>
-              <Text style={styles.microValue}>{safeNutrition.sugar}g sugar</Text>
+              <Text style={styles.microValue}>
+                {safeNutrition.sugar}g sugar
+              </Text>
             </View>
           )}
           {safeNutrition.sodium > 0 && (
             <View style={styles.microItem}>
-              <Text style={styles.microValue}>{safeNutrition.sodium}mg sodium</Text>
+              <Text style={styles.microValue}>
+                {safeNutrition.sodium}mg sodium
+              </Text>
             </View>
           )}
         </View>
@@ -577,6 +868,98 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  bottomAddButton: {
+    backgroundColor: '#f8f9fa',
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  bottomAddButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2c3e50',
+  },
+  modalCloseButton: {
+    padding: 8,
+  },
+  modalCloseText: {
+    fontSize: 18,
+    color: '#6c757d',
+  },
+  methodOptions: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  methodOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  methodIcon: {
+    fontSize: 24,
+    marginRight: 16,
+  },
+  methodContent: {
+    flex: 1,
+  },
+  methodTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 2,
+  },
+  methodDescription: {
+    fontSize: 14,
+    color: '#6c757d',
+  },
+  dailyProgressContainer: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#6c757d',
+  },
+  dailyProgressNote: {
+    fontSize: 14,
+    color: '#6c757d',
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   emptyState: {
     padding: 40,
@@ -764,5 +1147,9 @@ const styles = StyleSheet.create({
   actionContainer: {
     padding: 20,
     paddingBottom: 40,
+    gap: 12,
+  },
+  refineButton: {
+    marginBottom: 8,
   },
 });

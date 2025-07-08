@@ -6,13 +6,24 @@ import { MealAnalysis } from '../services/openai';
 export type RootStackParamList = {
   AuthStack: undefined;
   AppTabs: undefined;
-  Camera: undefined;
-  ManualEntry: undefined;
+  Camera: {
+    addToMeal?: {
+      mealId: string;
+      existingAnalysis: MealAnalysis;
+    };
+  };
+  ManualEntry: {
+    addToMeal?: {
+      mealId: string;
+      existingAnalysis: MealAnalysis;
+    };
+  };
   MealDetails: {
     mealId?: string;
     imageUri?: string;
     analysisData?: MealAnalysis;
     uploadedImageUrl?: string;
+    newFoodItems?: MealAnalysis['foods'];
   };
 };
 
@@ -37,6 +48,7 @@ export type HomeStackParamList = {
     imageUri?: string;
     analysisData?: MealAnalysis;
     uploadedImageUrl?: string;
+    newFoodItems?: MealAnalysis['foods'];
   };
 };
 
@@ -48,6 +60,7 @@ export type HistoryStackParamList = {
     imageUri?: string;
     analysisData?: MealAnalysis;
     uploadedImageUrl?: string;
+    newFoodItems?: MealAnalysis['foods'];
   };
 };
 

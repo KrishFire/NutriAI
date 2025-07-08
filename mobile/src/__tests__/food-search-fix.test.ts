@@ -81,13 +81,15 @@ describe('Food Search Fix Tests', () => {
     });
 
     it('should handle empty search query', async () => {
-      await expect(searchFoods({ query: '' }))
-        .rejects.toThrow('Please check your search terms and try again.');
+      await expect(searchFoods({ query: '' })).rejects.toThrow(
+        'Please check your search terms and try again.'
+      );
     });
 
     it('should handle whitespace-only query', async () => {
-      await expect(searchFoods({ query: '   ' }))
-        .rejects.toThrow('Please check your search terms and try again.');
+      await expect(searchFoods({ query: '   ' })).rejects.toThrow(
+        'Please check your search terms and try again.'
+      );
     });
 
     it('should handle authentication errors', async () => {
@@ -96,8 +98,9 @@ describe('Food Search Fix Tests', () => {
         error: null,
       });
 
-      await expect(searchFoods({ query: 'apple' }))
-        .rejects.toThrow('Please log in to search for foods.');
+      await expect(searchFoods({ query: 'apple' })).rejects.toThrow(
+        'Please log in to search for foods.'
+      );
     });
 
     it('should handle Edge Function errors', async () => {
@@ -106,8 +109,9 @@ describe('Food Search Fix Tests', () => {
         error: new Error('Edge Function error'),
       });
 
-      await expect(searchFoods({ query: 'apple' }))
-        .rejects.toThrow('Failed to search foods. Please try again.');
+      await expect(searchFoods({ query: 'apple' })).rejects.toThrow(
+        'Failed to search foods. Please try again.'
+      );
     });
 
     it('should handle rate limiting', async () => {
@@ -120,8 +124,9 @@ describe('Food Search Fix Tests', () => {
         error: null,
       });
 
-      await expect(searchFoods({ query: 'apple' }))
-        .rejects.toThrow('Too many searches. Please wait a moment before trying again.');
+      await expect(searchFoods({ query: 'apple' })).rejects.toThrow(
+        'Too many searches. Please wait a moment before trying again.'
+      );
     });
   });
 
@@ -160,16 +165,18 @@ describe('Food Search Fix Tests', () => {
           amount: 1,
           unit: 'medium',
         },
-        items: [{
-          name: 'Apple',
-          brand: null,
-          calories: 95,
-          protein: 1,
-          carbs: 25,
-          fat: 0,
-          servingSize: '1 medium',
-          verified: false,
-        }],
+        items: [
+          {
+            name: 'Apple',
+            brand: null,
+            calories: 95,
+            protein: 1,
+            carbs: 25,
+            fat: 0,
+            servingSize: '1 medium',
+            verified: false,
+          },
+        ],
         confidence: 0.85,
         source: 'manual',
       });
@@ -202,7 +209,7 @@ describe('Food Search Fix Tests', () => {
       const specialQueries = [
         '2% milk',
         'mac & cheese',
-        'M&M\'s',
+        "M&M's",
         'Häagen-Dazs',
         '🍎', // emoji
       ];
@@ -220,8 +227,9 @@ describe('Food Search Fix Tests', () => {
     it('should handle very long search queries', async () => {
       const longQuery = 'a'.repeat(101); // Over 100 chars
 
-      await expect(searchFoods({ query: longQuery }))
-        .rejects.toThrow('Please check your search terms and try again.');
+      await expect(searchFoods({ query: longQuery })).rejects.toThrow(
+        'Please check your search terms and try again.'
+      );
     });
 
     it('should handle pagination correctly', async () => {

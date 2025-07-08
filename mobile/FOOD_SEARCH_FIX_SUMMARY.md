@@ -3,14 +3,17 @@
 ## Issues Identified and Fixed
 
 ### 1. ✅ Client-Side Crypto Error (FIXED)
+
 **Error**: `crypto.getRandomValues() not supported`
 **Cause**: React Native (Expo Go) doesn't have Web Crypto API
 **Fix**: Replaced `uuid` with custom `generateCorrelationId()` function using Math.random()
 **Status**: RESOLVED - No more crypto errors
 
 ### 2. ❓ Edge Function 500 Error (INVESTIGATING)
+
 **Error**: Edge Function returns 500 status
-**Verified**: 
+**Verified**:
+
 - ✅ USDA_API_KEY is configured
 - ✅ OPENAI_API_KEY is configured
 - ✅ Database connection works
@@ -27,11 +30,13 @@ The crypto error has been fixed, but the Edge Function is still returning 500 er
 ## Next Steps
 
 ### For You:
+
 1. The app should no longer crash with crypto errors
 2. Try searching again - you'll get a cleaner error message
 3. Share any new error details from the logs
 
 ### For Me:
+
 1. Need to see the actual Edge Function error logs
 2. Test the USDA API key directly
 3. Check for any runtime errors in the Edge Function

@@ -1,11 +1,13 @@
 # Edge Function Error Code Transformation Analysis
 
 ## The Problem
+
 User reports: "yes i believe the error is a 4xx error idk why the logs say 500"
 
 ## Root Cause Found
 
 ### Line 496: The Culprit
+
 ```typescript
 throw new Error(`USDA API error ${response.status}: ${errorText}`);
 ```
@@ -13,6 +15,7 @@ throw new Error(`USDA API error ${response.status}: ${errorText}`);
 This line converts a typed HTTP response with a status code into a generic JavaScript Error object. The status code is embedded in the error MESSAGE but not preserved as a property.
 
 ### Line 735: The Transformation
+
 ```typescript
 { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
 ```
@@ -39,6 +42,7 @@ The catch block blindly returns 502 for ANY error from the USDA API call, regard
 ## The Fix
 
 ### Option 1: Custom Error Class
+
 ```typescript
 class USDAAPIError extends Error {
   constructor(public status: number, message: string) {
@@ -71,6 +75,7 @@ throw new USDAAPIError(response.status, `USDA API error ${response.status}: ${er
 ```
 
 ### Option 2: Return Status in searchUSDAFoods
+
 ```typescript
 // Instead of throwing, return an error result
 if (!response.ok) {
@@ -97,6 +102,7 @@ if (!result.success) {
 ## Immediate Workaround
 
 Until the code is fixed, look for the USDA status in the Edge Function logs:
+
 ```
 [food-search][req_xxx][usda-api][error] {"attempt":1,"status":401,"statusText":"Unauthorized","error":"Invalid API key"}
 ```

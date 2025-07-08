@@ -21,7 +21,10 @@ interface MealCorrectionModalProps {
   onClose: () => void;
   mealId: string;
   currentAnalysis: MealAnalysis;
-  onCorrectionComplete: (newAnalysis: MealAnalysis, newHistory: ChatMessage[]) => void;
+  onCorrectionComplete: (
+    newAnalysis: MealAnalysis,
+    newHistory: ChatMessage[]
+  ) => void;
 }
 
 interface ExampleCorrection {
@@ -34,33 +37,33 @@ const EXAMPLE_CORRECTIONS: ExampleCorrection[] = [
   {
     id: 'protein_shake',
     text: "it's a protein shake with blueberry and banana",
-    description: 'Specify ingredients in drinks'
+    description: 'Specify ingredients in drinks',
   },
   {
     id: 'portion_size',
     text: "that's actually a large portion, about 2 servings",
-    description: 'Correct portion sizes'
+    description: 'Correct portion sizes',
   },
   {
     id: 'cooking_method',
     text: "it's grilled, not fried",
-    description: 'Specify cooking method'
+    description: 'Specify cooking method',
   },
   {
     id: 'brand_specific',
     text: "it's a McDonald's Big Mac",
-    description: 'Identify specific brands'
+    description: 'Identify specific brands',
   },
   {
     id: 'missing_items',
     text: "there's also avocado and ranch dressing",
-    description: 'Add missing items'
+    description: 'Add missing items',
   },
   {
     id: 'wrong_food',
     text: "that's quinoa, not rice",
-    description: 'Correct food identification'
-  }
+    description: 'Correct food identification',
+  },
 ];
 
 /**
@@ -92,10 +95,16 @@ export default function MealCorrectionModal({
     setIsSubmitting(true);
 
     try {
-      const result = await mealCorrectionService.submitCorrection(mealId, correctionText);
+      const result = await mealCorrectionService.submitCorrection(
+        mealId,
+        correctionText
+      );
 
       if (!result.success) {
-        Alert.alert('Correction Failed', result.error || 'Unable to process your correction. Please try again.');
+        Alert.alert(
+          'Correction Failed',
+          result.error || 'Unable to process your correction. Please try again.'
+        );
         return;
       }
 
@@ -104,7 +113,9 @@ export default function MealCorrectionModal({
         return;
       }
 
-      console.log(`[MealCorrectionModal] Correction successful. New analysis has ${result.newAnalysis.foods.length} foods`);
+      console.log(
+        `[MealCorrectionModal] Correction successful. New analysis has ${result.newAnalysis.foods.length} foods`
+      );
 
       // Call parent handler with the corrected analysis
       onCorrectionComplete(result.newAnalysis, result.newHistory);
@@ -112,13 +123,9 @@ export default function MealCorrectionModal({
       // Reset and close modal
       setCorrectionText('');
       onClose();
-
     } catch (error) {
       console.error('[MealCorrectionModal] Unexpected error:', error);
-      Alert.alert(
-        'Error', 
-        'An unexpected error occurred. Please try again.'
-      );
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -137,7 +144,7 @@ export default function MealCorrectionModal({
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
@@ -162,15 +169,23 @@ export default function MealCorrectionModal({
             <Text style={styles.sectionTitle}>Current Analysis</Text>
             <View style={styles.analysisCard}>
               <Text style={styles.analysisText}>
-                {currentAnalysis.foods.map(food => 
-                  `${food.quantity} ${food.unit} ${food.name}`
-                ).join(', ')}
+                {currentAnalysis.foods
+                  .map(food => `${food.quantity} ${food.unit} ${food.name}`)
+                  .join(', ')}
               </Text>
               <View style={styles.macroSummary}>
-                <Text style={styles.macroText}>{currentAnalysis.totalCalories} cal</Text>
-                <Text style={styles.macroText}>{currentAnalysis.totalProtein}g protein</Text>
-                <Text style={styles.macroText}>{currentAnalysis.totalCarbs}g carbs</Text>
-                <Text style={styles.macroText}>{currentAnalysis.totalFat}g fat</Text>
+                <Text style={styles.macroText}>
+                  {currentAnalysis.totalCalories} cal
+                </Text>
+                <Text style={styles.macroText}>
+                  {currentAnalysis.totalProtein}g protein
+                </Text>
+                <Text style={styles.macroText}>
+                  {currentAnalysis.totalCarbs}g carbs
+                </Text>
+                <Text style={styles.macroText}>
+                  {currentAnalysis.totalFat}g fat
+                </Text>
               </View>
             </View>
           </View>
@@ -179,7 +194,8 @@ export default function MealCorrectionModal({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Tell me what's different</Text>
             <Text style={styles.helpText}>
-              Use natural language to correct the analysis. Be specific about ingredients, portions, or cooking methods.
+              Use natural language to correct the analysis. Be specific about
+              ingredients, portions, or cooking methods.
             </Text>
             <TextInput
               ref={textInputRef}
@@ -199,7 +215,7 @@ export default function MealCorrectionModal({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Common Corrections</Text>
             <View style={styles.examplesGrid}>
-              {EXAMPLE_CORRECTIONS.map((example) => (
+              {EXAMPLE_CORRECTIONS.map(example => (
                 <TouchableOpacity
                   key={example.id}
                   style={styles.exampleCard}
@@ -207,7 +223,9 @@ export default function MealCorrectionModal({
                   disabled={isSubmitting}
                 >
                   <Text style={styles.exampleText}>{example.text}</Text>
-                  <Text style={styles.exampleDescription}>{example.description}</Text>
+                  <Text style={styles.exampleDescription}>
+                    {example.description}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -223,24 +241,34 @@ export default function MealCorrectionModal({
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[
-              styles.button, 
+              styles.button,
               styles.submitButton,
-              (!correctionText.trim() || isSubmitting) && styles.submitButtonDisabled
+              (!correctionText.trim() || isSubmitting) &&
+                styles.submitButtonDisabled,
             ]}
             onPress={handleSubmitCorrection}
             disabled={!correctionText.trim() || isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <ActivityIndicator size="small" color="white" style={styles.loadingIcon} />
+                <ActivityIndicator
+                  size="small"
+                  color="white"
+                  style={styles.loadingIcon}
+                />
                 <Text style={styles.submitButtonText}>Refining...</Text>
               </>
             ) : (
               <>
-                <Ionicons name="sparkles" size={16} color="white" style={styles.buttonIcon} />
+                <Ionicons
+                  name="sparkles"
+                  size={16}
+                  color="white"
+                  style={styles.buttonIcon}
+                />
                 <Text style={styles.submitButtonText}>Refine Analysis</Text>
               </>
             )}

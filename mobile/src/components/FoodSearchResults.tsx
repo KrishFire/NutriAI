@@ -30,9 +30,15 @@ interface FoodItemCardProps {
 }
 
 const FoodItemCard: React.FC<FoodItemCardProps> = ({ item, onPress }) => (
-  <TouchableOpacity style={styles.card} onPress={() => onPress(item)} activeOpacity={0.7}>
+  <TouchableOpacity
+    style={styles.card}
+    onPress={() => onPress(item)}
+    activeOpacity={0.7}
+  >
     <View style={styles.foodInfo}>
-      <Text style={styles.foodName} numberOfLines={2}>{item.name}</Text>
+      <Text style={styles.foodName} numberOfLines={2}>
+        {item.name}
+      </Text>
       <View style={styles.foodMeta}>
         {item.brand && <Text style={styles.foodBrand}>{item.brand}</Text>}
         <Text style={styles.foodServing}>
@@ -44,7 +50,12 @@ const FoodItemCard: React.FC<FoodItemCardProps> = ({ item, onPress }) => (
       <Text style={styles.calories}>{Math.round(item.calories)}</Text>
       <Text style={styles.caloriesLabel}>kcal</Text>
       {item.verified && (
-        <Ionicons name="checkmark-circle" size={16} color="#4CAF50" style={styles.verifiedIcon} />
+        <Ionicons
+          name="checkmark-circle"
+          size={16}
+          color="#4CAF50"
+          style={styles.verifiedIcon}
+        />
       )}
     </View>
   </TouchableOpacity>
@@ -57,15 +68,15 @@ interface GroupSectionProps {
   isExpanded: boolean;
 }
 
-const GroupSection: React.FC<GroupSectionProps> = ({ 
-  group, 
-  onSelectFood, 
+const GroupSection: React.FC<GroupSectionProps> = ({
+  group,
+  onSelectFood,
   onShowMore,
-  isExpanded 
+  isExpanded,
 }) => {
   const hasItems = group.items.length > 0;
   const isPlaceholder = !hasItems && group.maxDisplayed === 0;
-  
+
   if (isPlaceholder) {
     // This is a collapsed section with count only
     return (
@@ -75,16 +86,22 @@ const GroupSection: React.FC<GroupSectionProps> = ({
       </TouchableOpacity>
     );
   }
-  
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{group.title}</Text>
       {group.items.map((item, index) => (
-        <FoodItemCard key={`${item.id}-${index}`} item={item} onPress={onSelectFood} />
+        <FoodItemCard
+          key={`${item.id}-${index}`}
+          item={item}
+          onPress={onSelectFood}
+        />
       ))}
       {group.maxDisplayed && group.items.length >= group.maxDisplayed && (
         <TouchableOpacity style={styles.showMoreButton} onPress={onShowMore}>
-          <Text style={styles.showMoreText}>Show more {group.title.toLowerCase()}...</Text>
+          <Text style={styles.showMoreText}>
+            Show more {group.title.toLowerCase()}...
+          </Text>
         </TouchableOpacity>
       )}
     </View>
@@ -99,12 +116,12 @@ export const FoodSearchResults: React.FC<FoodSearchResultsProps> = ({
   isLoading = false,
 }) => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  
+
   const handleShowMore = (groupTitle: string) => {
     setExpandedGroups(prev => new Set(prev).add(groupTitle));
     onLoadMore(groupTitle);
   };
-  
+
   return (
     <View style={styles.container}>
       {groups.map((group, index) => (
@@ -116,13 +133,18 @@ export const FoodSearchResults: React.FC<FoodSearchResultsProps> = ({
           isExpanded={expandedGroups.has(group.title)}
         />
       ))}
-      
+
       {totalRemaining > 0 && !isLoading && (
-        <TouchableOpacity style={styles.showAllButton} onPress={() => onLoadMore('all')}>
-          <Text style={styles.showAllText}>Show all {totalRemaining} remaining results</Text>
+        <TouchableOpacity
+          style={styles.showAllButton}
+          onPress={() => onLoadMore('all')}
+        >
+          <Text style={styles.showAllText}>
+            Show all {totalRemaining} remaining results
+          </Text>
         </TouchableOpacity>
       )}
-      
+
       {isLoading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color="#007AFF" />

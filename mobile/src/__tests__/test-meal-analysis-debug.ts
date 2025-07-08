@@ -5,32 +5,39 @@
 import { supabase } from '../config/supabase';
 
 // Sample base64 image data (1x1 pixel transparent PNG for testing)
-const SAMPLE_IMAGE_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+const SAMPLE_IMAGE_BASE64 =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
 async function testMealAnalysisWithDebug() {
   console.log('🍽️  Testing Meal Analysis with Enhanced Debugging\n');
 
   // Get current session
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
   if (sessionError || !session) {
     console.error('❌ No active session. Please login first.');
     return;
   }
 
   console.log('✅ Authenticated as:', session.user.email);
-  console.log('🔑 Using access token:', session.access_token.substring(0, 20) + '...');
+  console.log(
+    '🔑 Using access token:',
+    session.access_token.substring(0, 20) + '...'
+  );
 
   // Test configurations
   const tests = [
     {
       name: 'Normal Mode',
-      debugMode: false
+      debugMode: false,
     },
     {
       name: 'Debug Mode Enabled',
-      debugMode: true
-    }
+      debugMode: true,
+    },
   ];
 
   for (const test of tests) {
@@ -42,7 +49,7 @@ async function testMealAnalysisWithDebug() {
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        Authorization: `Bearer ${session.access_token}`,
       };
 
       if (test.debugMode) {
@@ -56,8 +63,8 @@ async function testMealAnalysisWithDebug() {
           headers,
           body: JSON.stringify({
             imageBase64: SAMPLE_IMAGE_BASE64,
-            voiceTranscription: 'This is a test meal with chicken and rice'
-          })
+            voiceTranscription: 'This is a test meal with chicken and rice',
+          }),
         }
       );
 
@@ -68,7 +75,9 @@ async function testMealAnalysisWithDebug() {
       console.log(`  Status: ${response.status} ${response.statusText}`);
       console.log(`  X-Request-ID: ${response.headers.get('X-Request-ID')}`);
       console.log(`  X-Auth-Status: ${response.headers.get('X-Auth-Status')}`);
-      console.log(`  X-Processing-Status: ${response.headers.get('X-Processing-Status')}`);
+      console.log(
+        `  X-Processing-Status: ${response.headers.get('X-Processing-Status')}`
+      );
       console.log(`  Server-Timing: ${response.headers.get('Server-Timing')}`);
       console.log(`  Client-measured time: ${responseTime}ms`);
 
@@ -80,7 +89,7 @@ async function testMealAnalysisWithDebug() {
         console.log(`  Foods identified: ${body.foods?.length || 0}`);
         console.log(`  Total calories: ${body.totalNutrition?.calories || 0}`);
         console.log(`  Confidence: ${body.confidence || 0}`);
-        
+
         if (test.debugMode && body._debug) {
           console.log('\n🐛 Debug Information:');
           console.log(`  Processing time: ${body._debug.processingTimeMs}ms`);
@@ -93,7 +102,7 @@ async function testMealAnalysisWithDebug() {
         console.log(`  Stage: ${body.stage}`);
         console.log(`  Error: ${body.error}`);
         console.log(`  Request ID: ${body.requestId}`);
-        
+
         if (body.details) {
           console.log(`  Details: ${body.details}`);
         }
@@ -109,7 +118,6 @@ async function testMealAnalysisWithDebug() {
         console.log('\n📄 Full Response Body:');
         console.log(JSON.stringify(body, null, 2));
       }
-
     } catch (error) {
       console.error('\n❌ Request failed:', error.message);
     }

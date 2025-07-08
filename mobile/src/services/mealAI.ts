@@ -1,6 +1,6 @@
 /**
  * AI-Powered Meal Logging Service
- * 
+ *
  * Provides natural language meal logging using GPT-4o-mini
  * Users can simply describe their meal and get structured nutrition data
  */
@@ -49,7 +49,10 @@ export interface LogMealResponse {
  * AI Meal Logging Service Class
  */
 class MealAIService {
-  private cache = new Map<string, { data: AIMealAnalysis; timestamp: number }>();
+  private cache = new Map<
+    string,
+    { data: AIMealAnalysis; timestamp: number }
+  >();
   private readonly CACHE_TTL = 10 * 60 * 1000; // 10 minutes cache for meal descriptions
 
   /**
@@ -62,22 +65,32 @@ class MealAIService {
   ): Promise<LogMealResponse> {
     try {
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
       if (userError || !user) {
         return {
           success: false,
           error: 'Please log in to save meals',
-          mealAnalysis: { foods: [], totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0, confidence: 0 }
+          mealAnalysis: {
+            foods: [],
+            totalCalories: 0,
+            totalProtein: 0,
+            totalCarbs: 0,
+            totalFat: 0,
+            confidence: 0,
+          },
         };
       }
 
       // Check cache first
       const cacheKey = this.getCacheKey(description.trim().toLowerCase());
       const cachedResult = this.getFromCache(cacheKey);
-      
+
       let mealAnalysis: AIMealAnalysis;
-      
+
       if (cachedResult) {
         console.log('[MealAI] Using cached result for:', description);
         mealAnalysis = cachedResult;
@@ -85,7 +98,7 @@ class MealAIService {
         // Analyze with AI
         console.log('[MealAI] Analyzing meal with AI:', description);
         mealAnalysis = await this.analyzeMealWithAI(description);
-        
+
         // Cache the result
         this.setCache(cacheKey, mealAnalysis);
       }
@@ -103,18 +116,21 @@ class MealAIService {
         return {
           success: false,
           error: 'Authentication required',
-          mealAnalysis
+          mealAnalysis,
         };
       }
 
-      const response = await fetch(`${supabaseConfig.url}/functions/v1/log-meal-ai`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.session.access_token}`,
-        },
-        body: JSON.stringify(requestPayload),
-      });
+      const response = await fetch(
+        `${supabaseConfig.url}/functions/v1/log-meal-ai`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.session.access_token}`,
+          },
+          body: JSON.stringify(requestPayload),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.text();
@@ -122,22 +138,29 @@ class MealAIService {
         return {
           success: false,
           error: 'Failed to save meal. Please try again.',
-          mealAnalysis
+          mealAnalysis,
         };
       }
 
       const result: LogMealResponse = await response.json();
-      
-      console.log('[MealAI] Meal logged successfully:', result.mealLogId);
-      
-      return result;
 
+      console.log('[MealAI] Meal logged successfully:', result.mealLogId);
+
+      return result;
     } catch (error) {
       console.error('[MealAI] Error logging meal:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        mealAnalysis: { foods: [], totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0, confidence: 0 }
+        error:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+        mealAnalysis: {
+          foods: [],
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+          confidence: 0,
+        },
       };
     }
   }
@@ -148,7 +171,7 @@ class MealAIService {
   public async analyzeMeal(description: string): Promise<AIMealAnalysis> {
     const cacheKey = this.getCacheKey(description.trim().toLowerCase());
     const cachedResult = this.getFromCache(cacheKey);
-    
+
     if (cachedResult) {
       console.log('[MealAI] Using cached analysis for:', description);
       return cachedResult;
@@ -156,17 +179,19 @@ class MealAIService {
 
     console.log('[MealAI] Analyzing meal preview:', description);
     const analysis = await this.analyzeMealWithAI(description);
-    
+
     // Cache the result
     this.setCache(cacheKey, analysis);
-    
+
     return analysis;
   }
 
   /**
    * Private method to call AI for meal analysis
    */
-  private async analyzeMealWithAI(description: string): Promise<AIMealAnalysis> {
+  private async analyzeMealWithAI(
+    description: string
+  ): Promise<AIMealAnalysis> {
     // Call the actual Edge Function for real AI analysis
     try {
       const { data: session } = await supabase.auth.getSession();
@@ -174,42 +199,46 @@ class MealAIService {
         throw new Error('No active session');
       }
 
-      const response = await fetch(`${supabaseConfig.url}/functions/v1/log-meal-ai`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.session.access_token}`,
-        },
-        body: JSON.stringify({
-          description: description.trim(),
-          userId: 'preview', // Special preview mode
-          mealType: 'snack',
-          date: new Date().toISOString().split('T')[0],
-        }),
-      });
+      const response = await fetch(
+        `${supabaseConfig.url}/functions/v1/log-meal-ai`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.session.access_token}`,
+          },
+          body: JSON.stringify({
+            description: description.trim(),
+            userId: 'preview', // Special preview mode
+            mealType: 'snack',
+            date: new Date().toISOString().split('T')[0],
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[MealAI] HTTP Error:', {
           status: response.status,
           statusText: response.statusText,
-          errorBody: errorText
+          errorBody: errorText,
         });
-        throw new Error(`Analysis failed: ${response.status} ${response.statusText} - ${errorText}`);
+        throw new Error(
+          `Analysis failed: ${response.status} ${response.statusText} - ${errorText}`
+        );
       }
 
       const result = await response.json();
-      
+
       if (!result.success) {
         console.error('[MealAI] API Error:', result);
         throw new Error(result.error || 'Analysis failed');
       }
 
       return result.mealAnalysis;
-
     } catch (error) {
       console.error('[MealAI] Error calling AI analysis:', error);
-      
+
       // Fallback to simple local analysis for demo/offline use
       return this.getFallbackAnalysis(description);
     }
@@ -221,7 +250,7 @@ class MealAIService {
   private getFallbackAnalysis(description: string): AIMealAnalysis {
     const descLower = description.toLowerCase();
     const mockFoods: AIFoodItem[] = [];
-    
+
     // Simple pattern matching for common foods (fallback only)
     if (descLower.includes('big mac')) {
       mockFoods.push({
@@ -234,10 +263,10 @@ class MealAIService {
         fat: 33,
         fiber: 3,
         sugar: 5,
-        sodium: 1040
+        sodium: 1040,
       });
     }
-    
+
     if (descLower.includes('fries') || descLower.includes('french fries')) {
       const isLarge = descLower.includes('large');
       mockFoods.push({
@@ -250,28 +279,34 @@ class MealAIService {
         fat: isLarge ? 17 : 15,
         fiber: 4,
         sugar: 0,
-        sodium: isLarge ? 400 : 350
+        sodium: isLarge ? 400 : 350,
       });
     }
-    
+
     if (descLower.includes('apple') && !descLower.includes('juice')) {
-      const isMedium = !descLower.includes('large') && !descLower.includes('small');
+      const isMedium =
+        !descLower.includes('large') && !descLower.includes('small');
       mockFoods.push({
         name: 'Apple',
         quantity: 1,
-        unit: isMedium ? 'medium' : (descLower.includes('large') ? 'large' : 'small'),
-        calories: isMedium ? 95 : (descLower.includes('large') ? 116 : 77),
+        unit: isMedium
+          ? 'medium'
+          : descLower.includes('large')
+            ? 'large'
+            : 'small',
+        calories: isMedium ? 95 : descLower.includes('large') ? 116 : 77,
         protein: 0,
-        carbs: isMedium ? 25 : (descLower.includes('large') ? 31 : 20),
+        carbs: isMedium ? 25 : descLower.includes('large') ? 31 : 20,
         fat: 0,
         fiber: 4,
         sugar: 19,
-        sodium: 2
+        sodium: 2,
       });
     }
-    
+
     if (descLower.includes('chicken')) {
-      const isGrilled = descLower.includes('grilled') || descLower.includes('baked');
+      const isGrilled =
+        descLower.includes('grilled') || descLower.includes('baked');
       mockFoods.push({
         name: isGrilled ? 'Chicken Breast, Grilled' : 'Chicken Breast',
         quantity: descLower.includes('2') ? 2 : 1,
@@ -282,10 +317,10 @@ class MealAIService {
         fat: isGrilled ? 4 : 4.3,
         fiber: 0,
         sugar: 0,
-        sodium: 74
+        sodium: 74,
       });
     }
-    
+
     // Fallback for unrecognized foods
     if (mockFoods.length === 0) {
       mockFoods.push({
@@ -298,24 +333,27 @@ class MealAIService {
         fat: 10,
         fiber: 3,
         sugar: 5,
-        sodium: 300
+        sodium: 300,
       });
     }
-    
+
     // Calculate totals
-    const totalCalories = mockFoods.reduce((sum, food) => sum + food.calories, 0);
+    const totalCalories = mockFoods.reduce(
+      (sum, food) => sum + food.calories,
+      0
+    );
     const totalProtein = mockFoods.reduce((sum, food) => sum + food.protein, 0);
     const totalCarbs = mockFoods.reduce((sum, food) => sum + food.carbs, 0);
     const totalFat = mockFoods.reduce((sum, food) => sum + food.fat, 0);
-    
+
     return {
       foods: mockFoods,
       totalCalories,
       totalProtein,
       totalCarbs,
       totalFat,
-      confidence: 0.50, // Lower confidence for fallback
-      notes: 'Offline analysis. Please check accuracy and adjust if needed.'
+      confidence: 0.5, // Lower confidence for fallback
+      notes: 'Offline analysis. Please check accuracy and adjust if needed.',
     };
   }
 
@@ -355,7 +393,7 @@ class MealAIService {
 
     this.cache.set(key, {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 }

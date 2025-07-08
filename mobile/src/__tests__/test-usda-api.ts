@@ -28,26 +28,29 @@ async function testUSDAApi() {
 
   try {
     console.log('\n📡 Testing USDA API endpoint...');
-    
+
     const testQuery = 'apple';
     const url = `${USDA_API_URL}?query=${encodeURIComponent(testQuery)}&api_key=${USDA_API_KEY}`;
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
-      }
+        Accept: 'application/json',
+      },
     });
 
     console.log(`Response status: ${response.status}`);
-    console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
+    console.log(
+      `Response headers:`,
+      Object.fromEntries(response.headers.entries())
+    );
 
     if (response.ok) {
       const data = await response.json();
       console.log('✅ USDA API is working!');
       console.log(`Total hits: ${data.totalHits}`);
       console.log(`Foods returned: ${data.foods?.length || 0}`);
-      
+
       if (data.foods && data.foods.length > 0) {
         console.log('\nSample food item:');
         console.log(`- Description: ${data.foods[0].description}`);
@@ -55,10 +58,11 @@ async function testUSDAApi() {
       }
     } else {
       const errorText = await response.text();
-      console.error(`❌ USDA API error: ${response.status} ${response.statusText}`);
+      console.error(
+        `❌ USDA API error: ${response.status} ${response.statusText}`
+      );
       console.error(`Error body: ${errorText}`);
     }
-
   } catch (error) {
     console.error('❌ Failed to connect to USDA API:', error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -71,12 +75,17 @@ async function testUSDAApi() {
   try {
     const edgeFunctionPayload = {
       query: 'chicken breast',
-      apiKey: USDA_API_KEY
+      apiKey: USDA_API_KEY,
     };
-    
-    console.log('Payload structure:', JSON.stringify(edgeFunctionPayload, null, 2));
-    console.log('API key in payload matches env:', edgeFunctionPayload.apiKey === USDA_API_KEY);
-    
+
+    console.log(
+      'Payload structure:',
+      JSON.stringify(edgeFunctionPayload, null, 2)
+    );
+    console.log(
+      'API key in payload matches env:',
+      edgeFunctionPayload.apiKey === USDA_API_KEY
+    );
   } catch (error) {
     console.error('Error creating payload:', error);
   }

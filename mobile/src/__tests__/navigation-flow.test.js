@@ -9,8 +9,8 @@ import { describe, test, expect } from '@jest/globals';
 const mockAnalysisData = {
   foods: [
     {
-      name: "Chicken Fingers",
-      quantity: "3 pieces", 
+      name: 'Chicken Fingers',
+      quantity: '3 pieces',
       nutrition: {
         calories: 400,
         protein: 30,
@@ -18,10 +18,10 @@ const mockAnalysisData = {
         fat: 25,
         fiber: 1,
         sugar: 0,
-        sodium: 800
+        sodium: 800,
       },
-      confidence: 0.9
-    }
+      confidence: 0.9,
+    },
   ],
   totalNutrition: {
     calories: 1405,
@@ -30,27 +30,29 @@ const mockAnalysisData = {
     fat: 75,
     fiber: 8,
     sugar: 67,
-    sodium: 1805
+    sodium: 1805,
   },
   confidence: 0.85,
-  notes: "Portion sizes are estimated based on typical servings."
+  notes: 'Portion sizes are estimated based on typical servings.',
 };
 
 describe('Navigation Flow Fix Verification', () => {
   test('MealDetails navigation payload structure is valid', () => {
     const navigationPayload = {
-      name: "MealDetails",
+      name: 'MealDetails',
       params: {
-        imageUri: "file:///mock/image.jpg",
+        imageUri: 'file:///mock/image.jpg',
         analysisData: mockAnalysisData,
-        uploadedImageUrl: "https://example.com/image.jpg"
-      }
+        uploadedImageUrl: 'https://example.com/image.jpg',
+      },
     };
 
     expect(navigationPayload.name).toBe('MealDetails');
     expect(navigationPayload.params.analysisData).toBeDefined();
     expect(navigationPayload.params.analysisData.foods).toHaveLength(1);
-    expect(navigationPayload.params.analysisData.totalNutrition.calories).toBe(1405);
+    expect(navigationPayload.params.analysisData.totalNutrition.calories).toBe(
+      1405
+    );
   });
 
   test('NutritionSummary conditional rendering logic', () => {
@@ -62,15 +64,14 @@ describe('Navigation Flow Fix Verification', () => {
       fat: 5,
       fiber: 0,
       sugar: 0,
-      sodium: 0
+      sodium: 0,
     };
 
     // Test the fixed conditional logic
-    const shouldShowMicroRow = (
-      nutritionWithZeroMicros.fiber > 0 || 
-      nutritionWithZeroMicros.sugar > 0 || 
-      nutritionWithZeroMicros.sodium > 0
-    );
+    const shouldShowMicroRow =
+      nutritionWithZeroMicros.fiber > 0 ||
+      nutritionWithZeroMicros.sugar > 0 ||
+      nutritionWithZeroMicros.sodium > 0;
 
     // Should be false (not render micro row), avoiding the "0" text rendering issue
     expect(shouldShowMicroRow).toBe(false);
@@ -79,14 +80,13 @@ describe('Navigation Flow Fix Verification', () => {
     const nutritionWithMicros = {
       ...nutritionWithZeroMicros,
       fiber: 5,
-      sodium: 200
+      sodium: 200,
     };
 
-    const shouldShowMicroRowWithValues = (
-      nutritionWithMicros.fiber > 0 || 
-      nutritionWithMicros.sugar > 0 || 
-      nutritionWithMicros.sodium > 0
-    );
+    const shouldShowMicroRowWithValues =
+      nutritionWithMicros.fiber > 0 ||
+      nutritionWithMicros.sugar > 0 ||
+      nutritionWithMicros.sodium > 0;
 
     // Should be true (render micro row)
     expect(shouldShowMicroRowWithValues).toBe(true);
@@ -97,14 +97,14 @@ describe('Navigation Flow Fix Verification', () => {
     const rootStackScreens = ['AuthStack', 'AppTabs', 'Camera', 'MealDetails'];
     const expectedParam = {
       mealId: 'optional-string',
-      imageUri: 'optional-string', 
+      imageUri: 'optional-string',
       analysisData: 'optional-object',
-      uploadedImageUrl: 'optional-string'
+      uploadedImageUrl: 'optional-string',
     };
 
     expect(rootStackScreens).toContain('MealDetails');
     expect(rootStackScreens).toContain('Camera');
-    
+
     // Verify MealDetails param structure
     expect(typeof expectedParam.imageUri).toBe('string');
     expect(typeof expectedParam.uploadedImageUrl).toBe('string');

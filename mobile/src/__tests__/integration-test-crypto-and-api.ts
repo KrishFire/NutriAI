@@ -1,6 +1,6 @@
 /**
  * Integration test to verify both crypto fix and API connectivity
- * 
+ *
  * This test ensures:
  * 1. The crypto.getRandomValues() fix works (UUID generation)
  * 2. The Edge Function API calls work properly
@@ -171,8 +171,9 @@ describe('Integration Test: Crypto Fix and API Connectivity', () => {
       });
 
       // Call should throw with proper error message
-      await expect(analyzeMealImage('fake-image-uri'))
-        .rejects.toThrow('Failed to analyze meal: Edge Function error: 500');
+      await expect(analyzeMealImage('fake-image-uri')).rejects.toThrow(
+        'Failed to analyze meal: Edge Function error: 500'
+      );
     });
 
     it('should send debug headers when DEBUG_MODE is enabled', async () => {
@@ -210,7 +211,7 @@ describe('Integration Test: Crypto Fix and API Connectivity', () => {
   describe('End-to-End Scenario', () => {
     it('should complete a full meal analysis flow', async () => {
       // This simulates the complete flow from image capture to meal save
-      
+
       // 1. User is authenticated
       expect(mockSession.access_token).toBeTruthy();
 

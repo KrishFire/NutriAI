@@ -1,6 +1,6 @@
 /**
  * SearchUXDemo Component
- * 
+ *
  * Demonstrates the improved food search UX with:
  * - Progressive disclosure with categorized results
  * - Search suggestions
@@ -17,7 +17,7 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import { searchFoods, searchFoodsStructured } from '../services/foodSearch';
 
@@ -87,9 +87,7 @@ export default function SearchUXDemo() {
       <Text style={styles.foodName} numberOfLines={2}>
         {item.name}
       </Text>
-      {item.brand && (
-        <Text style={styles.brandName}>{item.brand}</Text>
-      )}
+      {item.brand && <Text style={styles.brandName}>{item.brand}</Text>}
       <View style={styles.foodDetails}>
         <Text style={styles.calories}>{Math.round(item.calories)} cal</Text>
         <Text style={styles.dataType}>{item.dataType}</Text>
@@ -128,7 +126,9 @@ export default function SearchUXDemo() {
           >
             <Text style={styles.suggestionText}>{suggestion.displayText}</Text>
             {suggestion.reasoning && (
-              <Text style={styles.suggestionReason}>{suggestion.reasoning}</Text>
+              <Text style={styles.suggestionReason}>
+                {suggestion.reasoning}
+              </Text>
             )}
           </TouchableOpacity>
         ))}
@@ -143,12 +143,17 @@ export default function SearchUXDemo() {
       <View style={styles.comparisonContainer}>
         <Text style={styles.comparisonTitle}>Legacy Search (Old UX)</Text>
         <Text style={styles.comparisonNote}>
-          Shows {legacyResults.foods.length} of {legacyResults.total.toLocaleString()} results
+          Shows {legacyResults.foods.length} of{' '}
+          {legacyResults.total.toLocaleString()} results
         </Text>
         <ScrollView style={styles.legacyResults} nestedScrollEnabled>
-          {legacyResults.foods.slice(0, 10).map((item: any) => renderFoodItem(item))}
+          {legacyResults.foods
+            .slice(0, 10)
+            .map((item: any) => renderFoodItem(item))}
           <Text style={styles.legacyNote}>
-            😵 User sees overwhelming list of {legacyResults.total.toLocaleString()} results with confusing items mixed in
+            😵 User sees overwhelming list of{' '}
+            {legacyResults.total.toLocaleString()} results with confusing items
+            mixed in
           </Text>
         </ScrollView>
       </View>
@@ -171,7 +176,7 @@ export default function SearchUXDemo() {
           placeholder="Search for food (try 'chicken')"
           onSubmitEditing={handleSearch}
         />
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.searchButton}
           onPress={handleSearch}
           disabled={loading}
@@ -223,11 +228,21 @@ export default function SearchUXDemo() {
           {/* UX Benefits */}
           <View style={styles.benefitsContainer}>
             <Text style={styles.benefitsTitle}>🎯 UX Improvements</Text>
-            <Text style={styles.benefit}>✅ Shows only ~9 relevant items initially</Text>
-            <Text style={styles.benefit}>✅ Common foods prioritized over branded products</Text>
-            <Text style={styles.benefit}>✅ Cooking ingredients separated for easy discovery</Text>
-            <Text style={styles.benefit}>✅ Smart search suggestions provided</Text>
-            <Text style={styles.benefit}>✅ Progressive disclosure reduces cognitive load</Text>
+            <Text style={styles.benefit}>
+              ✅ Shows only ~9 relevant items initially
+            </Text>
+            <Text style={styles.benefit}>
+              ✅ Common foods prioritized over branded products
+            </Text>
+            <Text style={styles.benefit}>
+              ✅ Cooking ingredients separated for easy discovery
+            </Text>
+            <Text style={styles.benefit}>
+              ✅ Smart search suggestions provided
+            </Text>
+            <Text style={styles.benefit}>
+              ✅ Progressive disclosure reduces cognitive load
+            </Text>
           </View>
         </View>
       )}
@@ -238,10 +253,18 @@ export default function SearchUXDemo() {
       {/* Demo Instructions */}
       <View style={styles.instructionsContainer}>
         <Text style={styles.instructionsTitle}>🎮 Try These Searches</Text>
-        <Text style={styles.instruction}>• "chicken" - See categorization in action</Text>
-        <Text style={styles.instruction}>• "beef" - Compare common vs branded results</Text>
-        <Text style={styles.instruction}>• "milk" - Notice smart suggestions</Text>
-        <Text style={styles.instruction}>• "rice" - Observe ranking improvements</Text>
+        <Text style={styles.instruction}>
+          • "chicken" - See categorization in action
+        </Text>
+        <Text style={styles.instruction}>
+          • "beef" - Compare common vs branded results
+        </Text>
+        <Text style={styles.instruction}>
+          • "milk" - Notice smart suggestions
+        </Text>
+        <Text style={styles.instruction}>
+          • "rice" - Observe ranking improvements
+        </Text>
       </View>
     </ScrollView>
   );

@@ -8,12 +8,19 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useEffect, useCallback } from 'react';
-import { useNavigation, useFocusEffect, CommonActions } from '@react-navigation/native';
+import {
+  useNavigation,
+  useFocusEffect,
+  CommonActions,
+} from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { HomeStackParamList } from '../types/navigation';
 
-type HomeScreenNavigationProp = StackNavigationProp<HomeStackParamList, 'HomeScreen'>;
+type HomeScreenNavigationProp = StackNavigationProp<
+  HomeStackParamList,
+  'HomeScreen'
+>;
 import { Button, DailyProgress, LoadingSpinner } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import { useNutrition, useTodaysMeals } from '../hooks/useNutrition';
@@ -108,9 +115,9 @@ export default function HomeScreen() {
         <View style={styles.actionContainer}>
           <Button
             title="📷 Log Meal"
-            onPress={() => navigation.dispatch(
-              CommonActions.navigate('Camera')
-            )}
+            onPress={() =>
+              navigation.dispatch(CommonActions.navigate('Camera'))
+            }
             variant="primary"
             size="large"
           />
@@ -155,20 +162,21 @@ export default function HomeScreen() {
                 <View key={meal.id || index} style={styles.mealItem}>
                   <View style={styles.mealInfo}>
                     <Text style={styles.mealType}>
-                      {meal.meal_type.charAt(0).toUpperCase() + meal.meal_type.slice(1)}
+                      {meal.meal_type.charAt(0).toUpperCase() +
+                        meal.meal_type.slice(1)}
                     </Text>
                     <Text style={styles.mealCalories}>{meal.calories} cal</Text>
                   </View>
                   <Text style={styles.mealTime}>
-                    {new Date(meal.logged_at || '').toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
+                    {new Date(meal.logged_at || '').toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
                     })}
                   </Text>
                 </View>
               ))}
               {mealsData.meals.length > 3 && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.viewAllButton}
                   onPress={() => console.log('View all meals')}
                 >

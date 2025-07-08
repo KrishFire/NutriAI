@@ -46,7 +46,7 @@ export default function ProfileScreen() {
     notifications: true,
     reminderTime: '20:00',
   });
-  
+
   const [stats, setStats] = useState<UserStats>({
     currentStreak: 0,
     totalMeals: 0,
@@ -96,21 +96,21 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Sign Out', 
-          style: 'destructive',
-          onPress: () => signOut()
-        },
-      ]
-    );
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: () => signOut(),
+      },
+    ]);
   };
 
-  const renderStatCard = (title: string, value: string | number, icon: string) => (
+  const renderStatCard = (
+    title: string,
+    value: string | number,
+    icon: string
+  ) => (
     <View style={styles.statCard}>
       <Ionicons name={icon as any} size={24} color="#007AFF" />
       <Text style={styles.statValue}>{value}</Text>
@@ -128,7 +128,8 @@ export default function ProfileScreen() {
       <Text style={styles.preferenceLabel}>{label}</Text>
       <View style={styles.preferenceValue}>
         <Text style={styles.preferenceText}>
-          {value}{unit ? ` ${unit}` : ''}
+          {value}
+          {unit ? ` ${unit}` : ''}
         </Text>
         <Ionicons name="chevron-forward" size={16} color="#999" />
       </View>
@@ -193,30 +194,35 @@ export default function ProfileScreen() {
               <Text style={styles.preferenceLabel}>Notifications</Text>
               <Switch
                 value={preferences.notifications}
-                onValueChange={(value) => 
+                onValueChange={value =>
                   setPreferences(prev => ({ ...prev, notifications: value }))
                 }
                 trackColor={{ false: '#E0E0E0', true: '#007AFF' }}
                 thumbColor="#FFFFFF"
               />
             </View>
-            
+
             {renderPreferenceRow(
               'Weight Goal',
-              preferences.weightGoal.charAt(0).toUpperCase() + preferences.weightGoal.slice(1),
+              preferences.weightGoal.charAt(0).toUpperCase() +
+                preferences.weightGoal.slice(1),
               () => setEditing('weightGoal')
             )}
-            
+
             {renderPreferenceRow(
               'Activity Level',
-              preferences.activityLevel.replace('_', ' ').charAt(0).toUpperCase() + 
-              preferences.activityLevel.replace('_', ' ').slice(1),
+              preferences.activityLevel
+                .replace('_', ' ')
+                .charAt(0)
+                .toUpperCase() +
+                preferences.activityLevel.replace('_', ' ').slice(1),
               () => setEditing('activityLevel')
             )}
-            
+
             {renderPreferenceRow(
               'Units',
-              preferences.units.charAt(0).toUpperCase() + preferences.units.slice(1),
+              preferences.units.charAt(0).toUpperCase() +
+                preferences.units.slice(1),
               () => setEditing('units')
             )}
           </View>
@@ -226,7 +232,10 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.preferencesContainer}>
-            <TouchableOpacity style={styles.preferenceRow} onPress={handleSignOut}>
+            <TouchableOpacity
+              style={styles.preferenceRow}
+              onPress={handleSignOut}
+            >
               <Text style={[styles.preferenceLabel, { color: '#FF3B30' }]}>
                 Sign Out
               </Text>

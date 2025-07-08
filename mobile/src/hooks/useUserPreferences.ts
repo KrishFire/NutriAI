@@ -7,7 +7,7 @@ import {
   UserPreferences,
   UserPreferencesInput,
   PreferencesError,
-  DEFAULT_PREFERENCES
+  DEFAULT_PREFERENCES,
 } from '../services/userPreferences';
 
 interface UseUserPreferencesReturn {
@@ -29,7 +29,8 @@ export function useUserPreferences(): UseUserPreferencesReturn {
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<PreferencesError | null>(null);
-  const [originalPreferences, setOriginalPreferences] = useState<UserPreferences | null>(null);
+  const [originalPreferences, setOriginalPreferences] =
+    useState<UserPreferences | null>(null);
 
   /**
    * Load user preferences
@@ -45,7 +46,7 @@ export function useUserPreferences(): UseUserPreferencesReturn {
       setError(null);
 
       const result = await getOrCreateUserPreferences(user.id);
-      
+
       if (result.error) {
         setError(result.error);
         return;
@@ -58,7 +59,7 @@ export function useUserPreferences(): UseUserPreferencesReturn {
     } catch (err) {
       console.error('Error loading preferences:', err);
       setError({
-        message: 'Failed to load preferences'
+        message: 'Failed to load preferences',
       });
     } finally {
       setLoading(false);
@@ -75,36 +76,39 @@ export function useUserPreferences(): UseUserPreferencesReturn {
   /**
    * Update user preferences
    */
-  const updatePreferences = useCallback(async (updates: UserPreferencesInput): Promise<boolean> => {
-    if (!user?.id || !preferences) {
-      return false;
-    }
-
-    try {
-      setError(null);
-
-      const result = await updateUserPreferences(user.id, updates);
-      
-      if (result.error) {
-        setError(result.error);
+  const updatePreferences = useCallback(
+    async (updates: UserPreferencesInput): Promise<boolean> => {
+      if (!user?.id || !preferences) {
         return false;
       }
 
-      if (result.data) {
-        setPreferences(result.data);
-        setOriginalPreferences(result.data);
-        return true;
-      }
+      try {
+        setError(null);
 
-      return false;
-    } catch (err) {
-      console.error('Error updating preferences:', err);
-      setError({
-        message: 'Failed to update preferences'
-      });
-      return false;
-    }
-  }, [user?.id, preferences]);
+        const result = await updateUserPreferences(user.id, updates);
+
+        if (result.error) {
+          setError(result.error);
+          return false;
+        }
+
+        if (result.data) {
+          setPreferences(result.data);
+          setOriginalPreferences(result.data);
+          return true;
+        }
+
+        return false;
+      } catch (err) {
+        console.error('Error updating preferences:', err);
+        setError({
+          message: 'Failed to update preferences',
+        });
+        return false;
+      }
+    },
+    [user?.id, preferences]
+  );
 
   /**
    * Reset preferences to defaults
@@ -124,9 +128,9 @@ export function useUserPreferences(): UseUserPreferencesReturn {
    * Check if there are unsaved changes
    */
   const hasUnsavedChanges = Boolean(
-    preferences && 
-    originalPreferences && 
-    JSON.stringify(preferences) !== JSON.stringify(originalPreferences)
+    preferences &&
+      originalPreferences &&
+      JSON.stringify(preferences) !== JSON.stringify(originalPreferences)
   );
 
   // Load preferences when user changes
@@ -153,8 +157,10 @@ export function useDailyGoals() {
   const { preferences } = useUserPreferences();
 
   return {
-    calories: preferences?.daily_calorie_goal || DEFAULT_PREFERENCES.daily_calorie_goal,
-    protein: preferences?.daily_protein_goal || DEFAULT_PREFERENCES.daily_protein_goal,
+    calories:
+      preferences?.daily_calorie_goal || DEFAULT_PREFERENCES.daily_calorie_goal,
+    protein:
+      preferences?.daily_protein_goal || DEFAULT_PREFERENCES.daily_protein_goal,
     carbs: preferences?.daily_carb_goal || DEFAULT_PREFERENCES.daily_carb_goal,
     fat: preferences?.daily_fat_goal || DEFAULT_PREFERENCES.daily_fat_goal,
   };
@@ -169,7 +175,8 @@ export function useUserGoals() {
 
   return {
     weightGoal: preferences?.weight_goal || DEFAULT_PREFERENCES.weight_goal,
-    activityLevel: preferences?.activity_level || DEFAULT_PREFERENCES.activity_level,
+    activityLevel:
+      preferences?.activity_level || DEFAULT_PREFERENCES.activity_level,
     unitSystem: preferences?.unit_system || DEFAULT_PREFERENCES.unit_system,
   };
 }
@@ -182,9 +189,14 @@ export function useNotificationPreferences() {
   const { preferences } = useUserPreferences();
 
   return {
-    notificationsEnabled: preferences?.notifications_enabled ?? DEFAULT_PREFERENCES.notifications_enabled,
-    streakNotifications: preferences?.streak_notifications ?? DEFAULT_PREFERENCES.streak_notifications,
-    mealReminders: preferences?.meal_reminders ?? DEFAULT_PREFERENCES.meal_reminders,
+    notificationsEnabled:
+      preferences?.notifications_enabled ??
+      DEFAULT_PREFERENCES.notifications_enabled,
+    streakNotifications:
+      preferences?.streak_notifications ??
+      DEFAULT_PREFERENCES.streak_notifications,
+    mealReminders:
+      preferences?.meal_reminders ?? DEFAULT_PREFERENCES.meal_reminders,
   };
 }
 
@@ -196,6 +208,7 @@ export function usePrivacyPreferences() {
   const { preferences } = useUserPreferences();
 
   return {
-    analyticsEnabled: preferences?.privacy_analytics ?? DEFAULT_PREFERENCES.privacy_analytics,
+    analyticsEnabled:
+      preferences?.privacy_analytics ?? DEFAULT_PREFERENCES.privacy_analytics,
   };
 }

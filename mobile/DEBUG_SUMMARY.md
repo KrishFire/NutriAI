@@ -3,21 +3,25 @@
 ## What We've Implemented
 
 ### 1. Correlation IDs
+
 - Every search request now generates a unique UUID correlation ID
 - This ID is passed through the entire request lifecycle
 - The ID is sent to the Edge Function via `X-Correlation-ID` header
 - All logs include this ID for end-to-end tracing
 
 ### 2. Structured Logging
+
 - Created a `logger` utility with three levels: `debug`, `info`, `error`
 - In development (`__DEV__`): Pretty-printed logs with emojis
 - In production: JSON-structured logs for parsing
 - Debug mode can be toggled via `EXPO_PUBLIC_DEBUG_FOOD_SEARCH` env variable
 
 ### 3. Comprehensive Checkpoints
+
 We now log at these key stages:
 
 #### Client-Side (foodSearch.ts)
+
 - **SEARCH_START**: Initial request with query and options
 - **VALIDATION**: Input validation check
 - **VALIDATION_PASSED/FAILED**: Validation result
@@ -37,26 +41,31 @@ We now log at these key stages:
 - **SEARCH_FATAL_ERROR**: Unexpected errors with stack trace
 
 #### Server-Side (Edge Function)
+
 The Edge Function already has comprehensive logging with:
+
 - Request ID generation
 - Stage checkpoints (auth, validation, USDA API call, etc.)
 - Detailed error context
 - Processing time measurements
 
 ### 4. Enhanced Error Details
+
 - Errors now include the correlation ID in the `requestId` field
 - API errors attempt to parse the response body for details
 - Stack traces included for fatal errors
 - Specific error stages help pinpoint where failures occur
 
 ### 5. Debug Information Flow
+
 ```
-Client generates correlationId → Passes via X-Correlation-ID header → 
-Edge Function logs with same ID → Errors return server's requestId → 
+Client generates correlationId → Passes via X-Correlation-ID header →
+Edge Function logs with same ID → Errors return server's requestId →
 Client can correlate its logs with server logs
 ```
 
 ### 6. Security Considerations
+
 - Debug mode is opt-in via environment variable
 - No sensitive data (tokens, keys) logged
 - Server-side verbose logging controlled separately

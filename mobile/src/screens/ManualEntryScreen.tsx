@@ -13,17 +13,25 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { debounce } from 'lodash';
 import { RootStackParamList } from '../types/navigation';
-import mealAIService, { aiMealToMealAnalysis, AIMealAnalysis } from '../services/mealAI';
+import mealAIService, {
+  aiMealToMealAnalysis,
+  AIMealAnalysis,
+} from '../services/mealAI';
 import { useAuth } from '../hooks/useAuth';
-import { MealCorrectionModal } from '../components';
-import { MealAnalysis, ChatMessage } from '../../../shared/types';
 
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'ManualEntry'
+>;
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ManualEntry'>;
+type ManualEntryScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  'ManualEntry'
+>;
 
 interface MealAnalysisState {
   analysis: AIMealAnalysis | null;
@@ -31,22 +39,21 @@ interface MealAnalysisState {
   error: string | null;
 }
 
-interface SavedMealEntry {
-  id: string;
-  mealLogId: string;
-}
-
-export default function ManualEntryScreen() {
-  const navigation = useNavigation<NavigationProp>();
+export default function ManualEntryScreen({ navigation, route }: ManualEntryScreenProps) {
   const { user, session } = useAuth();
   const [description, setDescription] = useState('');
+  
+  // Check if we're in add mode
+  const { addToMeal } = route.params || {};
   const [analysisState, setAnalysisState] = useState<MealAnalysisState>({
     analysis: null,
     isLoading: false,
-    error: null
+    error: null,
   });
-  const [savedMeal, setSavedMeal] = useState<SavedMealEntry | null>(null);
-  const [showCorrectionModal, setShowCorrectionModal] = useState(false);
+  
+  // State for auto-navigation
+  const [autoNavigationTimer, setAutoNavigationTimer] = useState<NodeJS.Timeout | null>(null);
+  const [showAutoNavigation, setShowAutoNavigation] = useState(false);
 
   // Debounced analysis function
   const debouncedAnalysis = useCallback(
@@ -55,7 +62,7 @@ export default function ManualEntryScreen() {
         setAnalysisState({
           analysis: null,
           isLoading: false,
-          error: null
+          error: null,
         });
         return;
       }
@@ -65,7 +72,7 @@ export default function ManualEntryScreen() {
         setAnalysisState({
           analysis: null,
           isLoading: false,
-          error: 'Please log in to analyze meals'
+          error: 'Please log in to analyze meals',
         });
         return;
       }
@@ -73,61 +80,95 @@ export default function ManualEntryScreen() {
       setAnalysisState({
         analysis: null,
         isLoading: true,
-        error: null
+        error: null,
       });
 
       try {
         console.log('[ManualEntryScreen] Analyzing meal:', mealDescription);
-        
+
         const analysis = await mealAIService.analyzeMeal(mealDescription);
 
         console.log('[ManualEntryScreen] Analysis result:', analysis);
-        
+
         setAnalysisState({
           analysis,
           isLoading: false,
-          error: null
+          error: null,
         });
 
-        // Auto-save meal to database for correction capability
-        await autoSaveMealForCorrection(mealDescription, analysis);
+        // Auto-navigate to MealDetails after analysis (like CameraScreen does)
+        if (!addToMeal) {
+          // Only auto-navigate in normal mode, not when adding to existing meal
+          setShowAutoNavigation(true);
+        }
       } catch (err) {
         console.error('[ManualEntryScreen] Analysis error:', err);
         setAnalysisState({
           analysis: null,
           isLoading: false,
-          error: err instanceof Error ? err.message : 'Failed to analyze meal'
+          error: err instanceof Error ? err.message : 'Failed to analyze meal',
         });
       }
     }, 800),
     [user, session]
   );
 
-  // Auto-save meal for correction capability
-  const autoSaveMealForCorrection = async (mealDescription: string, analysis: AIMealAnalysis) => {
-    try {
-      if (!user) return;
+
+  // Auto-navigation effect with proper React pattern
+  useEffect(() => {
+    if (showAutoNavigation && analysisState.analysis && !addToMeal) {
+      console.log('[ManualEntryScreen] Starting auto-navigation timer...');
       
-      console.log('[ManualEntryScreen] Auto-saving meal for corrections...');
-      const result = await mealAIService.logMeal(mealDescription, 'snack');
+      const timer = setTimeout(async () => {
+        try {
+          console.log('[ManualEntryScreen] Auto-navigating to MealDetails...');
+          const analysisData = aiMealToMealAnalysis(analysisState.analysis);
+          
+          // Save meal first, then navigate with fresh meal ID
+          console.log('[ManualEntryScreen] Saving meal before navigation...');
+          const result = await mealAIService.logMeal(description, 'snack');
+          
+          if (result.success && result.mealLogId) {
+            console.log('[ManualEntryScreen] Meal saved with ID:', result.mealLogId);
+            
+            navigation.navigate('MealDetails', {
+              analysisData,
+              mealId: result.mealLogId,
+            });
+          } else {
+            console.error('[ManualEntryScreen] Auto-save failed, keeping analysis view');
+            setShowAutoNavigation(false);
+          }
+        } catch (error) {
+          console.error('[ManualEntryScreen] Auto-navigation error:', error);
+          setShowAutoNavigation(false);
+        }
+      }, 2000); // 2 second delay as discussed
       
-      if (result.success && result.mealLogId) {
-        setSavedMeal({
-          id: result.mealLogId,
-          mealLogId: result.mealLogId
-        });
-        console.log('[ManualEntryScreen] Meal auto-saved with ID:', result.mealLogId);
-      }
-    } catch (error) {
-      console.log('[ManualEntryScreen] Auto-save failed, corrections will be disabled:', error);
-      // Don't show error to user - corrections just won't be available
+      setAutoNavigationTimer(timer);
+      
+      // Cleanup function
+      return () => {
+        if (timer) {
+          clearTimeout(timer);
+        }
+      };
     }
+  }, [showAutoNavigation, analysisState.analysis, description, addToMeal, navigation]);
+
+  // Function to cancel auto-navigation
+  const cancelAutoNavigation = () => {
+    if (autoNavigationTimer) {
+      clearTimeout(autoNavigationTimer);
+      setAutoNavigationTimer(null);
+    }
+    setShowAutoNavigation(false);
   };
 
   // Effect to trigger analysis when description changes
   useEffect(() => {
     debouncedAnalysis(description);
-    
+
     // Cleanup
     return () => {
       debouncedAnalysis.cancel();
@@ -139,23 +180,75 @@ export default function ManualEntryScreen() {
       return;
     }
 
-    // Since meal is already saved, just navigate to details
     const analysisData = aiMealToMealAnalysis(analysisState.analysis);
-    
-    navigation.navigate('MealDetails', {
-      analysisData,
-    });
+
+    if (addToMeal) {
+      // Add mode: Return the analyzed food items to the existing meal
+      console.log('[ManualEntryScreen] Add mode: Returning food items to existing meal');
+      
+      navigation.navigate('MealDetails', {
+        mealId: addToMeal.mealId,
+        analysisData: addToMeal.existingAnalysis,
+        newFoodItems: analysisData.foods,
+      });
+    } else {
+      // Normal mode: Save meal first, then navigate with fresh meal ID
+      try {
+        console.log('[ManualEntryScreen] Saving meal before navigation...');
+        const result = await mealAIService.logMeal(description, 'snack');
+        
+        if (result.success && result.mealLogId) {
+          console.log('[ManualEntryScreen] Meal saved with ID:', result.mealLogId);
+          
+          navigation.navigate('MealDetails', {
+            analysisData,
+            mealId: result.mealLogId,
+          });
+        } else {
+          Alert.alert('Error', 'Failed to save meal');
+        }
+      } catch (error) {
+        console.error('[ManualEntryScreen] Save error:', error);
+        Alert.alert('Error', 'Failed to save meal');
+      }
+    }
   };
 
-  const handleEditAnalysis = () => {
+  const handleEditAnalysis = async () => {
     if (!analysisState.analysis) return;
-    
-    // Navigate directly to MealDetails for editing
+
     const analysisData = aiMealToMealAnalysis(analysisState.analysis);
-    
-    navigation.navigate('MealDetails', {
-      analysisData,
-    });
+
+    if (addToMeal) {
+      // Add mode: Return the analyzed food items to the existing meal
+      console.log('[ManualEntryScreen] Add mode: Returning food items to existing meal');
+      
+      navigation.navigate('MealDetails', {
+        mealId: addToMeal.mealId,
+        analysisData: addToMeal.existingAnalysis,
+        newFoodItems: analysisData.foods,
+      });
+    } else {
+      // Normal mode: Save meal first, then navigate with fresh meal ID
+      try {
+        console.log('[ManualEntryScreen] Saving meal before navigation...');
+        const result = await mealAIService.logMeal(description, 'snack');
+        
+        if (result.success && result.mealLogId) {
+          console.log('[ManualEntryScreen] Meal saved with ID:', result.mealLogId);
+          
+          navigation.navigate('MealDetails', {
+            analysisData,
+            mealId: result.mealLogId,
+          });
+        } else {
+          Alert.alert('Error', 'Failed to save meal');
+        }
+      } catch (error) {
+        console.error('[ManualEntryScreen] Save error:', error);
+        Alert.alert('Error', 'Failed to save meal');
+      }
+    }
   };
 
   const handleClearDescription = () => {
@@ -163,50 +256,13 @@ export default function ManualEntryScreen() {
     setAnalysisState({
       analysis: null,
       isLoading: false,
-      error: null
+      error: null,
     });
   };
 
   const handleSuggestionPress = (suggestion: string) => {
     setDescription(suggestion);
     debouncedAnalysis(suggestion);
-  };
-
-  const handleCorrectAnalysis = () => {
-    setShowCorrectionModal(true);
-  };
-
-  const handleCorrectionComplete = (newAnalysis: MealAnalysis, newHistory: ChatMessage[]) => {
-    // Convert the corrected analysis back to our AI format
-    const correctedAIAnalysis: AIMealAnalysis = {
-      foods: newAnalysis.foods.map(food => ({
-        name: food.name,
-        quantity: food.quantity,
-        unit: food.unit,
-        calories: food.calories,
-        protein: food.protein,
-        carbs: food.carbs,
-        fat: food.fat,
-        fiber: food.fiber || 0,
-        sugar: food.sugar || 0,
-        sodium: food.sodium || 0,
-      })),
-      totalCalories: newAnalysis.totalCalories,
-      totalProtein: newAnalysis.totalProtein,
-      totalCarbs: newAnalysis.totalCarbs,
-      totalFat: newAnalysis.totalFat,
-      confidence: newAnalysis.confidence,
-      notes: newAnalysis.notes
-    };
-
-    // Update the analysis state with the corrected data
-    setAnalysisState(prev => ({
-      ...prev,
-      analysis: correctedAIAnalysis,
-      error: null
-    }));
-
-    console.log(`[ManualEntryScreen] Analysis corrected, ${newAnalysis.foods.length} foods, ${newAnalysis.totalCalories} calories`);
   };
 
   const renderContent = () => {
@@ -224,7 +280,10 @@ export default function ManualEntryScreen() {
         <View style={styles.centerContainer}>
           <Ionicons name="alert-circle" size={48} color="#FF3B30" />
           <Text style={styles.errorText}>{analysisState.error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => debouncedAnalysis(description)}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => debouncedAnalysis(description)}
+          >
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -240,58 +299,98 @@ export default function ManualEntryScreen() {
               {Math.round(analysisState.analysis.confidence * 100)}% confident
             </Text>
           </View>
-          
+
           <View style={styles.summaryCard}>
-            <Text style={styles.totalCalories}>{analysisState.analysis.totalCalories}</Text>
+            <Text style={styles.totalCalories}>
+              {analysisState.analysis.totalCalories}
+            </Text>
             <Text style={styles.analysisCaloriesLabel}>calories</Text>
-            
+
             <View style={styles.macroRow}>
               <View style={styles.macroItem}>
-                <Text style={styles.macroValue}>{Math.round(analysisState.analysis.totalProtein)}g</Text>
+                <Text style={styles.macroValue}>
+                  {Math.round(analysisState.analysis.totalProtein)}g
+                </Text>
                 <Text style={styles.macroLabel}>Protein</Text>
               </View>
               <View style={styles.macroItem}>
-                <Text style={styles.macroValue}>{Math.round(analysisState.analysis.totalCarbs)}g</Text>
+                <Text style={styles.macroValue}>
+                  {Math.round(analysisState.analysis.totalCarbs)}g
+                </Text>
                 <Text style={styles.macroLabel}>Carbs</Text>
               </View>
               <View style={styles.macroItem}>
-                <Text style={styles.macroValue}>{Math.round(analysisState.analysis.totalFat)}g</Text>
+                <Text style={styles.macroValue}>
+                  {Math.round(analysisState.analysis.totalFat)}g
+                </Text>
                 <Text style={styles.macroLabel}>Fat</Text>
               </View>
             </View>
           </View>
-          
+
           <View style={styles.foodsList}>
             {analysisState.analysis.foods.map((food, index) => (
               <View key={index} style={styles.foodItem}>
                 <Text style={styles.analysisFoodName}>{food.name}</Text>
-                <Text style={styles.foodQuantity}>{food.quantity} {food.unit}</Text>
+                <Text style={styles.foodQuantity}>
+                  {food.quantity} {food.unit}
+                </Text>
                 <Text style={styles.foodCalories}>{food.calories} cal</Text>
               </View>
             ))}
           </View>
-          
+
           {analysisState.analysis.notes && (
             <View style={styles.notesContainer}>
-              <Text style={styles.notesText}>{analysisState.analysis.notes}</Text>
+              <Text style={styles.notesText}>
+                {analysisState.analysis.notes}
+              </Text>
             </View>
           )}
-          
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.refineButton} onPress={handleCorrectAnalysis}>
-              <Ionicons name="sparkles" size={16} color="#FF9500" />
-              <Text style={styles.refineButtonText}>Refine with AI</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.editButton} onPress={handleEditAnalysis}>
-              <Ionicons name="pencil" size={16} color="#007AFF" />
-              <Text style={styles.editButtonText}>Edit Details</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.logButton} onPress={handleLogMeal}>
-              <Text style={styles.logButtonText}>View Details</Text>
-            </TouchableOpacity>
-          </View>
+
+          {showAutoNavigation && !addToMeal ? (
+            // Auto-navigation countdown UI
+            <View style={styles.autoNavigationContainer}>
+              <View style={styles.autoNavigationHeader}>
+                <Text style={styles.autoNavigationText}>
+                  Taking you to meal details in 2 seconds...
+                </Text>
+                <TouchableOpacity 
+                  style={styles.autoNavigationCancelButton}
+                  onPress={cancelAutoNavigation}
+                >
+                  <Text style={styles.autoNavigationCancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.manualButtonsRow}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => {
+                    cancelAutoNavigation();
+                    handleEditAnalysis();
+                  }}
+                >
+                  <Ionicons name="pencil" size={16} color="#007AFF" />
+                  <Text style={styles.editButtonText}>Edit Details</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            // Regular action buttons (when auto-navigation is disabled or canceled)
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={handleEditAnalysis}
+              >
+                <Ionicons name="pencil" size={16} color="#007AFF" />
+                <Text style={styles.editButtonText}>Edit Details</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.logButton} onPress={handleLogMeal}>
+                <Text style={styles.logButtonText}>View Details</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       );
     }
@@ -301,7 +400,9 @@ export default function ManualEntryScreen() {
         <View style={styles.centerContainer}>
           <Ionicons name="search" size={48} color="#C7C7CC" />
           <Text style={styles.emptyText}>Analyzing "{description}"...</Text>
-          <Text style={styles.emptySubtext}>Please wait while we process your meal</Text>
+          <Text style={styles.emptySubtext}>
+            Please wait while we process your meal
+          </Text>
         </View>
       );
     }
@@ -310,18 +411,22 @@ export default function ManualEntryScreen() {
       <View style={styles.centerContainer}>
         <Ionicons name="create" size={48} color="#C7C7CC" />
         <Text style={styles.emptyText}>Start composing your meal</Text>
-        <Text style={styles.emptySubtext}>Describe your entire meal naturally - we'll break it down for you</Text>
-        
+        <Text style={styles.emptySubtext}>
+          Describe your entire meal naturally - we'll break it down for you
+        </Text>
+
         <View style={styles.examplesContainer}>
-          <Text style={styles.examplesTitle}>Examples of great descriptions:</Text>
+          <Text style={styles.examplesTitle}>
+            Examples of great descriptions:
+          </Text>
           {[
-            "chicken caesar salad with extra parmesan and croutons",
-            "bagel with strawberry cream cheese and orange juice",
-            "grilled salmon with quinoa and steamed broccoli",
-            "turkey sandwich with chips and a pickle"
+            'chicken caesar salad with extra parmesan and croutons',
+            'bagel with strawberry cream cheese and orange juice',
+            'grilled salmon with quinoa and steamed broccoli',
+            'turkey sandwich with chips and a pickle',
           ].map((example, index) => (
-            <TouchableOpacity 
-              key={index} 
+            <TouchableOpacity
+              key={index}
               style={styles.exampleChip}
               onPress={() => handleSuggestionPress(example)}
             >
@@ -333,17 +438,21 @@ export default function ManualEntryScreen() {
     );
   };
 
-
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        style={styles.container} 
+      <KeyboardAvoidingView
+        style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Compose Your Meal</Text>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.cancelButton}>
+          <Text style={styles.headerTitle}>
+            {addToMeal ? 'Describe Food Item' : 'Compose Your Meal'}
+          </Text>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.cancelButton}
+          >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
@@ -351,7 +460,12 @@ export default function ManualEntryScreen() {
         {/* Composition Area */}
         <View style={styles.compositionContainer}>
           <View style={styles.inputContainer}>
-            <Ionicons name="restaurant" size={24} color="#8E8E93" style={styles.inputIcon} />
+            <Ionicons
+              name="restaurant"
+              size={24}
+              color="#8E8E93"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={styles.compositionInput}
               placeholder="Describe your meal naturally...&#10;e.g., chicken caesar salad with croutons&#10;or bagel with strawberry cream cheese"
@@ -366,58 +480,40 @@ export default function ManualEntryScreen() {
               numberOfLines={4}
             />
             {description.length > 0 && (
-              <TouchableOpacity onPress={handleClearDescription} style={styles.clearButton}>
+              <TouchableOpacity
+                onPress={handleClearDescription}
+                style={styles.clearButton}
+              >
                 <Ionicons name="close-circle" size={20} color="#8E8E93" />
               </TouchableOpacity>
             )}
           </View>
-          
-          {description.trim().length > 3 && !analysisState.analysis && !analysisState.isLoading && (
-            <TouchableOpacity style={styles.analyzeButton} onPress={() => debouncedAnalysis(description)}>
-              <Ionicons name="analytics" size={16} color="#FFFFFF" />
-              <Text style={styles.analyzeButtonText}>Analyze Meal</Text>
-            </TouchableOpacity>
-          )}
+
+          {description.trim().length > 3 &&
+            !analysisState.analysis &&
+            !analysisState.isLoading && (
+              <TouchableOpacity
+                style={styles.analyzeButton}
+                onPress={() => debouncedAnalysis(description)}
+              >
+                <Ionicons name="analytics" size={16} color="#FFFFFF" />
+                <Text style={styles.analyzeButtonText}>Analyze Meal</Text>
+              </TouchableOpacity>
+            )}
         </View>
 
         {/* Results */}
         <ScrollView
           style={styles.scrollView}
           keyboardDismissMode="on-drag"
-          contentContainerStyle={!analysisState.analysis ? styles.emptyScrollContent : styles.scrollContent}
+          contentContainerStyle={
+            !analysisState.analysis
+              ? styles.emptyScrollContent
+              : styles.scrollContent
+          }
         >
           {renderContent()}
         </ScrollView>
-        
-        {/* AI Meal Correction Modal */}
-        {savedMeal && analysisState.analysis && (
-          <MealCorrectionModal
-            visible={showCorrectionModal}
-            onClose={() => setShowCorrectionModal(false)}
-            mealId={savedMeal.id}
-            currentAnalysis={{
-              foods: analysisState.analysis.foods.map(food => ({
-                name: food.name,
-                quantity: food.quantity,
-                unit: food.unit,
-                calories: food.calories,
-                protein: food.protein,
-                carbs: food.carbs,
-                fat: food.fat,
-                fiber: food.fiber,
-                sugar: food.sugar,
-                sodium: food.sodium,
-              })),
-              totalCalories: analysisState.analysis.totalCalories,
-              totalProtein: analysisState.analysis.totalProtein,
-              totalCarbs: analysisState.analysis.totalCarbs,
-              totalFat: analysisState.analysis.totalFat,
-              confidence: analysisState.analysis.confidence,
-              notes: analysisState.analysis.notes
-            }}
-            onCorrectionComplete={handleCorrectionComplete}
-          />
-        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -807,5 +903,43 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#007AFF',
     fontWeight: '400',
+  },
+  // Auto-navigation UI styles
+  autoNavigationContainer: {
+    backgroundColor: '#E6F3FF',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  autoNavigationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  autoNavigationText: {
+    fontSize: 16,
+    color: '#007AFF',
+    fontWeight: '600',
+    flex: 1,
+  },
+  autoNavigationCancelButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  autoNavigationCancelButtonText: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '500',
+  },
+  manualButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
 });

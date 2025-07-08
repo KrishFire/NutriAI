@@ -1,54 +1,54 @@
 /**
  * Type definitions for Food Search API
- * 
+ *
  * These types match the USDA Food Search Edge Function API contract.
  * Import these types when implementing food search functionality.
  */
 
 // Request payload for food search
 export interface FoodSearchRequest {
-  query: string;      // Required: 1-100 characters
-  limit?: number;     // Optional: 1-50, default 20
-  page?: number;      // Optional: >= 1, default 1
+  query: string; // Required: 1-100 characters
+  limit?: number; // Optional: 1-50, default 20
+  page?: number; // Optional: >= 1, default 1
 }
 
 // Individual food item from search results
 export interface FoodSearchItem {
-  id: string;          // USDA FDC ID as string
-  name: string;        // Food description
-  brand?: string;      // Brand name (if available)
+  id: string; // USDA FDC ID as string
+  name: string; // Food description
+  brand?: string; // Brand name (if available)
   servingSize: number; // Default serving size
   servingUnit: string; // Unit (g, oz, cup, etc.)
-  calories: number;    // Calories per serving
-  protein: number;     // Protein in grams
-  carbs: number;       // Carbohydrates in grams  
-  fat: number;         // Fat in grams
-  fiber?: number;      // Fiber in grams (optional)
-  sugar?: number;      // Sugar in grams (optional)
-  sodium?: number;     // Sodium in mg (optional)
-  verified: boolean;   // True for government data sources
+  calories: number; // Calories per serving
+  protein: number; // Protein in grams
+  carbs: number; // Carbohydrates in grams
+  fat: number; // Fat in grams
+  fiber?: number; // Fiber in grams (optional)
+  sugar?: number; // Sugar in grams (optional)
+  sodium?: number; // Sodium in mg (optional)
+  verified: boolean; // True for government data sources
 }
 
 // Response from food search API
 export interface FoodSearchResponse {
   foods: FoodSearchItem[];
-  hasMore: boolean;    // True if more pages available
-  total: number;       // Total number of results available
-  page: number;        // Current page number
+  hasMore: boolean; // True if more pages available
+  total: number; // Total number of results available
+  page: number; // Current page number
 }
 
 // Error response structure
 export interface FoodSearchError {
-  stage: string;       // Where the error occurred
-  error: string;       // Human-readable error message
-  requestId: string;   // Unique request identifier for debugging
+  stage: string; // Where the error occurred
+  error: string; // Human-readable error message
+  requestId: string; // Unique request identifier for debugging
 }
 
 // Rate limiting information
 export interface RateLimitInfo {
-  limit: number;       // Requests per minute
-  remaining: number;   // Requests remaining in current window
-  resetTime: number;   // Unix timestamp when window resets
+  limit: number; // Requests per minute
+  remaining: number; // Requests remaining in current window
+  resetTime: number; // Unix timestamp when window resets
 }
 
 // Search options for client-side configuration
@@ -116,9 +116,9 @@ export interface FoodSearchResult {
 
 // Utility type for converting search items to FoodItem interface
 export type FoodItemFromSearch = Omit<FoodSearchItem, 'id'> & {
-  id?: string;        // Will be generated when saving to database
-  imageUrl?: string;  // Not available from search
-  barcode?: string;   // Not available from search
+  id?: string; // Will be generated when saving to database
+  imageUrl?: string; // Not available from search
+  barcode?: string; // Not available from search
 };
 
 // Search history item for caching/recent searches
@@ -189,7 +189,7 @@ export const FOOD_SEARCH_CONSTRAINTS = {
   DEFAULT_LIMIT: 20,
   DEFAULT_PAGE: 1,
   DEFAULT_TIMEOUT: 10000, // 10 seconds
-  RATE_LIMIT_PER_MINUTE: 10
+  RATE_LIMIT_PER_MINUTE: 10,
 } as const;
 
 /**
@@ -204,7 +204,8 @@ export const FOOD_SEARCH_ERROR_CODES = {
   SERVER_ERROR: 'environment',
   USDA_API_ERROR: 'usda-api',
   TRANSFORMATION_ERROR: 'data-transformation',
-  FATAL_ERROR: 'fatal'
+  FATAL_ERROR: 'fatal',
 } as const;
 
-export type FoodSearchErrorCode = typeof FOOD_SEARCH_ERROR_CODES[keyof typeof FOOD_SEARCH_ERROR_CODES];
+export type FoodSearchErrorCode =
+  (typeof FOOD_SEARCH_ERROR_CODES)[keyof typeof FOOD_SEARCH_ERROR_CODES];

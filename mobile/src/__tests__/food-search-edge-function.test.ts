@@ -1,7 +1,7 @@
 /**
  * Food Search Edge Function Integration Tests
- * 
- * These tests verify that the food-search Edge Function fix for the startTime 
+ *
+ * These tests verify that the food-search Edge Function fix for the startTime
  * ReferenceError is working correctly and that the function properly handles
  * all scenarios without throwing 500 errors due to undefined variables.
  */
@@ -50,8 +50,10 @@ interface ErrorResponse {
 // Test configuration - replace with actual values
 const testConfig: TestConfig = {
   projectUrl: 'https://cdqtuxepvomeyfkvfrnj.supabase.co',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkcXR1eGVwdm9tZXlma3Zmcm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNDY3NzMsImV4cCI6MjA2NjcyMjc3M30.WNA4AeVnGQF0iKzd8XaLtTrx8HntKGNO1b-fYW1HX4I',
-  functionUrl: 'https://cdqtuxepvomeyfkvfrnj.supabase.co/functions/v1/food-search'
+  anonKey:
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkcXR1eGVwdm9tZXlma3Zmcm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNDY3NzMsImV4cCI6MjA2NjcyMjc3M30.WNA4AeVnGQF0iKzd8XaLtTrx8HntKGNO1b-fYW1HX4I',
+  functionUrl:
+    'https://cdqtuxepvomeyfkvfrnj.supabase.co/functions/v1/food-search',
 };
 
 /**
@@ -60,7 +62,11 @@ const testConfig: TestConfig = {
 async function callFoodSearch(
   request: FoodSearchRequest,
   authToken?: string
-): Promise<{ status: number; data: FoodSearchResponse | ErrorResponse; headers: Headers }> {
+): Promise<{
+  status: number;
+  data: FoodSearchResponse | ErrorResponse;
+  headers: Headers;
+}> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -76,18 +82,16 @@ async function callFoodSearch(
   });
 
   const data = await response.json();
-  
+
   return {
     status: response.status,
     data,
-    headers: response.headers
+    headers: response.headers,
   };
 }
 
 describe('Food Search Edge Function - StartTime Fix Verification', () => {
-  
   describe('Core ReferenceError Fix Tests', () => {
-    
     it('should not throw 500 errors due to undefined startTime on invalid auth', async () => {
       // This test verifies the specific fix - before the fix, this would have returned 500
       // because startTime was undefined when calculating processingTime
@@ -99,9 +103,11 @@ describe('Food Search Edge Function - StartTime Fix Verification', () => {
       // Should return 401 (auth error), NOT 500 (server error from undefined startTime)
       expect(result.status).toBe(401);
       expect((result.data as ErrorResponse).stage).toBe('authentication');
-      expect((result.data as ErrorResponse).error).toContain('Invalid or expired token');
+      expect((result.data as ErrorResponse).error).toContain(
+        'Invalid or expired token'
+      );
       expect((result.data as ErrorResponse).requestId).toBeDefined();
-      
+
       // Verify it's a structured error response, not a crash
       expect(result.data).toHaveProperty('stage');
       expect(result.data).toHaveProperty('error');
@@ -117,7 +123,9 @@ describe('Food Search Edge Function - StartTime Fix Verification', () => {
       // Should return 401 (missing auth), NOT 500 (server error from undefined startTime)
       expect(result.status).toBe(401);
       expect((result.data as ErrorResponse).stage).toBe('authorization');
-      expect((result.data as ErrorResponse).error).toContain('Missing Authorization header');
+      expect((result.data as ErrorResponse).error).toContain(
+        'Missing Authorization header'
+      );
     });
 
     it('should not throw 500 errors due to undefined startTime on validation errors', async () => {
@@ -136,9 +144,9 @@ describe('Food Search Edge Function - StartTime Fix Verification', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${testConfig.anonKey}`
+          Authorization: `Bearer ${testConfig.anonKey}`,
         },
-        body: 'invalid-json{{'
+        body: 'invalid-json{{',
       });
 
       const data = await response.json();
@@ -151,11 +159,10 @@ describe('Food Search Edge Function - StartTime Fix Verification', () => {
   });
 
   describe('Processing Time Calculation Tests', () => {
-    
     it('should return processing time in successful responses', async () => {
       // This test would have failed before the fix because processingTime calculation
       // depends on startTime being defined
-      
+
       // Note: This will fail with auth error, but we can test the structure
       const result = await callFoodSearch(
         { query: 'banana', limit: 10 },
@@ -164,7 +171,7 @@ describe('Food Search Edge Function - StartTime Fix Verification', () => {
 
       // Even on auth error, the response structure should be consistent
       expect(result.data).toHaveProperty('requestId');
-      
+
       // For successful requests (if we had valid auth), we would expect:
       // expect(result.data.meta.processingTime).toBeDefined();
       // expect(typeof result.data.meta.processingTime).toBe('number');
@@ -173,7 +180,6 @@ describe('Food Search Edge Function - StartTime Fix Verification', () => {
   });
 
   describe('CORS and Method Tests', () => {
-    
     it('should handle OPTIONS requests properly', async () => {
       const response = await fetch(testConfig.functionUrl, {
         method: 'OPTIONS',
@@ -181,7 +187,9 @@ describe('Food Search Edge Function - StartTime Fix Verification', () => {
 
       expect(response.status).toBe(200);
       expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
-      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('POST');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain(
+        'POST'
+      );
     });
 
     it('should return proper CORS headers on errors', async () => {
@@ -195,7 +203,6 @@ describe('Food Search Edge Function - StartTime Fix Verification', () => {
   });
 
   describe('Input Validation Edge Cases', () => {
-    
     it('should handle various invalid query scenarios without startTime errors', async () => {
       const testCases = [
         { query: '', limit: 10 }, // Empty query
@@ -207,7 +214,7 @@ describe('Food Search Edge Function - StartTime Fix Verification', () => {
 
       for (const testCase of testCases) {
         const result = await callFoodSearch(testCase, testConfig.anonKey);
-        
+
         // All should return 400 (validation error), NOT 500 (startTime error)
         expect(result.status).toBe(400);
         expect((result.data as ErrorResponse).stage).toBe('validation');
@@ -217,7 +224,6 @@ describe('Food Search Edge Function - StartTime Fix Verification', () => {
   });
 
   describe('Rate Limiting and Performance', () => {
-    
     it('should handle rapid requests without startTime errors', async () => {
       // Make multiple rapid requests to test rate limiting and ensure
       // startTime is properly handled in all concurrent scenarios
@@ -239,7 +245,6 @@ describe('Food Search Edge Function - StartTime Fix Verification', () => {
 });
 
 describe('Food Search Function Deployment Verification', () => {
-  
   it('should be running the correct version with the fix', async () => {
     // Test that demonstrates the function is working and not crashing
     const result = await callFoodSearch(
@@ -250,9 +255,11 @@ describe('Food Search Function Deployment Verification', () => {
     // Should get a structured response, not a deployment error
     expect(result.data).toHaveProperty('requestId');
     expect(typeof (result.data as ErrorResponse).requestId).toBe('string');
-    
+
     // RequestId format should match the new implementation
-    expect((result.data as ErrorResponse).requestId).toMatch(/^req_\d+_[a-z0-9]+$/);
+    expect((result.data as ErrorResponse).requestId).toMatch(
+      /^req_\d+_[a-z0-9]+$/
+    );
   });
 
   it('should handle unexpected errors gracefully', async () => {
@@ -261,14 +268,14 @@ describe('Food Search Function Deployment Verification', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain', // Wrong content type
-        'Authorization': `Bearer ${testConfig.anonKey}`
+        Authorization: `Bearer ${testConfig.anonKey}`,
       },
-      body: 'not json'
+      body: 'not json',
     });
 
     // Should handle gracefully, not crash with startTime error
     expect(response.status).toBe(400);
-    
+
     const data = await response.json();
     expect(data).toHaveProperty('requestId');
     expect(data).toHaveProperty('stage');
@@ -279,7 +286,7 @@ describe('Food Search Function Deployment Verification', () => {
 export const foodSearchTestHelpers = {
   testConfig,
   callFoodSearch,
-  
+
   /**
    * Generate a test authentication token (would need real implementation)
    */
@@ -300,5 +307,5 @@ export const foodSearchTestHelpers = {
     } catch {
       return false;
     }
-  }
+  },
 };

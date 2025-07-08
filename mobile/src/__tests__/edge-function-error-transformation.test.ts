@@ -1,9 +1,9 @@
 /**
  * Test Matrix for Edge Function Error Code Transformation
- * 
+ *
  * This test verifies how the food-search Edge Function transforms
  * various USDA API error responses into client-facing error codes.
- * 
+ *
  * Test scenarios:
  * 1. USDA returns 401 (bad API key) → Edge Function returns ?
  * 2. USDA returns 403 (forbidden) → Edge Function returns ?
@@ -23,14 +23,17 @@ class EdgeFunctionSimulator {
     this.usdaApiKey = apiKey;
   }
 
-  async searchUSDAFoods(query: string, mockResponse: {
-    status: number;
-    statusText: string;
-    body?: any;
-    shouldTimeout?: boolean;
-  }) {
+  async searchUSDAFoods(
+    query: string,
+    mockResponse: {
+      status: number;
+      statusText: string;
+      body?: any;
+      shouldTimeout?: boolean;
+    }
+  ) {
     const requestId = `test_${Date.now()}`;
-    
+
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
         // Simulate timeout
@@ -43,8 +46,11 @@ class EdgeFunctionSimulator {
           ok: mockResponse.status >= 200 && mockResponse.status < 300,
           status: mockResponse.status,
           statusText: mockResponse.statusText,
-          text: async () => JSON.stringify(mockResponse.body || { error: mockResponse.statusText }),
-          json: async () => mockResponse.body || {}
+          text: async () =>
+            JSON.stringify(
+              mockResponse.body || { error: mockResponse.statusText }
+            ),
+          json: async () => mockResponse.body || {},
         };
 
         if (!response.ok) {
@@ -53,7 +59,7 @@ class EdgeFunctionSimulator {
             attempt,
             status: response.status,
             statusText: response.statusText,
-            error: errorText
+            error: errorText,
           });
 
           // Special handling for rate limit (429)
@@ -70,7 +76,6 @@ class EdgeFunctionSimulator {
         }
 
         return response;
-
       } catch (error) {
         if (attempt < this.maxRetries && mockResponse.status === 429) {
           continue;
@@ -86,15 +91,15 @@ class EdgeFunctionSimulator {
       return { status: 200, body: { success: true } };
     } catch (error: any) {
       console.log('[usda-api-error]', { error: error.message });
-      
+
       // This is where the transformation happens - all errors become 502!
       return {
         status: 502,
         body: {
           stage: 'usda-api',
           error: 'Failed to search food database. Please try again.',
-          requestId: 'test'
-        }
+          requestId: 'test',
+        },
       };
     }
   }
@@ -111,19 +116,21 @@ describe('Edge Function Error Code Transformation Matrix', () => {
     const result = await edgeFunction.handleRequest('chicken', {
       status: 401,
       statusText: 'Unauthorized',
-      body: { error: 'Invalid API key' }
+      body: { error: 'Invalid API key' },
     });
 
     expect(result.status).toBe(502); // NOT 401!
     expect(result.body.stage).toBe('usda-api');
-    expect(result.body.error).toBe('Failed to search food database. Please try again.');
+    expect(result.body.error).toBe(
+      'Failed to search food database. Please try again.'
+    );
   });
 
   it('USDA 403 (Forbidden) → Edge Function returns 502', async () => {
     const result = await edgeFunction.handleRequest('chicken', {
       status: 403,
       statusText: 'Forbidden',
-      body: { error: 'Access denied' }
+      body: { error: 'Access denied' },
     });
 
     expect(result.status).toBe(502); // NOT 403!
@@ -134,7 +141,7 @@ describe('Edge Function Error Code Transformation Matrix', () => {
     const result = await edgeFunction.handleRequest('chicken', {
       status: 429,
       statusText: 'Too Many Requests',
-      body: { error: 'Rate limit exceeded' }
+      body: { error: 'Rate limit exceeded' },
     });
 
     expect(result.status).toBe(502); // NOT 429!
@@ -145,7 +152,7 @@ describe('Edge Function Error Code Transformation Matrix', () => {
     const result = await edgeFunction.handleRequest('chicken', {
       status: 404,
       statusText: 'Not Found',
-      body: { error: 'Endpoint not found' }
+      body: { error: 'Endpoint not found' },
     });
 
     expect(result.status).toBe(502); // NOT 404!
@@ -155,7 +162,7 @@ describe('Edge Function Error Code Transformation Matrix', () => {
     const result = await edgeFunction.handleRequest('chicken', {
       status: 500,
       statusText: 'Internal Server Error',
-      body: { error: 'USDA server error' }
+      body: { error: 'USDA server error' },
     });
 
     expect(result.status).toBe(502); // Consistent 502
@@ -165,7 +172,7 @@ describe('Edge Function Error Code Transformation Matrix', () => {
     const result = await edgeFunction.handleRequest('chicken', {
       status: 0,
       statusText: '',
-      shouldTimeout: true
+      shouldTimeout: true,
     });
 
     expect(result.status).toBe(502);
@@ -181,26 +188,28 @@ describe('Edge Function Error Code Transformation Matrix', () => {
           return { status: 200, body: { success: true } };
         } catch (error: any) {
           console.log('[usda-api-error]', { error: error.message });
-          
+
           // Extract the original status code from the error message
           const statusMatch = error.message.match(/USDA API error (\d+):/);
           const originalStatus = statusMatch ? parseInt(statusMatch[1]) : 500;
-          
+
           // Map USDA errors to appropriate client-facing errors
           let clientStatus: number;
           let clientMessage: string;
-          
+
           switch (originalStatus) {
             case 401:
             case 403:
               // These are server config issues, not client's fault
               clientStatus = 500;
-              clientMessage = 'Food database configuration error. Please contact support.';
+              clientMessage =
+                'Food database configuration error. Please contact support.';
               break;
             case 429:
               // Rate limit should be passed through
               clientStatus = 429;
-              clientMessage = 'Too many requests. Please wait before trying again.';
+              clientMessage =
+                'Too many requests. Please wait before trying again.';
               break;
             case 404:
               // USDA endpoint issue
@@ -210,9 +219,10 @@ describe('Edge Function Error Code Transformation Matrix', () => {
             default:
               // Generic gateway error for other cases
               clientStatus = 502;
-              clientMessage = 'Failed to search food database. Please try again.';
+              clientMessage =
+                'Failed to search food database. Please try again.';
           }
-          
+
           return {
             status: clientStatus,
             body: {
@@ -220,8 +230,8 @@ describe('Edge Function Error Code Transformation Matrix', () => {
               error: clientMessage,
               requestId: 'test',
               // Include original status in debug info (not shown to client)
-              _debug: { originalStatus, originalError: error.message }
-            }
+              _debug: { originalStatus, originalError: error.message },
+            },
           };
         }
       }
@@ -231,7 +241,7 @@ describe('Edge Function Error Code Transformation Matrix', () => {
       const improvedFunction = new ImprovedEdgeFunction('test-api-key');
       const result = await improvedFunction.handleRequest('chicken', {
         status: 401,
-        statusText: 'Unauthorized'
+        statusText: 'Unauthorized',
       });
 
       expect(result.status).toBe(500); // Server misconfiguration
@@ -243,7 +253,7 @@ describe('Edge Function Error Code Transformation Matrix', () => {
       const improvedFunction = new ImprovedEdgeFunction('test-api-key');
       const result = await improvedFunction.handleRequest('chicken', {
         status: 429,
-        statusText: 'Too Many Requests'
+        statusText: 'Too Many Requests',
       });
 
       expect(result.status).toBe(429); // Pass through rate limit

@@ -12,7 +12,10 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { HistoryStackParamList } from '../types/navigation';
 
-type HistoryScreenNavigationProp = StackNavigationProp<HistoryStackParamList, 'HistoryScreen'>;
+type HistoryScreenNavigationProp = StackNavigationProp<
+  HistoryStackParamList,
+  'HistoryScreen'
+>;
 
 interface MealEntry {
   id: string;
@@ -138,21 +141,26 @@ export default function HistoryScreen() {
     } else if (date.toDateString() === yesterday.toDateString()) {
       return 'Yesterday';
     } else {
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric' 
+      return date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
       });
     }
   };
 
   const getMealTypeIcon = (mealType: string) => {
     switch (mealType) {
-      case 'breakfast': return 'sunny';
-      case 'lunch': return 'partly-sunny';
-      case 'dinner': return 'moon';
-      case 'snack': return 'nutrition';
-      default: return 'restaurant';
+      case 'breakfast':
+        return 'sunny';
+      case 'lunch':
+        return 'partly-sunny';
+      case 'dinner':
+        return 'moon';
+      case 'snack':
+        return 'nutrition';
+      default:
+        return 'restaurant';
     }
   };
 
@@ -165,19 +173,21 @@ export default function HistoryScreen() {
           <Text style={styles.dayMeals}>{item.totalMeals} meals</Text>
         </View>
       </View>
-      
-      {item.meals.map((meal) => (
+
+      {item.meals.map(meal => (
         <TouchableOpacity
           key={meal.id}
           style={styles.mealItem}
-          onPress={() => navigation.navigate('MealDetails', { mealId: meal.id })}
+          onPress={() =>
+            navigation.navigate('MealDetails', { mealId: meal.id })
+          }
         >
           <View style={styles.mealHeader}>
             <View style={styles.mealTypeContainer}>
-              <Ionicons 
-                name={getMealTypeIcon(meal.mealType) as any} 
-                size={20} 
-                color="#007AFF" 
+              <Ionicons
+                name={getMealTypeIcon(meal.mealType) as any}
+                size={20}
+                color="#007AFF"
               />
               <Text style={styles.mealType}>
                 {meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)}
@@ -185,7 +195,7 @@ export default function HistoryScreen() {
             </View>
             <Text style={styles.mealCalories}>{meal.totalCalories} kcal</Text>
           </View>
-          
+
           <View style={styles.foodsList}>
             {meal.foods.map((food, index) => (
               <Text key={index} style={styles.foodItem}>
@@ -193,7 +203,7 @@ export default function HistoryScreen() {
               </Text>
             ))}
           </View>
-          
+
           <View style={styles.macrosSummary}>
             <Text style={styles.macroText}>P: {meal.totalProtein}g</Text>
             <Text style={styles.macroText}>C: {meal.totalCarbs}g</Text>
@@ -230,13 +240,17 @@ export default function HistoryScreen() {
         <Text style={styles.title}>History</Text>
         {/* TODO: Add calendar picker for date navigation */}
       </View>
-      
+
       <FlatList
         data={historyData}
         renderItem={renderDayItem}
-        keyExtractor={(item) => item.date}
+        keyExtractor={item => item.date}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={historyData.length === 0 ? styles.emptyContainer : styles.listContainer}
+        contentContainerStyle={
+          historyData.length === 0
+            ? styles.emptyContainer
+            : styles.listContainer
+        }
         ListEmptyComponent={renderEmptyState}
       />
     </SafeAreaView>

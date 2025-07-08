@@ -1,6 +1,6 @@
 /**
  * Test Setup Configuration
- * 
+ *
  * This file configures the testing environment to match your actual mobile app experience.
  * It sets up both MSW integration tests and real user experience tests.
  */
@@ -18,18 +18,20 @@ jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
 jest.mock('expo-constants', () => ({
   expoConfig: {
     extra: {
-      supabaseUrl: process.env.TEST_SUPABASE_URL || 'https://test-project.supabase.co',
+      supabaseUrl:
+        process.env.TEST_SUPABASE_URL || 'https://test-project.supabase.co',
       supabaseAnonKey: process.env.TEST_SUPABASE_ANON_KEY || 'test-anon-key',
-    }
+    },
   },
   default: {
     expoConfig: {
       extra: {
-        supabaseUrl: process.env.TEST_SUPABASE_URL || 'https://test-project.supabase.co',
+        supabaseUrl:
+          process.env.TEST_SUPABASE_URL || 'https://test-project.supabase.co',
         supabaseAnonKey: process.env.TEST_SUPABASE_ANON_KEY || 'test-anon-key',
-      }
-    }
-  }
+      },
+    },
+  },
 }));
 
 // Mock react-navigation
@@ -45,7 +47,8 @@ jest.mock('@react-navigation/native', () => {
     useRoute: () => ({
       params: {},
     }),
-    NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
+    NavigationContainer: ({ children }: { children: React.ReactNode }) =>
+      children,
   };
 });
 
@@ -110,21 +113,23 @@ expect.extend({
       };
     }
   },
-  
+
   toHaveValidNutritionData(received: any) {
-    const hasRequiredFields = received &&
+    const hasRequiredFields =
+      received &&
       typeof received.calories === 'number' &&
       typeof received.protein === 'number' &&
       typeof received.carbs === 'number' &&
       typeof received.fat === 'number';
-    
-    const hasValidValues = received.calories >= 0 &&
+
+    const hasValidValues =
+      received.calories >= 0 &&
       received.protein >= 0 &&
       received.carbs >= 0 &&
       received.fat >= 0;
-    
+
     const pass = hasRequiredFields && hasValidValues;
-    
+
     if (pass) {
       return {
         message: () => `Expected nutrition data to be invalid`,
@@ -132,7 +137,8 @@ expect.extend({
       };
     } else {
       return {
-        message: () => `Expected valid nutrition data but received: ${JSON.stringify(received)}`,
+        message: () =>
+          `Expected valid nutrition data but received: ${JSON.stringify(received)}`,
         pass: false,
       };
     }
@@ -141,13 +147,10 @@ expect.extend({
 
 // Environment validation for real user experience tests
 export function validateTestEnvironment() {
-  const requiredEnvVars = [
-    'TEST_SUPABASE_URL',
-    'TEST_SUPABASE_ANON_KEY',
-  ];
-  
+  const requiredEnvVars = ['TEST_SUPABASE_URL', 'TEST_SUPABASE_ANON_KEY'];
+
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-  
+
   if (missingVars.length > 0) {
     console.warn(`
 ⚠️  Warning: Missing environment variables for real user experience tests:
@@ -162,7 +165,7 @@ TEST_USER_PASSWORD=TestPassword123!
 The MSW integration tests will still run without these.
     `);
   }
-  
+
   return missingVars.length === 0;
 }
 
@@ -170,14 +173,14 @@ The MSW integration tests will still run without these.
 export class TestPerformanceMonitor {
   private static instance: TestPerformanceMonitor;
   private measurements: Map<string, number[]> = new Map();
-  
+
   static getInstance(): TestPerformanceMonitor {
     if (!TestPerformanceMonitor.instance) {
       TestPerformanceMonitor.instance = new TestPerformanceMonitor();
     }
     return TestPerformanceMonitor.instance;
   }
-  
+
   startMeasurement(name: string): () => number {
     const startTime = performance.now();
     return () => {
@@ -186,18 +189,18 @@ export class TestPerformanceMonitor {
       return duration;
     };
   }
-  
+
   recordMeasurement(name: string, duration: number) {
     if (!this.measurements.has(name)) {
       this.measurements.set(name, []);
     }
     this.measurements.get(name)!.push(duration);
   }
-  
+
   getStats(name: string) {
     const measurements = this.measurements.get(name) || [];
     if (measurements.length === 0) return null;
-    
+
     const sorted = [...measurements].sort((a, b) => a - b);
     return {
       count: measurements.length,
@@ -208,11 +211,11 @@ export class TestPerformanceMonitor {
       p95: sorted[Math.floor(sorted.length * 0.95)],
     };
   }
-  
+
   reset() {
     this.measurements.clear();
   }
-  
+
   getAllStats() {
     const stats: Record<string, any> = {};
     for (const [name] of this.measurements) {
@@ -226,11 +229,11 @@ export class TestPerformanceMonitor {
 export class ConsoleCapture {
   private originalConsole: Console;
   private logs: Array<{ level: string; args: any[] }> = [];
-  
+
   constructor() {
     this.originalConsole = { ...console };
   }
-  
+
   start() {
     this.logs = [];
     console.log = (...args) => this.capture('log', args);
@@ -238,11 +241,11 @@ export class ConsoleCapture {
     console.warn = (...args) => this.capture('warn', args);
     console.info = (...args) => this.capture('info', args);
   }
-  
+
   stop() {
     Object.assign(console, this.originalConsole);
   }
-  
+
   private capture(level: string, args: any[]) {
     this.logs.push({ level, args });
     // Still output to original console in test verbose mode
@@ -250,24 +253,24 @@ export class ConsoleCapture {
       this.originalConsole[level as keyof Console](...args);
     }
   }
-  
+
   getLogs() {
     return [...this.logs];
   }
-  
+
   getLogsForLevel(level: string) {
     return this.logs.filter(log => log.level === level);
   }
-  
+
   hasLogMatching(pattern: string | RegExp) {
     return this.logs.some(log => {
       const message = log.args.join(' ');
-      return typeof pattern === 'string' 
+      return typeof pattern === 'string'
         ? message.includes(pattern)
         : pattern.test(message);
     });
   }
-  
+
   clear() {
     this.logs = [];
   }
@@ -276,4 +279,6 @@ export class ConsoleCapture {
 // Initialize environment validation
 validateTestEnvironment();
 
-console.log('🧪 Test environment configured for comprehensive mobile app testing');
+console.log(
+  '🧪 Test environment configured for comprehensive mobile app testing'
+);

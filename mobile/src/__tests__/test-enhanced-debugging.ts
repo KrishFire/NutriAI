@@ -10,27 +10,27 @@ const TEST_CASES = [
     name: 'Missing Authorization Header',
     headers: {},
     expectedStatus: 401,
-    expectedAuthStatus: 'Missing-Token'
+    expectedAuthStatus: 'Missing-Token',
   },
   {
     name: 'Malformed Authorization Header',
     headers: { Authorization: 'InvalidFormat token123' },
     expectedStatus: 401,
-    expectedAuthStatus: 'Malformed-Token'
+    expectedAuthStatus: 'Malformed-Token',
   },
   {
     name: 'Invalid Bearer Token',
     headers: { Authorization: 'Bearer invalid-token-format' },
     expectedStatus: 401,
-    expectedAuthStatus: 'Invalid-Token'
+    expectedAuthStatus: 'Invalid-Token',
   },
   {
     name: 'Debug Mode with Valid Auth',
     headers: { 'X-Debug-Mode': 'true' },
     useAuth: true,
     expectedStatus: 400, // No image provided
-    expectedAuthStatus: 'Authenticated'
-  }
+    expectedAuthStatus: 'Authenticated',
+  },
 ];
 
 async function runDebugTests() {
@@ -44,7 +44,9 @@ async function runDebugTests() {
       // Get auth token if needed
       let authToken = '';
       if (testCase.useAuth) {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session?.access_token) {
           authToken = session.access_token;
           console.log('✅ Using authenticated session');
@@ -57,7 +59,7 @@ async function runDebugTests() {
       // Prepare headers
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...testCase.headers
+        ...testCase.headers,
       };
 
       if (authToken && !headers.Authorization) {
@@ -72,7 +74,7 @@ async function runDebugTests() {
           headers,
           body: JSON.stringify({
             // Empty payload to trigger validation error
-          })
+          }),
         }
       );
 
@@ -90,16 +92,24 @@ async function runDebugTests() {
 
       // Verify expectations
       if (response.status === testCase.expectedStatus) {
-        console.log(`\n✅ Status code matches expected: ${testCase.expectedStatus}`);
+        console.log(
+          `\n✅ Status code matches expected: ${testCase.expectedStatus}`
+        );
       } else {
-        console.log(`\n❌ Status code mismatch! Expected: ${testCase.expectedStatus}, Got: ${response.status}`);
+        console.log(
+          `\n❌ Status code mismatch! Expected: ${testCase.expectedStatus}, Got: ${response.status}`
+        );
       }
 
       const authStatus = response.headers.get('X-Auth-Status');
       if (authStatus === testCase.expectedAuthStatus) {
-        console.log(`✅ Auth status matches expected: ${testCase.expectedAuthStatus}`);
+        console.log(
+          `✅ Auth status matches expected: ${testCase.expectedAuthStatus}`
+        );
       } else {
-        console.log(`❌ Auth status mismatch! Expected: ${testCase.expectedAuthStatus}, Got: ${authStatus}`);
+        console.log(
+          `❌ Auth status mismatch! Expected: ${testCase.expectedAuthStatus}, Got: ${authStatus}`
+        );
       }
 
       // Check for debug info if debug mode is enabled
@@ -107,7 +117,6 @@ async function runDebugTests() {
         console.log('\n🐛 Debug Information:');
         console.log(JSON.stringify(body._debug, null, 2));
       }
-
     } catch (error) {
       console.log(`\n❌ Test failed with error: ${error.message}`);
     }

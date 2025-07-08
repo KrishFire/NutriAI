@@ -34,7 +34,10 @@ export interface DailyLog {
 /**
  * Get or create daily log for a user on a specific date
  */
-export async function getOrCreateDailyLog(userId: string, date: Date): Promise<DailyLog> {
+export async function getOrCreateDailyLog(
+  userId: string,
+  date: Date
+): Promise<DailyLog> {
   const dateStr = date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
 
   // Check if daily log exists
@@ -86,12 +89,13 @@ export async function saveMealAnalysis(
 ): Promise<{ success: boolean; error?: string; mealEntries?: MealEntry[] }> {
   try {
     const today = new Date();
-    
+
     // Get or create daily log
     const dailyLog = await getOrCreateDailyLog(userId, today);
 
     // Prepare meal entries
-    const mealEntries: Omit<MealEntry, 'id' | 'created_at' | 'updated_at'>[] = [];
+    const mealEntries: Omit<MealEntry, 'id' | 'created_at' | 'updated_at'>[] =
+      [];
 
     for (const food of analysis.foods) {
       // First, check if food item exists or create it
@@ -150,7 +154,8 @@ export async function saveMealAnalysis(
     const { error: updateError } = await supabase
       .from('daily_logs')
       .update({
-        total_calories: dailyLog.total_calories + analysis.totalNutrition.calories,
+        total_calories:
+          dailyLog.total_calories + analysis.totalNutrition.calories,
         total_protein: dailyLog.total_protein + analysis.totalNutrition.protein,
         total_carbs: dailyLog.total_carbs + analysis.totalNutrition.carbs,
         total_fat: dailyLog.total_fat + analysis.totalNutrition.fat,
@@ -163,18 +168,16 @@ export async function saveMealAnalysis(
     }
 
     // Track analytics event
-    await supabase
-      .from('analytics_events')
-      .insert({
-        user_id: userId,
-        event_name: 'meal_logged',
-        properties: {
-          method: 'photo',
-          items: analysis.foods.length,
-          total_kcal: analysis.totalNutrition.calories,
-          meal_type: mealType,
-        },
-      });
+    await supabase.from('analytics_events').insert({
+      user_id: userId,
+      event_name: 'meal_logged',
+      properties: {
+        method: 'photo',
+        items: analysis.foods.length,
+        total_kcal: analysis.totalNutrition.calories,
+        meal_type: mealType,
+      },
+    });
 
     // Update user streak
     await updateUserStreak(userId);
@@ -213,15 +216,13 @@ async function updateUserStreak(userId: string): Promise<void> {
 
     if (!streak) {
       // Create new streak record
-      await supabase
-        .from('user_streaks')
-        .insert({
-          user_id: userId,
-          current_streak: 1,
-          longest_streak: 1,
-          last_log_date: today,
-          total_days_logged: 1,
-        });
+      await supabase.from('user_streaks').insert({
+        user_id: userId,
+        current_streak: 1,
+        longest_streak: 1,
+        last_log_date: today,
+        total_days_logged: 1,
+      });
       return;
     }
 
@@ -233,7 +234,9 @@ async function updateUserStreak(userId: string): Promise<void> {
     // Calculate streak
     const lastLogDate = new Date(streak.last_log_date);
     const todayDate = new Date(today);
-    const daysDiff = Math.floor((todayDate.getTime() - lastLogDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysDiff = Math.floor(
+      (todayDate.getTime() - lastLogDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
     let newCurrentStreak = streak.current_streak;
     if (daysDiff === 1) {
@@ -268,10 +271,12 @@ export async function getTodaysMeals(userId: string): Promise<MealEntry[]> {
 
   const { data, error } = await supabase
     .from('meal_entries')
-    .select(`
+    .select(
+      `
       *,
       food_items (*)
-    `)
+    `
+    )
     .eq('user_id', userId)
     .gte('logged_at', `${today}T00:00:00`)
     .lte('logged_at', `${today}T23:59:59`)
@@ -288,7 +293,9 @@ export async function getTodaysMeals(userId: string): Promise<MealEntry[]> {
 /**
  * Get today's nutrition summary
  */
-export async function getTodaysNutrition(userId: string): Promise<DailyLog | null> {
+export async function getTodaysNutrition(
+  userId: string
+): Promise<DailyLog | null> {
   const today = new Date().toISOString().split('T')[0];
 
   const { data, error } = await supabase
@@ -321,7 +328,10 @@ export async function getTodaysNutrition(userId: string): Promise<DailyLog | nul
 /**
  * Delete a meal entry
  */
-export async function deleteMealEntry(mealId: string, userId: string): Promise<boolean> {
+export async function deleteMealEntry(
+  mealId: string,
+  userId: string
+): Promise<boolean> {
   try {
     // Get meal entry to update daily totals
     const { data: meal, error: fetchError } = await supabase
@@ -358,7 +368,10 @@ export async function deleteMealEntry(mealId: string, userId: string): Promise<b
         await supabase
           .from('daily_logs')
           .update({
-            total_calories: Math.max(0, dailyLog.total_calories - meal.calories),
+            total_calories: Math.max(
+              0,
+              dailyLog.total_calories - meal.calories
+            ),
             total_protein: Math.max(0, dailyLog.total_protein - meal.protein),
             total_carbs: Math.max(0, dailyLog.total_carbs - meal.carbs),
             total_fat: Math.max(0, dailyLog.total_fat - meal.fat),

@@ -21,33 +21,39 @@ export default function TestScreen() {
   const [testing, setTesting] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);
 
-  const runTest = async (scenario: string, query: string, expectedError?: boolean) => {
+  const runTest = async (
+    scenario: string,
+    query: string,
+    expectedError?: boolean
+  ) => {
     try {
       const { data, error } = await supabase.functions.invoke('food-search', {
-        body: { query, limit: 5 }
+        body: { query, limit: 5 },
       });
 
       if (error) {
         return {
           scenario,
-          status: expectedError ? 'success' : 'error' as const,
+          status: expectedError ? 'success' : ('error' as const),
           message: error.message || 'Unknown error',
-          details: error.details || error
+          details: error.details || error,
         };
       }
 
       return {
         scenario,
-        status: expectedError ? 'error' : 'success' as const,
-        message: expectedError ? 'Expected error but got success' : `Found ${data?.meta?.totalResults || 0} results`,
-        details: data?.meta
+        status: expectedError ? 'error' : ('success' as const),
+        message: expectedError
+          ? 'Expected error but got success'
+          : `Found ${data?.meta?.totalResults || 0} results`,
+        details: data?.meta,
       };
     } catch (err: any) {
       return {
         scenario,
         status: 'error' as const,
         message: err.message || 'Network error',
-        details: err
+        details: err,
       };
     }
   };
@@ -57,17 +63,37 @@ export default function TestScreen() {
     setResults([]);
 
     const tests = [
-      { scenario: 'Valid Query - Chicken', query: 'chicken', expectedError: false },
+      {
+        scenario: 'Valid Query - Chicken',
+        query: 'chicken',
+        expectedError: false,
+      },
       { scenario: 'Empty Query', query: '', expectedError: true },
-      { scenario: 'Very Long Query (>100 chars)', query: 'a'.repeat(101), expectedError: true },
-      { scenario: 'Special Characters', query: '!@#$%^&*()', expectedError: false },
-      { scenario: 'SQL Injection Attempt', query: "'; DROP TABLE foods; --", expectedError: false },
+      {
+        scenario: 'Very Long Query (>100 chars)',
+        query: 'a'.repeat(101),
+        expectedError: true,
+      },
+      {
+        scenario: 'Special Characters',
+        query: '!@#$%^&*()',
+        expectedError: false,
+      },
+      {
+        scenario: 'SQL Injection Attempt',
+        query: "'; DROP TABLE foods; --",
+        expectedError: false,
+      },
       { scenario: 'Unicode Query', query: '🍕 pizza', expectedError: false },
       { scenario: 'Numeric Query', query: '123456', expectedError: false },
     ];
 
     for (const test of tests) {
-      const result = await runTest(test.scenario, test.query, test.expectedError);
+      const result = await runTest(
+        test.scenario,
+        test.query,
+        test.expectedError
+      );
       setResults(prev => [...prev, result]);
     }
 
@@ -88,7 +114,7 @@ export default function TestScreen() {
             for (let i = 0; i < 15; i++) {
               promises.push(
                 supabase.functions.invoke('food-search', {
-                  body: { query: `rate-test-${i}`, limit: 5 }
+                  body: { query: `rate-test-${i}`, limit: 5 },
                 })
               );
             }
@@ -113,8 +139,8 @@ export default function TestScreen() {
               `Sent 15 requests:\n${succeeded} succeeded\n${rateLimited} rate limited\n\nRate limiting is ${rateLimited > 0 ? 'working!' : 'not working'}`
             );
             setTesting(false);
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -136,7 +162,11 @@ export default function TestScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.button, styles.buttonSecondary, testing && styles.buttonDisabled]}
+          style={[
+            styles.button,
+            styles.buttonSecondary,
+            testing && styles.buttonDisabled,
+          ]}
           onPress={testRateLimit}
           disabled={testing}
         >
@@ -159,7 +189,9 @@ export default function TestScreen() {
               key={index}
               style={[
                 styles.resultItem,
-                result.status === 'success' ? styles.resultSuccess : styles.resultError
+                result.status === 'success'
+                  ? styles.resultSuccess
+                  : styles.resultError,
               ]}
             >
               <Text style={styles.resultScenario}>{result.scenario}</Text>

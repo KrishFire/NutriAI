@@ -1,15 +1,18 @@
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
-import { createNativeStackNavigator, NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  createNativeStackNavigator,
+  NativeStackNavigationProp,
+} from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
-import { 
-  RootStackParamList, 
-  AuthStackParamList, 
-  AppTabParamList, 
-  HomeStackParamList, 
-  HistoryStackParamList, 
-  ProfileStackParamList 
+import {
+  RootStackParamList,
+  AuthStackParamList,
+  AppTabParamList,
+  HomeStackParamList,
+  HistoryStackParamList,
+  ProfileStackParamList,
 } from '../types/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { LoadingSpinner } from '../components';
@@ -88,8 +91,9 @@ function ProfileStackNavigator() {
 
 // FAB wrapper component that can access navigation
 function FABWithNavigation() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   return (
     <ExpandableFAB
       onCameraPress={() => navigation.navigate('Camera')}
@@ -120,8 +124,8 @@ function AppTabNavigator() {
           tabBarInactiveTintColor: '#8E8E93',
         }}
       >
-        <Tab.Screen 
-          name="Home" 
+        <Tab.Screen
+          name="Home"
           component={HomeStackNavigator}
           options={{
             tabBarIcon: ({ color, size }) => (
@@ -129,8 +133,8 @@ function AppTabNavigator() {
             ),
           }}
         />
-        <Tab.Screen 
-          name="History" 
+        <Tab.Screen
+          name="History"
           component={HistoryStackNavigator}
           options={{
             tabBarIcon: ({ color, size }) => (
@@ -138,8 +142,8 @@ function AppTabNavigator() {
             ),
           }}
         />
-        <Tab.Screen 
-          name="Profile" 
+        <Tab.Screen
+          name="Profile"
           component={ProfileStackNavigator}
           options={{
             tabBarIcon: ({ color, size }) => (
@@ -148,7 +152,7 @@ function AppTabNavigator() {
           }}
         />
       </Tab.Navigator>
-      
+
       <FABWithNavigation />
     </View>
   );
@@ -162,31 +166,31 @@ function AppStack() {
         presentation: 'modal',
       }}
     >
-      <RootStack.Screen 
-        name="AppTabs" 
+      <RootStack.Screen
+        name="AppTabs"
         component={AppTabNavigator}
         options={{
           presentation: 'card',
         }}
       />
-      <RootStack.Screen 
-        name="Camera" 
+      <RootStack.Screen
+        name="Camera"
         component={CameraScreen}
         options={{
           presentation: 'modal',
           animation: 'slide_from_bottom',
         }}
       />
-      <RootStack.Screen 
-        name="MealDetails" 
+      <RootStack.Screen
+        name="MealDetails"
         component={MealDetailsScreen}
         options={{
           presentation: 'card',
           animation: 'slide_from_right',
         }}
       />
-      <RootStack.Screen 
-        name="ManualEntry" 
+      <RootStack.Screen
+        name="ManualEntry"
         component={ManualEntryScreen}
         options={{
           presentation: 'modal',

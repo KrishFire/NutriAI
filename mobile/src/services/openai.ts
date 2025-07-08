@@ -24,12 +24,14 @@ export interface MealAnalysis {
   notes?: string;
 }
 
-export async function analyzeMealImage(imageUri: string): Promise<MealAnalysis> {
+export async function analyzeMealImage(
+  imageUri: string
+): Promise<MealAnalysis> {
   try {
     // Convert image to base64 for Edge Function
     const response = await fetch(imageUri);
     const blob = await response.blob();
-    const base64 = await new Promise<string>((resolve) => {
+    const base64 = await new Promise<string>(resolve => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
@@ -39,8 +41,10 @@ export async function analyzeMealImage(imageUri: string): Promise<MealAnalysis> 
     });
 
     // Get current session for authentication
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session?.access_token) {
       throw new Error('User not authenticated');
     }
@@ -58,7 +62,7 @@ export async function analyzeMealImage(imageUri: string): Promise<MealAnalysis> 
 
     if (error) {
       console.error('Supabase function error:', error);
-      
+
       // Try to extract detailed error information
       let errorMessage = error.message;
       try {
@@ -66,7 +70,7 @@ export async function analyzeMealImage(imageUri: string): Promise<MealAnalysis> 
         if (error.response && typeof error.response.json === 'function') {
           const errorBody = await error.response.json();
           console.error('Edge Function error details:', errorBody);
-          
+
           // Extract specific error info from Edge Function response
           if (errorBody.error) {
             errorMessage = errorBody.error;
@@ -81,7 +85,7 @@ export async function analyzeMealImage(imageUri: string): Promise<MealAnalysis> 
       } catch (parseError) {
         console.error('Could not parse error response:', parseError);
       }
-      
+
       throw new Error(`Failed to analyze meal: ${errorMessage}`);
     }
 
@@ -102,7 +106,7 @@ export async function analyzeMealImage(imageUri: string): Promise<MealAnalysis> 
   } catch (error) {
     console.error('Error analyzing meal image:', error);
     throw new Error(
-      error instanceof Error 
+      error instanceof Error
         ? `Failed to analyze meal: ${error.message}`
         : 'Failed to analyze meal: Unknown error'
     );
@@ -110,14 +114,14 @@ export async function analyzeMealImage(imageUri: string): Promise<MealAnalysis> 
 }
 
 export async function analyzeWithVoiceContext(
-  imageUri: string, 
+  imageUri: string,
   voiceTranscription: string
 ): Promise<MealAnalysis> {
   try {
     // Convert image to base64 for Edge Function
     const response = await fetch(imageUri);
     const blob = await response.blob();
-    const base64 = await new Promise<string>((resolve) => {
+    const base64 = await new Promise<string>(resolve => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
@@ -127,8 +131,10 @@ export async function analyzeWithVoiceContext(
     });
 
     // Get current session for authentication
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session?.access_token) {
       throw new Error('User not authenticated');
     }
@@ -147,7 +153,7 @@ export async function analyzeWithVoiceContext(
 
     if (error) {
       console.error('Supabase function error:', error);
-      
+
       // Try to extract detailed error information
       let errorMessage = error.message;
       try {
@@ -155,7 +161,7 @@ export async function analyzeWithVoiceContext(
         if (error.response && typeof error.response.json === 'function') {
           const errorBody = await error.response.json();
           console.error('Edge Function error details:', errorBody);
-          
+
           // Extract specific error info from Edge Function response
           if (errorBody.error) {
             errorMessage = errorBody.error;
@@ -170,7 +176,7 @@ export async function analyzeWithVoiceContext(
       } catch (parseError) {
         console.error('Could not parse error response:', parseError);
       }
-      
+
       throw new Error(`Failed to analyze meal: ${errorMessage}`);
     }
 
@@ -191,7 +197,7 @@ export async function analyzeWithVoiceContext(
   } catch (error) {
     console.error('Error analyzing meal with voice context:', error);
     throw new Error(
-      error instanceof Error 
+      error instanceof Error
         ? `Failed to analyze meal: ${error.message}`
         : 'Failed to analyze meal: Unknown error'
     );

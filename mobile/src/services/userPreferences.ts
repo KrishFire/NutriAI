@@ -2,7 +2,7 @@ import { supabase } from '../config/supabase';
 
 /**
  * USER PREFERENCES DATABASE SCHEMA
- * 
+ *
  * Table: user_preferences
  * ----------------------
  * id: UUID (primary key)
@@ -20,7 +20,7 @@ import { supabase } from '../config/supabase';
  * unit_system: TEXT ('metric' | 'imperial', default: 'metric')
  * created_at: TIMESTAMP WITH TIME ZONE
  * updated_at: TIMESTAMP WITH TIME ZONE
- * 
+ *
  * RLS Policies:
  * - Users can only view/edit their own preferences
  * - Authenticated users can insert their preferences
@@ -50,7 +50,12 @@ export interface UserPreferencesInput {
   daily_carb_goal?: number;
   daily_fat_goal?: number;
   weight_goal?: 'lose_weight' | 'maintain_weight' | 'gain_weight';
-  activity_level?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+  activity_level?:
+    | 'sedentary'
+    | 'light'
+    | 'moderate'
+    | 'active'
+    | 'very_active';
   notifications_enabled?: boolean;
   streak_notifications?: boolean;
   meal_reminders?: boolean;
@@ -71,7 +76,10 @@ export interface PreferencesResult<T = UserPreferences> {
 /**
  * Default user preferences
  */
-export const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
+export const DEFAULT_PREFERENCES: Omit<
+  UserPreferences,
+  'id' | 'user_id' | 'created_at' | 'updated_at'
+> = {
   daily_calorie_goal: 2000,
   daily_protein_goal: 150,
   daily_carb_goal: 200,
@@ -97,7 +105,7 @@ export const getUserPreferences = async (
     if (!userId) {
       return {
         data: null,
-        error: { message: 'User ID is required' }
+        error: { message: 'User ID is required' },
       };
     }
 
@@ -112,7 +120,7 @@ export const getUserPreferences = async (
       if (error.code === 'PGRST116') {
         return {
           data: null,
-          error: null
+          error: null,
         };
       }
 
@@ -120,22 +128,22 @@ export const getUserPreferences = async (
         data: null,
         error: {
           message: error.message,
-          code: error.code
-        }
+          code: error.code,
+        },
       };
     }
 
     return {
       data: data as UserPreferences,
-      error: null
+      error: null,
     };
   } catch (err) {
     console.error('Error getting user preferences:', err);
     return {
       data: null,
       error: {
-        message: 'An unexpected error occurred while fetching preferences'
-      }
+        message: 'An unexpected error occurred while fetching preferences',
+      },
     };
   }
 };
@@ -154,11 +162,14 @@ export const createUserPreferences = async (
     if (!userId) {
       return {
         data: null,
-        error: { message: 'User ID is required' }
+        error: { message: 'User ID is required' },
       };
     }
 
-    const newPreferences: Omit<UserPreferences, 'id' | 'created_at' | 'updated_at'> = {
+    const newPreferences: Omit<
+      UserPreferences,
+      'id' | 'created_at' | 'updated_at'
+    > = {
       user_id: userId,
       ...DEFAULT_PREFERENCES,
       ...preferences,
@@ -175,22 +186,22 @@ export const createUserPreferences = async (
         data: null,
         error: {
           message: error.message,
-          code: error.code
-        }
+          code: error.code,
+        },
       };
     }
 
     return {
       data: data as UserPreferences,
-      error: null
+      error: null,
     };
   } catch (err) {
     console.error('Error creating user preferences:', err);
     return {
       data: null,
       error: {
-        message: 'An unexpected error occurred while creating preferences'
-      }
+        message: 'An unexpected error occurred while creating preferences',
+      },
     };
   }
 };
@@ -209,7 +220,7 @@ export const updateUserPreferences = async (
     if (!userId) {
       return {
         data: null,
-        error: { message: 'User ID is required' }
+        error: { message: 'User ID is required' },
       };
     }
 
@@ -230,22 +241,22 @@ export const updateUserPreferences = async (
         data: null,
         error: {
           message: error.message,
-          code: error.code
-        }
+          code: error.code,
+        },
       };
     }
 
     return {
       data: data as UserPreferences,
-      error: null
+      error: null,
     };
   } catch (err) {
     console.error('Error updating user preferences:', err);
     return {
       data: null,
       error: {
-        message: 'An unexpected error occurred while updating preferences'
-      }
+        message: 'An unexpected error occurred while updating preferences',
+      },
     };
   }
 };
@@ -261,14 +272,17 @@ export const getOrCreateUserPreferences = async (
   try {
     // First try to get existing preferences
     const existingResult = await getUserPreferences(userId);
-    
+
     // If preferences exist, return them
     if (existingResult.data) {
       return existingResult;
     }
 
     // If there was an error other than "not found", return the error
-    if (existingResult.error && existingResult.error.message !== 'No preferences found') {
+    if (
+      existingResult.error &&
+      existingResult.error.message !== 'No preferences found'
+    ) {
       return existingResult;
     }
 
@@ -279,8 +293,9 @@ export const getOrCreateUserPreferences = async (
     return {
       data: null,
       error: {
-        message: 'An unexpected error occurred while fetching or creating preferences'
-      }
+        message:
+          'An unexpected error occurred while fetching or creating preferences',
+      },
     };
   }
 };
@@ -296,7 +311,7 @@ export const deleteUserPreferences = async (
   try {
     if (!userId) {
       return {
-        error: { message: 'User ID is required' }
+        error: { message: 'User ID is required' },
       };
     }
 
@@ -309,8 +324,8 @@ export const deleteUserPreferences = async (
       return {
         error: {
           message: error.message,
-          code: error.code
-        }
+          code: error.code,
+        },
       };
     }
 
@@ -319,8 +334,8 @@ export const deleteUserPreferences = async (
     console.error('Error deleting user preferences:', err);
     return {
       error: {
-        message: 'An unexpected error occurred while deleting preferences'
-      }
+        message: 'An unexpected error occurred while deleting preferences',
+      },
     };
   }
 };
@@ -343,11 +358,11 @@ export const calculateDailyCaloricNeeds = (
 ): number => {
   // Harris-Benedict Equation for BMR (Basal Metabolic Rate)
   let bmr: number;
-  
+
   if (userGender === 'male') {
-    bmr = 88.362 + (13.397 * userWeight) + (4.799 * userHeight) - (5.677 * userAge);
+    bmr = 88.362 + 13.397 * userWeight + 4.799 * userHeight - 5.677 * userAge;
   } else {
-    bmr = 447.593 + (9.247 * userWeight) + (3.098 * userHeight) - (4.330 * userAge);
+    bmr = 447.593 + 9.247 * userWeight + 3.098 * userHeight - 4.33 * userAge;
   }
 
   // Activity level multipliers
@@ -356,7 +371,7 @@ export const calculateDailyCaloricNeeds = (
     light: 1.375,
     moderate: 1.55,
     active: 1.725,
-    very_active: 1.9
+    very_active: 1.9,
   };
 
   const tdee = bmr * activityMultipliers[preferences.activity_level];
@@ -365,7 +380,7 @@ export const calculateDailyCaloricNeeds = (
   const goalAdjustments = {
     lose_weight: -500, // 500 calorie deficit for ~1 lb/week loss
     maintain_weight: 0,
-    gain_weight: 300 // 300 calorie surplus for gradual weight gain
+    gain_weight: 300, // 300 calorie surplus for gradual weight gain
   };
 
   return Math.round(tdee + goalAdjustments[preferences.weight_goal]);
@@ -383,14 +398,20 @@ export const validateUserPreferences = (
 
   // Validate calorie goal
   if (preferences.daily_calorie_goal !== undefined) {
-    if (preferences.daily_calorie_goal < 800 || preferences.daily_calorie_goal > 5000) {
+    if (
+      preferences.daily_calorie_goal < 800 ||
+      preferences.daily_calorie_goal > 5000
+    ) {
       errors.push('Daily calorie goal must be between 800 and 5000');
     }
   }
 
   // Validate protein goal
   if (preferences.daily_protein_goal !== undefined) {
-    if (preferences.daily_protein_goal < 20 || preferences.daily_protein_goal > 400) {
+    if (
+      preferences.daily_protein_goal < 20 ||
+      preferences.daily_protein_goal > 400
+    ) {
       errors.push('Daily protein goal must be between 20 and 400 grams');
     }
   }

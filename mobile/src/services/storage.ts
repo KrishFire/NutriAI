@@ -42,7 +42,7 @@ export const uploadMealImage = async (
     const timestamp = Date.now();
     const fileExtension = imageUri.split('.').pop() || 'jpg';
     const finalFilename = filename || `meal_${timestamp}.${fileExtension}`;
-    
+
     // Create the storage path: userId/filename
     const filePath = `${userId}/${finalFilename}`;
 
@@ -100,7 +100,7 @@ export const deleteMealImage = async (
 
     // Verify the file belongs to the user
     if (!filePath.startsWith(userId)) {
-      return { error: 'Unauthorized: Cannot delete another user\'s image' };
+      return { error: "Unauthorized: Cannot delete another user's image" };
     }
 
     const { error } = await supabase.storage
@@ -140,7 +140,7 @@ export const getUserMealImages = async (
     }
 
     // Convert to full URLs
-    const images = data.map((file) => {
+    const images = data.map(file => {
       const { data: publicUrlData } = supabase.storage
         .from('meal-images')
         .getPublicUrl(`${userId}/${file.name}`);

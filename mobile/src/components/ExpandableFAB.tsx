@@ -13,19 +13,22 @@ interface ExpandableFABProps {
   onManualPress: () => void;
 }
 
-export default function ExpandableFAB({ onCameraPress, onManualPress }: ExpandableFABProps) {
+export default function ExpandableFAB({
+  onCameraPress,
+  onManualPress,
+}: ExpandableFABProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
 
   const toggleExpand = () => {
     const toValue = isExpanded ? 0 : 1;
-    
+
     Animated.spring(animation, {
       toValue,
       useNativeDriver: true,
       friction: 5,
     }).start();
-    
+
     setIsExpanded(!isExpanded);
   };
 
@@ -68,9 +71,9 @@ export default function ExpandableFAB({ onCameraPress, onManualPress }: Expandab
     <View style={styles.container}>
       {/* Backdrop */}
       {isExpanded && (
-        <TouchableOpacity 
-          style={styles.backdrop} 
-          activeOpacity={1} 
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
           onPress={toggleExpand}
         />
       )}
@@ -80,10 +83,7 @@ export default function ExpandableFAB({ onCameraPress, onManualPress }: Expandab
         style={[
           styles.subButton,
           {
-            transform: [
-              { translateY: manualTranslateY },
-              { scale },
-            ],
+            transform: [{ translateY: manualTranslateY }, { scale }],
             opacity,
           },
         ]}
@@ -105,10 +105,7 @@ export default function ExpandableFAB({ onCameraPress, onManualPress }: Expandab
         style={[
           styles.subButton,
           {
-            transform: [
-              { translateY: cameraTranslateY },
-              { scale },
-            ],
+            transform: [{ translateY: cameraTranslateY }, { scale }],
             opacity,
           },
         ]}

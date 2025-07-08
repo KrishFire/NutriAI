@@ -7,6 +7,7 @@ The user correctly identified that a 4xx error from the USDA API is being transf
 ## Root Cause
 
 ### The Problem Code (Line 496)
+
 ```typescript
 throw new Error(`USDA API error ${response.status}: ${errorText}`);
 ```
@@ -14,6 +15,7 @@ throw new Error(`USDA API error ${response.status}: ${errorText}`);
 This line converts an HTTP response with a specific status code (401, 403, 429, etc.) into a generic JavaScript `Error` object. The status code is embedded in the error message string but is not preserved as a property.
 
 ### The Transformation (Line 735)
+
 ```typescript
 } catch (error) {
   log('usda-api-error', { error: error.message });
@@ -34,13 +36,13 @@ The catch block returns 502 (Bad Gateway) for **ANY** error from the USDA API, r
 
 Running direct tests against the USDA API confirms:
 
-| Scenario | USDA Returns | Edge Function Returns | Should Return |
-|----------|--------------|----------------------|---------------|
-| Valid API Key | 200 OK | 200 OK ✅ | 200 OK |
-| Invalid API Key | 403 Forbidden | 502 Bad Gateway ❌ | 500 Internal Server Error |
-| Missing API Key | 403 Forbidden | 502 Bad Gateway ❌ | 500 Internal Server Error |
-| Rate Limited | 429 Too Many Requests | 502 Bad Gateway ❌ | 429 Too Many Requests |
-| USDA Server Error | 500 Internal Server Error | 502 Bad Gateway ⚠️ | 503 Service Unavailable |
+| Scenario          | USDA Returns              | Edge Function Returns | Should Return             |
+| ----------------- | ------------------------- | --------------------- | ------------------------- |
+| Valid API Key     | 200 OK                    | 200 OK ✅             | 200 OK                    |
+| Invalid API Key   | 403 Forbidden             | 502 Bad Gateway ❌    | 500 Internal Server Error |
+| Missing API Key   | 403 Forbidden             | 502 Bad Gateway ❌    | 500 Internal Server Error |
+| Rate Limited      | 429 Too Many Requests     | 502 Bad Gateway ❌    | 429 Too Many Requests     |
+| USDA Server Error | 500 Internal Server Error | 502 Bad Gateway ⚠️    | 503 Service Unavailable   |
 
 ## Why This Matters
 
@@ -52,6 +54,7 @@ Running direct tests against the USDA API confirms:
 ## The Fix
 
 ### Step 1: Create a Custom Error Class
+
 ```typescript
 class USDAAPIError extends Error {
   constructor(
@@ -66,6 +69,7 @@ class USDAAPIError extends Error {
 ```
 
 ### Step 2: Throw the Custom Error (Line 496)
+
 ```typescript
 throw new USDAAPIError(
   response.status,
@@ -75,6 +79,7 @@ throw new USDAAPIError(
 ```
 
 ### Step 3: Handle Errors Appropriately (Lines 727-737)
+
 ```typescript
 } catch (error) {
   if (error instanceof USDAAPIError) {
@@ -91,7 +96,7 @@ throw new USDAAPIError(
           }),
           { status: 500, headers }
         );
-      
+
       case 429:
         // Rate limit - pass it through
         return new Response(
@@ -102,11 +107,11 @@ throw new USDAAPIError(
           }),
           { status: 429, headers }
         );
-      
+
       // ... handle other cases
     }
   }
-  
+
   // Default 502 for unknown errors
   return new Response(
     JSON.stringify({
@@ -137,6 +142,7 @@ The actual status IS being logged (line 481-487), it's just not being returned t
 ## Recommendation
 
 Implement the fix immediately to:
+
 1. Improve debugging by preserving original error codes
 2. Provide better error messages to clients
 3. Enable proper rate limit handling

@@ -135,13 +135,13 @@ describe('Daily Log Fix Tests', () => {
   describe('getOrCreateDailyLog Edge Cases', () => {
     it('should handle concurrent creation attempts', async () => {
       // First call - no existing log
-      const mockMaybeSingle = jest.fn()
+      const mockMaybeSingle = jest
+        .fn()
         .mockResolvedValueOnce({ data: null, error: null });
 
-      const mockSingle = jest.fn()
-        .mockRejectedValueOnce({ 
-          error: { code: '23505', message: 'duplicate key value' } 
-        });
+      const mockSingle = jest.fn().mockRejectedValueOnce({
+        error: { code: '23505', message: 'duplicate key value' },
+      });
 
       const mockInsert = jest.fn().mockReturnValue({
         select: jest.fn().mockReturnValue({
@@ -168,8 +168,9 @@ describe('Daily Log Fix Tests', () => {
       (supabase.from as jest.Mock).mockImplementation(mockFrom);
 
       // This should handle the duplicate key error
-      await expect(getOrCreateDailyLog(mockUserId, new Date()))
-        .rejects.toThrow('Failed to create daily log');
+      await expect(getOrCreateDailyLog(mockUserId, new Date())).rejects.toThrow(
+        'Failed to create daily log'
+      );
     });
   });
 });
@@ -178,9 +179,9 @@ describe('Edge Case Scenarios', () => {
   describe('Race Conditions', () => {
     it('should handle multiple simultaneous meal saves', async () => {
       // Test that multiple meal saves don't create duplicate daily logs
-      const promises = Array(5).fill(null).map(() => 
-        getOrCreateDailyLog(mockUserId, new Date())
-      );
+      const promises = Array(5)
+        .fill(null)
+        .map(() => getOrCreateDailyLog(mockUserId, new Date()));
 
       // In real scenario, only one should succeed in creating
       // Others should get the existing one

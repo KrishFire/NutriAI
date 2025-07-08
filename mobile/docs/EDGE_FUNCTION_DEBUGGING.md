@@ -7,9 +7,11 @@ The analyze-meal Edge Function now includes comprehensive debugging capabilities
 ## New Debug Headers
 
 ### Request Headers
+
 - **X-Debug-Mode**: Set to `'true'` to enable debug mode
 
 ### Response Headers (Always Included)
+
 - **X-Request-ID**: Unique request identifier for correlation with server logs
 - **X-Auth-Status**: Specific authentication state
   - `Pre-Auth`: Request failed before authentication
@@ -28,7 +30,9 @@ The analyze-meal Edge Function now includes comprehensive debugging capabilities
 - **X-OpenAI-Status**: OpenAI API response status (when applicable)
 
 ### CORS Headers
+
 The function now exposes these headers via `Access-Control-Expose-Headers`:
+
 - X-Request-ID
 - X-Auth-Status
 - Server-Timing
@@ -39,6 +43,7 @@ The function now exposes these headers via `Access-Control-Expose-Headers`:
 When `X-Debug-Mode: true` is set in the request:
 
 ### Error Responses Include `_debug` Object
+
 ```json
 {
   "stage": "authentication",
@@ -53,6 +58,7 @@ When `X-Debug-Mode: true` is set in the request:
 ```
 
 ### Success Responses Include Performance Metrics
+
 ```json
 {
   "foods": [...],
@@ -69,35 +75,42 @@ When `X-Debug-Mode: true` is set in the request:
 ## Common Error Patterns
 
 ### 401 Authentication Errors
+
 Check the `X-Auth-Status` header to determine the exact cause:
+
 - `Missing-Token`: Add Authorization header
 - `Malformed-Token`: Use `Bearer <token>` format
 - `Expired-Token`: Refresh the user session
 - `Invalid-Signature`: Token corruption or wrong project
 
 ### 500 Server Errors
+
 Debug mode will include stack traces and detailed error information:
+
 - Environment configuration issues
 - External API failures
 - Data parsing errors
 
 ### 502 Gateway Errors
+
 Usually indicates OpenAI API issues:
+
 - Check `X-OpenAI-Status` header
 - Debug mode includes OpenAI response headers
 
 ## Testing the Enhanced Function
 
 ### Basic Auth Testing
+
 ```typescript
 // Test missing auth
 const response = await fetch(edgeFunctionUrl, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'X-Debug-Mode': 'true'
+    'X-Debug-Mode': 'true',
   },
-  body: JSON.stringify({})
+  body: JSON.stringify({}),
 });
 
 console.log('Auth Status:', response.headers.get('X-Auth-Status')); // "Missing-Token"
@@ -105,18 +118,19 @@ console.log('Request ID:', response.headers.get('X-Request-ID'));
 ```
 
 ### Full Debug Mode Testing
+
 ```typescript
 const response = await fetch(edgeFunctionUrl, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session.access_token}`,
-    'X-Debug-Mode': 'true'
+    Authorization: `Bearer ${session.access_token}`,
+    'X-Debug-Mode': 'true',
   },
   body: JSON.stringify({
     imageBase64: imageData,
-    voiceTranscription: 'Grilled chicken with vegetables'
-  })
+    voiceTranscription: 'Grilled chicken with vegetables',
+  }),
 });
 
 const body = await response.json();
