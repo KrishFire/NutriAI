@@ -9,6 +9,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useState, useRef, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -51,6 +52,11 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
           quality: 0.8,
         });
         setCapturedImage(photo.uri);
+        
+        // Start analysis automatically after a brief delay for UX
+        setTimeout(() => {
+          handleAnalyzeMeal();
+        }, 1000); // 1 second delay to show the preview briefly
       } catch (error) {
         Alert.alert('Error', 'Failed to take picture');
         console.error('Camera error:', error);
@@ -80,6 +86,11 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
 
       if (!result.canceled && result.assets[0]) {
         setCapturedImage(result.assets[0].uri);
+        
+        // Start analysis automatically after a brief delay for UX
+        setTimeout(() => {
+          handleAnalyzeMeal();
+        }, 1000); // 1 second delay to show the preview briefly
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to pick image');
@@ -88,8 +99,13 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
   };
 
   const handleAnalyzeMeal = async () => {
-    if (!capturedImage || !user) {
-      Alert.alert('Error', 'No image captured or user not authenticated');
+    if (!capturedImage) {
+      Alert.alert('Error', 'No image captured');
+      return;
+    }
+    
+    if (!user) {
+      Alert.alert('Error', 'User not authenticated');
       return;
     }
 
@@ -229,30 +245,27 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
               />
             </View>
 
-            {/* Action Buttons */}
-            <View style={styles.previewActions}>
-              <View style={styles.actionButtons}>
+            {/* Analysis Status */}
+            {analyzing ? (
+              <View style={styles.analysisStatus}>
+                <ActivityIndicator size="large" color="#007AFF" />
+                <Text style={styles.analysisText}>
+                  Analyzing your meal...
+                </Text>
+                <Text style={styles.analysisSubtext}>
+                  Taking you to meal details
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.previewActions}>
                 <Button
-                  title="Retake"
+                  title="Retake Photo"
                   onPress={handleRetake}
                   variant="outline"
-                  style={styles.actionButton}
-                />
-                <Button
-                  title="Cancel"
-                  onPress={() => navigation.goBack()}
-                  variant="outline"
-                  style={styles.actionButton}
-                />
-                <Button
-                  title={analyzing ? 'Analyzing...' : 'Analyze'}
-                  onPress={handleAnalyzeMeal}
-                  variant="primary"
-                  loading={analyzing}
-                  style={styles.analyzeButton}
+                  style={styles.retakeButton}
                 />
               </View>
-            </View>
+            )}
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -342,30 +355,37 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   backButtonText: {
     color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
   },
   headerTitle: {
     color: 'white',
     fontSize: 18,
     fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   flipButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   flipButtonText: {
     color: 'white',
@@ -373,39 +393,47 @@ const styles = StyleSheet.create({
   },
   cameraFooter: {
     position: 'absolute',
-    bottom: 50,
+    bottom: 60,
     left: 0,
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: 50,
+    paddingHorizontal: 40,
   },
   galleryIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   iconText: {
     fontSize: 24,
+    color: 'white',
   },
   captureButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 4,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   captureButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: 'white',
   },
   placeholder: {
@@ -414,19 +442,24 @@ const styles = StyleSheet.create({
   },
   instructionContainer: {
     position: 'absolute',
-    bottom: 150,
-    left: 0,
-    right: 0,
+    bottom: 160,
+    left: 20,
+    right: 20,
     alignItems: 'center',
   },
   instructionText: {
     color: 'white',
     fontSize: 16,
     textAlign: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    textShadowColor: 'rgba(0, 0, 0, 0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   previewContainer: {
     flex: 1,
@@ -437,8 +470,10 @@ const styles = StyleSheet.create({
   },
   preview: {
     width: '100%',
-    height: 250,
+    aspectRatio: 4/3,
     resizeMode: 'cover',
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
   },
   inputSection: {
     backgroundColor: '#FFFFFF',
@@ -463,19 +498,33 @@ const styles = StyleSheet.create({
   },
   previewActions: {
     backgroundColor: '#FFFFFF',
-    padding: 16,
-    paddingTop: 12,
+    padding: 20,
+    alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: '#E5E5EA',
   },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
+  retakeButton: {
+    minWidth: 120,
+    paddingHorizontal: 24,
   },
-  actionButton: {
-    flex: 1,
+  analysisStatus: {
+    backgroundColor: '#FFFFFF',
+    padding: 32,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5EA',
   },
-  analyzeButton: {
-    flex: 2,
+  analysisText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#007AFF',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  analysisSubtext: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginTop: 8,
+    textAlign: 'center',
   },
 });
