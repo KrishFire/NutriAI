@@ -11,11 +11,15 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import {
+  BottomSheetModal,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
 import { Button, LoadingSpinner } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadMealImage } from '../services/storage';
@@ -32,6 +36,7 @@ type CameraScreenProps = NativeStackScreenProps<RootStackParamList, 'Camera'>;
 export default function CameraScreen({ navigation, route }: CameraScreenProps) {
   const { user } = useAuth();
   const cameraRef = useRef<CameraView>(null);
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const [permission, requestPermission] = useCameraPermissions();
 
   const [type, setType] = useState<CameraType>('back');
@@ -45,6 +50,18 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
   // Check if we're in add mode
   const { addToMeal } = route.params || {};
 
+  // Bottom sheet snap points
+  const snapPoints = useMemo(() => ['25%', '50%'], []);
+
+  // Callbacks for bottom sheet
+  const handlePresentModalPress = useCallback(() => {
+    bottomSheetModalRef.current?.present();
+  }, []);
+
+  const handleDismissModalPress = useCallback(() => {
+    bottomSheetModalRef.current?.dismiss();
+  }, []);
+
   const takePicture = async () => {
     if (cameraRef.current) {
       try {
@@ -52,11 +69,6 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
           quality: 0.8,
         });
         setCapturedImage(photo.uri);
-        
-        // Start analysis automatically after a brief delay for UX
-        setTimeout(() => {
-          handleAnalyzeMeal();
-        }, 1000); // 1 second delay to show the preview briefly
       } catch (error) {
         Alert.alert('Error', 'Failed to take picture');
         console.error('Camera error:', error);
@@ -86,11 +98,6 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
 
       if (!result.canceled && result.assets[0]) {
         setCapturedImage(result.assets[0].uri);
-        
-        // Start analysis automatically after a brief delay for UX
-        setTimeout(() => {
-          handleAnalyzeMeal();
-        }, 1000); // 1 second delay to show the preview briefly
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to pick image');
@@ -109,6 +116,8 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
       return;
     }
 
+    // Show bottom sheet modal during analysis
+    handlePresentModalPress();
     setAnalyzing(true);
 
     try {
@@ -163,7 +172,13 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
           mealId: logResult.mealLogId,
         });
       }
+
+      // Auto-dismiss bottom sheet after successful analysis
+      setTimeout(() => {
+        handleDismissModalPress();
+      }, 500);
     } catch (err) {
+      handleDismissModalPress();
       Alert.alert(
         'Analysis Failed',
         err instanceof Error ? err.message : 'Failed to analyze meal photo'
@@ -245,27 +260,23 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
               />
             </View>
 
-            {/* Analysis Status */}
-            {analyzing ? (
-              <View style={styles.analysisStatus}>
-                <ActivityIndicator size="large" color="#007AFF" />
-                <Text style={styles.analysisText}>
-                  Analyzing your meal...
-                </Text>
-                <Text style={styles.analysisSubtext}>
-                  Taking you to meal details
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.previewActions}>
-                <Button
-                  title="Retake Photo"
-                  onPress={handleRetake}
-                  variant="outline"
-                  style={styles.retakeButton}
-                />
-              </View>
-            )}
+            {/* Action Buttons */}
+            <View style={styles.previewActions}>
+              <Button
+                title="Retake Photo"
+                onPress={handleRetake}
+                variant="outline"
+                style={styles.actionButton}
+              />
+              <Button
+                title="Analyze Meal"
+                onPress={handleAnalyzeMeal}
+                variant="primary"
+                style={styles.actionButton}
+                disabled={analyzing}
+                loading={analyzing}
+              />
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -318,6 +329,28 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
           </Text>
         </View>
       </CameraView>
+
+      {/* Bottom Sheet Modal for Analysis */}
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        index={1}
+        snapPoints={snapPoints}
+        enablePanDownToClose={false}
+        enableDismissOnClose={true}
+        backgroundStyle={styles.bottomSheetBackground}
+      >
+        <BottomSheetView style={styles.bottomSheetContent}>
+          <View style={styles.analysisModalContent}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={styles.analysisModalTitle}>
+              Analyzing your meal...
+            </Text>
+            <Text style={styles.analysisModalSubtext}>
+              This will take just a moment
+            </Text>
+          </View>
+        </BottomSheetView>
+      </BottomSheetModal>
     </SafeAreaView>
   );
 }
@@ -496,35 +529,50 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
   },
-  previewActions: {
+  actionButton: {
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  // Bottom Sheet Modal Styles
+  bottomSheetBackground: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  bottomSheetContent: {
+    flex: 1,
+    padding: 24,
+  },
+  analysisModalContent: {
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
+    justifyContent: 'center',
+    paddingVertical: 32,
   },
-  retakeButton: {
-    minWidth: 120,
-    paddingHorizontal: 24,
-  },
-  analysisStatus: {
-    backgroundColor: '#FFFFFF',
-    padding: 32,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
-  },
-  analysisText: {
-    fontSize: 18,
+  analysisModalTitle: {
+    fontSize: 20,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#1A1A1A',
     marginTop: 16,
     textAlign: 'center',
   },
-  analysisSubtext: {
-    fontSize: 14,
-    color: '#8E8E93',
+  analysisModalSubtext: {
+    fontSize: 16,
+    color: '#6B7280',
     marginTop: 8,
     textAlign: 'center',
+  },
+  previewActions: {
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5EA',
+    gap: 16,
   },
 });

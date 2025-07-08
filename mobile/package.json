@@ -22,6 +22,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
     "@expo/vector-icons": "^14.1.0",
+    "@gorhom/bottom-sheet": "^5.1.6",
     "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-navigation/bottom-tabs": "^7.4.2",
     "@react-navigation/native": "^7.1.14",
@@ -42,6 +43,8 @@
     "react-dom": "19.0.0",
     "react-native": "0.79.4",
     "react-native-calendars": "^1.1313.0",
+    "react-native-gesture-handler": "^2.27.1",
+    "react-native-reanimated": "^3.18.0",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-url-polyfill": "^2.0.0",
@@ -60,6 +63,10 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "prettier": "^3.6.2",
     "typescript": "~5.8.3"
+  },
+  "_overridesReason": "Pin react-native-reanimated to 3.17.4 to match Expo SDK 53 native version. Fixes runtime mismatch caused by @gorhom/bottom-sheet pulling in v3.18.0. Remove when upgrading Expo SDK.",
+  "overrides": {
+    "react-native-reanimated": "3.17.4"
   },
   "private": true
 }
