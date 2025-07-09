@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button, LoadingSpinner, MealCorrectionModal } from '../components';
 import { useAuth } from '../contexts/AuthContext';
-import { RootStackParamList } from '../types/navigation';
+import { AddMealStackParamList } from '../types/navigation';
 import { MealAnalysis, FoodItem, NutritionData } from '../services/openai';
 import { saveMealAnalysis } from '../services/meals';
 import {
@@ -23,7 +23,7 @@ import {
 } from '../../../shared/types';
 
 type MealDetailsScreenProps = NativeStackScreenProps<
-  RootStackParamList,
+  AddMealStackParamList,
   'MealDetails'
 >;
 
@@ -252,7 +252,7 @@ export default function MealDetailsScreen({
         Alert.alert('Success!', 'Meal saved successfully!', [
           {
             text: 'OK',
-            onPress: () => navigation.navigate('AppTabs'),
+            onPress: () => navigation.getParent()?.goBack(),
           },
         ]);
       } else {

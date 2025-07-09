@@ -6,18 +6,26 @@ import { MealAnalysis } from '../services/openai';
 export type RootStackParamList = {
   AuthStack: undefined;
   AppTabs: undefined;
+  AddMealFlow: {
+    screen: 'Camera' | 'ManualEntry' | 'MealDetails';
+    params?: AddMealStackParamList[keyof AddMealStackParamList];
+  };
+};
+
+// Add Meal stack for the modal flow
+export type AddMealStackParamList = {
   Camera: {
     addToMeal?: {
       mealId: string;
       existingAnalysis: MealAnalysis;
     };
-  };
+  } | undefined;
   ManualEntry: {
     addToMeal?: {
       mealId: string;
       existingAnalysis: MealAnalysis;
     };
-  };
+  } | undefined;
   MealDetails: {
     mealId?: string;
     imageUri?: string;
@@ -43,25 +51,11 @@ export type AppTabParamList = {
 // Home stack for home-related screens
 export type HomeStackParamList = {
   HomeScreen: undefined;
-  MealDetails: {
-    mealId?: string;
-    imageUri?: string;
-    analysisData?: MealAnalysis;
-    uploadedImageUrl?: string;
-    newFoodItems?: MealAnalysis['foods'];
-  };
 };
 
 // History stack for history-related screens
 export type HistoryStackParamList = {
   HistoryScreen: undefined;
-  MealDetails: {
-    mealId?: string;
-    imageUri?: string;
-    analysisData?: MealAnalysis;
-    uploadedImageUrl?: string;
-    newFoodItems?: MealAnalysis['foods'];
-  };
 };
 
 // Profile stack for profile-related screens

@@ -3,6 +3,7 @@ import {
   createNativeStackNavigator,
   NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
+import { TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
@@ -13,6 +14,7 @@ import {
   HomeStackParamList,
   HistoryStackParamList,
   ProfileStackParamList,
+  AddMealStackParamList,
 } from '../types/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { LoadingSpinner } from '../components';
@@ -32,6 +34,58 @@ const Tab = createBottomTabNavigator<AppTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const HistoryStack = createNativeStackNavigator<HistoryStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
+const AddMealStack = createNativeStackNavigator<AddMealStackParamList>();
+
+// Close button component for modal exit
+function CloseButton() {
+  const navigation = useNavigation();
+  
+  return (
+    <TouchableOpacity
+      onPress={() => navigation.getParent()?.goBack()}
+      style={{ padding: 4 }}
+    >
+      <Ionicons name="close" size={24} color="#007AFF" />
+    </TouchableOpacity>
+  );
+}
+
+function AddMealStackNavigator() {
+  return (
+    <AddMealStack.Navigator
+      screenOptions={{
+        headerShown: true,
+        animation: 'slide_from_right',
+      }}
+    >
+      <AddMealStack.Screen 
+        name="Camera" 
+        component={CameraScreen}
+        options={{
+          headerShown: false, // CameraScreen has its own header
+        }}
+        initialParams={{}}
+      />
+      <AddMealStack.Screen 
+        name="ManualEntry" 
+        component={ManualEntryScreen}
+        options={{
+          title: 'Manual Entry',
+          headerLeft: () => <CloseButton />,
+        }}
+        initialParams={undefined}
+      />
+      <AddMealStack.Screen 
+        name="MealDetails" 
+        component={MealDetailsScreen}
+        options={{
+          title: 'Meal Details',
+          gestureEnabled: false, // Prevent accidental swipe dismissal with data
+        }}
+      />
+    </AddMealStack.Navigator>
+  );
+}
 
 function AuthStackNavigator() {
   return (
@@ -57,7 +111,6 @@ function HomeStackNavigator() {
       }}
     >
       <HomeStack.Screen name="HomeScreen" component={HomeScreen} />
-      <HomeStack.Screen name="MealDetails" component={MealDetailsScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -71,7 +124,6 @@ function HistoryStackNavigator() {
       }}
     >
       <HistoryStack.Screen name="HistoryScreen" component={HistoryScreen} />
-      <HistoryStack.Screen name="MealDetails" component={MealDetailsScreen} />
     </HistoryStack.Navigator>
   );
 }
@@ -96,8 +148,8 @@ function FABWithNavigation() {
 
   return (
     <ExpandableFAB
-      onCameraPress={() => navigation.navigate('Camera')}
-      onManualPress={() => navigation.navigate('ManualEntry')}
+      onCameraPress={() => navigation.navigate('AddMealFlow', { screen: 'Camera' })}
+      onManualPress={() => navigation.navigate('AddMealFlow', { screen: 'ManualEntry' })}
     />
   );
 }
@@ -163,7 +215,6 @@ function AppStack() {
     <RootStack.Navigator
       screenOptions={{
         headerShown: false,
-        presentation: 'modal',
       }}
     >
       <RootStack.Screen
@@ -173,30 +224,16 @@ function AppStack() {
           presentation: 'card',
         }}
       />
-      <RootStack.Screen
-        name="Camera"
-        component={CameraScreen}
-        options={{
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <RootStack.Screen
-        name="MealDetails"
-        component={MealDetailsScreen}
-        options={{
-          presentation: 'card',
-          animation: 'slide_from_right',
-        }}
-      />
-      <RootStack.Screen
-        name="ManualEntry"
-        component={ManualEntryScreen}
-        options={{
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
+      <RootStack.Group screenOptions={{ presentation: 'modal' }}>
+        <RootStack.Screen
+          name="AddMealFlow"
+          component={AddMealStackNavigator}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_bottom',
+          }}
+        />
+      </RootStack.Group>
     </RootStack.Navigator>
   );
 }
