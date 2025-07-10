@@ -114,22 +114,10 @@ export async function analyzeMealImage(
 }
 
 export async function analyzeWithVoiceContext(
-  imageUri: string,
+  imageBase64: string,
   voiceTranscription: string
 ): Promise<MealAnalysis> {
   try {
-    // Convert image to base64 for Edge Function
-    const response = await fetch(imageUri);
-    const blob = await response.blob();
-    const base64 = await new Promise<string>(resolve => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        resolve(result); // Keep the full data URL with prefix
-      };
-      reader.readAsDataURL(blob);
-    });
-
     // Get current session for authentication
     const {
       data: { session },
@@ -139,15 +127,15 @@ export async function analyzeWithVoiceContext(
       throw new Error('User not authenticated');
     }
 
-    // Call the Supabase Edge Function with voice context and authentication
+    // Call the Supabase Edge Function with both image and voice context
     const { data, error } = await supabase.functions.invoke('analyze-meal', {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
-        'X-Debug-Mode': 'true', // Enable debug mode for detailed error info
+        'X-Debug-Mode': 'true',
       },
       body: {
-        imageBase64: base64,
-        voiceTranscription,
+        imageBase64,
+        voiceContext: voiceTranscription,
       },
     });
 
@@ -200,6 +188,92 @@ export async function analyzeWithVoiceContext(
       error instanceof Error
         ? `Failed to analyze meal: ${error.message}`
         : 'Failed to analyze meal: Unknown error'
+    );
+  }
+}
+
+export async function transcribeAudio(
+  audioUri: string
+): Promise<{ transcription: string; confidence?: number }> {
+  // Note: The transcribe-audio Edge Function accepts both:
+  // - multipart/form-data (current implementation)
+  // - application/json with base64 audio or storagePath
+  try {
+    // Get current session for authentication
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('User not authenticated');
+    }
+
+    // Read audio file and convert to blob
+    const response = await fetch(audioUri);
+    const blob = await response.blob();
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('audio', blob, 'recording.m4a');
+
+    // Call the Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke('transcribe-audio', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        'X-Debug-Mode': 'true', // Enable debug mode for detailed error info
+      },
+      body: formData,
+    });
+
+    if (error) {
+      console.error('Supabase function error:', error);
+
+      // Try to extract detailed error information
+      let errorMessage = error.message;
+      try {
+        // @ts-ignore - runtime check for FunctionsHttpError
+        if (error.response && typeof error.response.json === 'function') {
+          const errorBody = await error.response.json();
+          console.error('Edge Function error details:', errorBody);
+
+          if (errorBody.error) {
+            errorMessage = errorBody.error;
+          }
+          if (errorBody.stage) {
+            errorMessage = `[${errorBody.stage}] ${errorMessage}`;
+          }
+        }
+      } catch (parseError) {
+        console.error('Could not parse error response:', parseError);
+      }
+
+      throw new Error(`Failed to transcribe audio: ${errorMessage}`);
+    }
+
+    if (!data) {
+      throw new Error('No response from transcription service');
+    }
+
+    // Validate the response structure
+    if (!data.transcription || typeof data.transcription !== 'string') {
+      throw new Error('Invalid response format: missing transcription');
+    }
+
+    console.log('[OpenAI Service] Transcription successful:', {
+      length: data.transcription.length,
+      confidence: data.confidence,
+    });
+
+    return {
+      transcription: data.transcription,
+      confidence: data.confidence || 1.0,
+    };
+  } catch (error) {
+    console.error('[OpenAI Service] Transcription error:', error);
+    throw new Error(
+      error instanceof Error
+        ? `Failed to transcribe audio: ${error.message}`
+        : 'Failed to transcribe audio: Unknown error'
     );
   }
 }

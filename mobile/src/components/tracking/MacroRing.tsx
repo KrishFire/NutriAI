@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { useEffect, useState } from 'react';
+import Svg, { Circle } from 'react-native-svg';
 
 interface MacroRingProps {
   current: number;
@@ -21,10 +22,12 @@ export default function MacroRing({
   showPercentage = true,
 }: MacroRingProps) {
   const [displayCurrent, setDisplayCurrent] = useState(0);
+  const [animatedPercentage, setAnimatedPercentage] = useState(0);
+  
   const percentage = Math.min((current / target) * 100, 100);
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const strokeDashoffset = circumference - (animatedPercentage / 100) * circumference;
 
   // Animate the number counting up
   useEffect(() => {
@@ -38,41 +41,45 @@ export default function MacroRing({
     return () => clearTimeout(timer);
   }, [current, displayCurrent]);
 
+  // Animate the ring progress
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (animatedPercentage < percentage) {
+        setAnimatedPercentage(prev =>
+          Math.min(prev + 2, percentage)
+        );
+      }
+    }, 30);
+    return () => clearTimeout(timer);
+  }, [percentage, animatedPercentage]);
+
   return (
     <View style={styles.container}>
       <View style={[styles.ringContainer, { width: size, height: size }]}>
-        {/* Background circle */}
-        <View
-          style={[
-            styles.backgroundRing,
-            {
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              borderWidth: strokeWidth,
-              borderColor: '#f0f0f0',
-            },
-          ]}
-        />
-
-        {/* Progress circle - simplified for React Native */}
-        <View
-          style={[
-            styles.progressRing,
-            {
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              borderWidth: strokeWidth,
-              borderColor: color,
-              borderTopColor: percentage < 25 ? '#f0f0f0' : color,
-              borderRightColor: percentage < 50 ? '#f0f0f0' : color,
-              borderBottomColor: percentage < 75 ? '#f0f0f0' : color,
-              borderLeftColor: '#f0f0f0',
-              transform: [{ rotate: '45deg' }],
-            },
-          ]}
-        />
+        <Svg width={size} height={size} style={styles.svg}>
+          {/* Background circle */}
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#f0f0f0"
+            strokeWidth={strokeWidth}
+            fill="transparent"
+          />
+          {/* Progress circle */}
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="transparent"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        </Svg>
 
         <View style={styles.centerContent}>
           <Text style={[styles.currentValue, { color }]}>{displayCurrent}</Text>
@@ -98,10 +105,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backgroundRing: {
-    position: 'absolute',
-  },
-  progressRing: {
+  svg: {
     position: 'absolute',
   },
   centerContent: {

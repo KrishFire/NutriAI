@@ -11,11 +11,15 @@ import { Ionicons } from '@expo/vector-icons';
 interface ExpandableFABProps {
   onCameraPress: () => void;
   onManualPress: () => void;
+  onBarcodePress: () => void;
+  onVoicePress?: () => void;
 }
 
 export default function ExpandableFAB({
   onCameraPress,
   onManualPress,
+  onBarcodePress,
+  onVoicePress,
 }: ExpandableFABProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
@@ -42,6 +46,16 @@ export default function ExpandableFAB({
     onManualPress();
   };
 
+  const handleBarcodePress = () => {
+    toggleExpand();
+    onBarcodePress();
+  };
+
+  const handleVoicePress = () => {
+    toggleExpand();
+    onVoicePress?.();
+  };
+
   const rotation = animation.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '45deg'],
@@ -55,6 +69,16 @@ export default function ExpandableFAB({
   const manualTranslateY = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [0, -160],
+  });
+
+  const barcodeTranslateY = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -240],
+  });
+
+  const voiceTranslateY = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, onVoicePress ? -320 : 0],
   });
 
   const opacity = animation.interpolate({
@@ -77,6 +101,52 @@ export default function ExpandableFAB({
           onPress={toggleExpand}
         />
       )}
+
+      {/* Voice Option - only show if handler provided */}
+      {onVoicePress && (
+        <Animated.View
+          style={[
+            styles.subButton,
+            {
+              transform: [{ translateY: voiceTranslateY }, { scale }],
+              opacity,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={[styles.subFab, styles.voiceFab]}
+            onPress={handleVoicePress}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="mic" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Animated.Text style={[styles.label, { opacity }]}>
+            Voice Input
+          </Animated.Text>
+        </Animated.View>
+      )}
+
+      {/* Barcode Scanner Option */}
+      <Animated.View
+        style={[
+          styles.subButton,
+          {
+            transform: [{ translateY: barcodeTranslateY }, { scale }],
+            opacity,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={[styles.subFab, styles.barcodeFab]}
+          onPress={handleBarcodePress}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="barcode" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Animated.Text style={[styles.label, { opacity }]}>
+          Scan Barcode
+        </Animated.Text>
+      </Animated.View>
 
       {/* Manual Entry Option */}
       <Animated.View
@@ -191,6 +261,12 @@ const styles = StyleSheet.create({
   },
   manualFab: {
     backgroundColor: '#FF9800',
+  },
+  barcodeFab: {
+    backgroundColor: '#9C27B0',
+  },
+  voiceFab: {
+    backgroundColor: '#E91E63',
   },
   label: {
     marginRight: 12,

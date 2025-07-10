@@ -1,0 +1,259 @@
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
+import { Alert } from 'react-native';
+import { transcribeAudio } from '../services/openai';
+
+export type RecordingState = 'idle' | 'recording' | 'transcribing' | 'error';
+
+interface UseVoiceRecordingOptions {
+  maxDuration?: number; // in seconds, default 10
+  onTranscriptionComplete?: (text: string) => void;
+  onError?: (error: Error) => void;
+}
+
+export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
+  const {
+    maxDuration = 10,
+    onTranscriptionComplete,
+    onError,
+  } = options;
+
+  const [state, setState] = useState<RecordingState>('idle');
+  const [transcription, setTranscription] = useState<string>('');
+  const [error, setError] = useState<Error | null>(null);
+  const [duration, setDuration] = useState<number>(0);
+  
+  const recordingRef = useRef<Audio.Recording | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const durationTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Request permissions on mount
+  useEffect(() => {
+    requestPermissions();
+    
+    return () => {
+      // Cleanup on unmount
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      if (durationTimerRef.current) {
+        clearInterval(durationTimerRef.current);
+      }
+      if (recordingRef.current) {
+        recordingRef.current.stopAndUnloadAsync().catch(() => {});
+      }
+    };
+  }, []);
+
+  const requestPermissions = async () => {
+    try {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        throw new Error('Microphone permission denied');
+      }
+      
+      // Set audio mode for iOS
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+    } catch (err) {
+      const error = err as Error;
+      console.error('[useVoiceRecording] Permission error:', error);
+      setError(error);
+      onError?.(error);
+    }
+  };
+
+  const startRecording = useCallback(async () => {
+    try {
+      // Check permissions first
+      const { status } = await Audio.getPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please grant microphone permission to use voice input.',
+          [{ text: 'OK', onPress: requestPermissions }]
+        );
+        return;
+      }
+
+      // Reset state
+      setState('recording');
+      setError(null);
+      setTranscription('');
+      setDuration(0);
+
+      // Configure recording options for M4A format
+      const recordingOptions: Audio.RecordingOptions = {
+        isMeteringEnabled: true,
+        android: {
+          extension: '.m4a',
+          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+          audioEncoder: Audio.AndroidAudioEncoder.AAC,
+          sampleRate: 44100,
+          numberOfChannels: 1,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.m4a',
+          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
+          audioQuality: Audio.IOSAudioQuality.HIGH,
+          sampleRate: 44100,
+          numberOfChannels: 1,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/mp4',
+          bitsPerSecond: 128000,
+        },
+      };
+
+      // Create and start recording
+      const { recording } = await Audio.Recording.createAsync(recordingOptions);
+      recordingRef.current = recording;
+
+      // Start duration timer
+      durationTimerRef.current = setInterval(() => {
+        setDuration(prev => prev + 1);
+      }, 1000);
+
+      // Set auto-stop timer
+      timerRef.current = setTimeout(() => {
+        stopRecording();
+      }, maxDuration * 1000);
+
+      console.log('[useVoiceRecording] Recording started');
+    } catch (err) {
+      const error = err as Error;
+      console.error('[useVoiceRecording] Start recording error:', error);
+      setState('error');
+      setError(error);
+      onError?.(error);
+    }
+  }, [maxDuration, onError]);
+
+  const stopRecording = useCallback(async () => {
+    try {
+      if (!recordingRef.current) {
+        console.warn('[useVoiceRecording] No active recording to stop');
+        return;
+      }
+
+      // Clear timers
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      if (durationTimerRef.current) {
+        clearInterval(durationTimerRef.current);
+        durationTimerRef.current = null;
+      }
+
+      setState('transcribing');
+      console.log('[useVoiceRecording] Stopping recording...');
+
+      // Stop and unload recording
+      await recordingRef.current.stopAndUnloadAsync();
+      const uri = recordingRef.current.getURI();
+      recordingRef.current = null;
+
+      if (!uri) {
+        throw new Error('No recording URI available');
+      }
+
+      console.log('[useVoiceRecording] Recording saved to:', uri);
+
+      // Get file info for debugging
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      console.log('[useVoiceRecording] File info:', fileInfo);
+
+      // Transcribe the audio
+      const result = await transcribeAudio(uri);
+      
+      // Clean up temporary file
+      await FileSystem.deleteAsync(uri, { idempotent: true });
+
+      // Update state with transcription
+      setTranscription(result.transcription);
+      setState('idle');
+      
+      // Notify callback
+      onTranscriptionComplete?.(result.transcription);
+
+      console.log('[useVoiceRecording] Transcription complete:', result.transcription);
+    } catch (err) {
+      const error = err as Error;
+      console.error('[useVoiceRecording] Stop recording error:', error);
+      setState('error');
+      setError(error);
+      onError?.(error);
+      
+      // Clean up recording if it exists
+      if (recordingRef.current) {
+        try {
+          await recordingRef.current.stopAndUnloadAsync();
+        } catch {}
+        recordingRef.current = null;
+      }
+    }
+  }, [onTranscriptionComplete, onError]);
+
+  const cancelRecording = useCallback(async () => {
+    try {
+      // Clear timers
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      if (durationTimerRef.current) {
+        clearInterval(durationTimerRef.current);
+        durationTimerRef.current = null;
+      }
+
+      if (recordingRef.current) {
+        await recordingRef.current.stopAndUnloadAsync();
+        const uri = recordingRef.current.getURI();
+        recordingRef.current = null;
+
+        // Clean up temporary file
+        if (uri) {
+          await FileSystem.deleteAsync(uri, { idempotent: true });
+        }
+      }
+
+      setState('idle');
+      setDuration(0);
+      setError(null);
+      setTranscription('');
+      
+      console.log('[useVoiceRecording] Recording cancelled');
+    } catch (err) {
+      console.error('[useVoiceRecording] Cancel recording error:', err);
+      setState('idle');
+    }
+  }, []);
+
+  const reset = useCallback(() => {
+    setState('idle');
+    setError(null);
+    setTranscription('');
+    setDuration(0);
+  }, []);
+
+  return {
+    state,
+    transcription,
+    error,
+    duration,
+    maxDuration,
+    startRecording,
+    stopRecording,
+    cancelRecording,
+    reset,
+  };
+}

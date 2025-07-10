@@ -27,6 +27,8 @@ import MealDetailsScreen from '../screens/MealDetailsScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ManualEntryScreen from '../screens/ManualEntryScreen';
+import BarcodeScannerScreen from '../screens/BarcodeScannerScreen';
+import VoiceLogScreen from '../screens/VoiceLogScreen';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -74,6 +76,21 @@ function AddMealStackNavigator() {
           headerLeft: () => <CloseButton />,
         }}
         initialParams={undefined}
+      />
+      <AddMealStack.Screen 
+        name="BarcodeScanner" 
+        component={BarcodeScannerScreen}
+        options={{
+          headerShown: false, // BarcodeScannerScreen has its own header
+        }}
+        initialParams={undefined}
+      />
+      <AddMealStack.Screen 
+        name="VoiceLog" 
+        component={VoiceLogScreen}
+        options={{
+          headerShown: false, // VoiceLogScreen has its own header
+        }}
       />
       <AddMealStack.Screen 
         name="MealDetails" 
@@ -150,6 +167,7 @@ function FABWithNavigation() {
     <ExpandableFAB
       onCameraPress={() => navigation.navigate('AddMealFlow', { screen: 'Camera' })}
       onManualPress={() => navigation.navigate('AddMealFlow', { screen: 'ManualEntry' })}
+      onBarcodePress={() => navigation.navigate('AddMealFlow', { screen: 'BarcodeScanner' })}
     />
   );
 }

@@ -6,11 +6,14 @@ import {
   FlatList,
   SafeAreaView,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { HistoryStackParamList } from '../types/navigation';
+import { useAuth } from '../contexts/AuthContext';
+import { getMealHistory } from '../services/meals';
 
 type HistoryScreenNavigationProp = StackNavigationProp<
   HistoryStackParamList,
@@ -41,90 +44,39 @@ interface DayData {
 
 export default function HistoryScreen() {
   const navigation = useNavigation<HistoryScreenNavigationProp>();
+  const { user } = useAuth();
   const [historyData, setHistoryData] = useState<DayData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   useEffect(() => {
     loadHistoryData();
-  }, []);
+  }, [user]);
 
   const loadHistoryData = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
+    setError(null);
+    
     try {
-      // TODO: Load actual history data from Supabase
-      // This is a placeholder implementation with mock data
-      const mockData: DayData[] = [
-        {
-          date: '2024-01-15',
-          totalCalories: 1850,
-          totalMeals: 3,
-          meals: [
-            {
-              id: '1',
-              date: '2024-01-15',
-              mealType: 'breakfast',
-              foods: [
-                { name: 'Oatmeal with Berries', calories: 320 },
-                { name: 'Greek Yogurt', calories: 150 },
-              ],
-              totalCalories: 470,
-              totalProtein: 25,
-              totalCarbs: 65,
-              totalFat: 8,
-            },
-            {
-              id: '2',
-              date: '2024-01-15',
-              mealType: 'lunch',
-              foods: [
-                { name: 'Grilled Chicken Salad', calories: 450 },
-                { name: 'Quinoa', calories: 220 },
-              ],
-              totalCalories: 670,
-              totalProtein: 45,
-              totalCarbs: 35,
-              totalFat: 15,
-            },
-            {
-              id: '3',
-              date: '2024-01-15',
-              mealType: 'dinner',
-              foods: [
-                { name: 'Salmon with Vegetables', calories: 520 },
-                { name: 'Brown Rice', calories: 190 },
-              ],
-              totalCalories: 710,
-              totalProtein: 42,
-              totalCarbs: 45,
-              totalFat: 22,
-            },
-          ],
-        },
-        {
-          date: '2024-01-14',
-          totalCalories: 1920,
-          totalMeals: 4,
-          meals: [
-            {
-              id: '4',
-              date: '2024-01-14',
-              mealType: 'breakfast',
-              foods: [
-                { name: 'Scrambled Eggs', calories: 280 },
-                { name: 'Whole Grain Toast', calories: 140 },
-              ],
-              totalCalories: 420,
-              totalProtein: 20,
-              totalCarbs: 25,
-              totalFat: 18,
-            },
-          ],
-        },
-      ];
-      setHistoryData(mockData);
-    } catch (error) {
-      console.error('Error loading history data:', error);
+      console.log('[HistoryScreen] Loading meal history for user:', user.id);
+      const result = await getMealHistory(user.id, 30); // Last 30 days
+      
+      if (result.success) {
+        console.log('[HistoryScreen] Loaded', result.data.length, 'days of history');
+        setHistoryData(result.data);
+      } else {
+        console.error('[HistoryScreen] Failed to load history:', result.error);
+        setError(result.error || 'Failed to load meal history');
+      }
+    } catch (err) {
+      console.error('[HistoryScreen] Error loading history data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load meal history');
     } finally {
       setLoading(false);
     }
@@ -214,15 +166,33 @@ export default function HistoryScreen() {
     </View>
   );
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <Ionicons name="restaurant-outline" size={64} color="#C7C7CC" />
-      <Text style={styles.emptyTitle}>No meals logged yet</Text>
-      <Text style={styles.emptySubtitle}>
-        Start tracking your nutrition by taking photos of your meals
-      </Text>
-    </View>
-  );
+  const renderEmptyState = () => {
+    if (error) {
+      return (
+        <View style={styles.emptyState}>
+          <Ionicons name="alert-circle-outline" size={64} color="#FF3B30" />
+          <Text style={styles.emptyTitle}>Failed to load history</Text>
+          <Text style={styles.emptySubtitle}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton} 
+            onPress={loadHistoryData}
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.emptyState}>
+        <Ionicons name="restaurant-outline" size={64} color="#C7C7CC" />
+        <Text style={styles.emptyTitle}>No meals logged yet</Text>
+        <Text style={styles.emptySubtitle}>
+          Start tracking your nutrition by taking photos of your meals
+        </Text>
+      </View>
+    );
+  };
 
   if (loading) {
     return (
@@ -252,6 +222,14 @@ export default function HistoryScreen() {
             : styles.listContainer
         }
         ListEmptyComponent={renderEmptyState}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={loadHistoryData}
+            tintColor="#007AFF"
+            colors={['#007AFF']}
+          />
+        }
       />
     </SafeAreaView>
   );
@@ -390,5 +368,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     fontWeight: '500',
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

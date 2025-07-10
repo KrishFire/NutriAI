@@ -7,7 +7,7 @@ export type RootStackParamList = {
   AuthStack: undefined;
   AppTabs: undefined;
   AddMealFlow: {
-    screen: 'Camera' | 'ManualEntry' | 'MealDetails';
+    screen: 'Camera' | 'ManualEntry' | 'MealDetails' | 'BarcodeScanner';
     params?: AddMealStackParamList[keyof AddMealStackParamList];
   };
 };
@@ -25,7 +25,15 @@ export type AddMealStackParamList = {
       mealId: string;
       existingAnalysis: MealAnalysis;
     };
+    openVoiceRecording?: boolean;
   } | undefined;
+  BarcodeScanner: {
+    addToMeal?: {
+      mealId: string;
+      existingAnalysis: MealAnalysis;
+    };
+  } | undefined;
+  VoiceLog: undefined;
   MealDetails: {
     mealId?: string;
     imageUri?: string;

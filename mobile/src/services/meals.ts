@@ -326,6 +326,207 @@ export async function getTodaysNutrition(
 }
 
 /**
+ * Get meal history for a user (last 30 days)
+ */
+export async function getMealHistory(userId: string, daysBack: number = 30) {
+  try {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysBack);
+
+    // Get daily logs for the date range
+    const { data: dailyLogs, error: dailyError } = await supabase
+      .from('daily_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('date', startDate.toISOString().split('T')[0])
+      .lte('date', endDate.toISOString().split('T')[0])
+      .order('date', { ascending: false });
+
+    if (dailyError) {
+      throw new Error(`Failed to fetch daily logs: ${dailyError.message}`);
+    }
+
+    // Get all meal entries for the date range with food items
+    const { data: mealEntries, error: mealsError } = await supabase
+      .from('meal_entries')
+      .select(`
+        *,
+        food_items (
+          id,
+          name,
+          serving_size,
+          serving_unit,
+          calories,
+          protein,
+          carbs,
+          fat
+        )
+      `)
+      .eq('user_id', userId)
+      .gte('logged_at', `${startDate.toISOString().split('T')[0]}T00:00:00`)
+      .lte('logged_at', `${endDate.toISOString().split('T')[0]}T23:59:59`)
+      .order('logged_at', { ascending: false });
+
+    if (mealsError) {
+      throw new Error(`Failed to fetch meal entries: ${mealsError.message}`);
+    }
+
+    // Group meal entries by date
+    const mealsByDate: { [key: string]: any[] } = {};
+    
+    (mealEntries || []).forEach(entry => {
+      const date = entry.logged_at?.split('T')[0] || '';
+      if (!mealsByDate[date]) {
+        mealsByDate[date] = [];
+      }
+      mealsByDate[date].push(entry);
+    });
+
+    // Create history data structure
+    const historyData = (dailyLogs || []).map(dailyLog => {
+      const dayMeals = mealsByDate[dailyLog.date] || [];
+      
+      // Group meals by meal type for the day
+      const mealsByType: { [key: string]: any[] } = {};
+      dayMeals.forEach(meal => {
+        if (!mealsByType[meal.meal_type]) {
+          mealsByType[meal.meal_type] = [];
+        }
+        mealsByType[meal.meal_type].push(meal);
+      });
+
+      // Create meal entries for each meal type
+      const meals = Object.entries(mealsByType).map(([mealType, entries]) => {
+        const foods = entries.map(entry => ({
+          name: entry.food_items?.name || 'Unknown Food',
+          calories: entry.calories || 0,
+        }));
+
+        const totalCalories = entries.reduce((sum, entry) => sum + (entry.calories || 0), 0);
+        const totalProtein = entries.reduce((sum, entry) => sum + (entry.protein || 0), 0);
+        const totalCarbs = entries.reduce((sum, entry) => sum + (entry.carbs || 0), 0);
+        const totalFat = entries.reduce((sum, entry) => sum + (entry.fat || 0), 0);
+
+        return {
+          id: `${dailyLog.date}-${mealType}`,
+          date: dailyLog.date,
+          mealType: mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
+          foods,
+          totalCalories,
+          totalProtein,
+          totalCarbs,
+          totalFat,
+          imageUrl: entries.find(e => e.image_url)?.image_url,
+        };
+      });
+
+      return {
+        date: dailyLog.date,
+        totalCalories: dailyLog.total_calories || 0,
+        totalMeals: meals.length,
+        meals: meals.sort((a, b) => {
+          // Sort meals by preferred order: breakfast, lunch, dinner, snack
+          const order = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 };
+          return order[a.mealType] - order[b.mealType];
+        }),
+      };
+    });
+
+    return {
+      success: true,
+      data: historyData,
+    };
+  } catch (error) {
+    console.error('Error fetching meal history:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch meal history',
+      data: [],
+    };
+  }
+}
+
+/**
+ * Get user statistics based on meal history
+ */
+export async function getUserStats(userId: string) {
+  try {
+    // Get user streak data
+    const { data: streakData, error: streakError } = await supabase
+      .from('user_streaks')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    // Get meal entries for the last 30 days to calculate averages
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: recentMeals, error: mealsError } = await supabase
+      .from('meal_entries')
+      .select('calories, protein, logged_at')
+      .eq('user_id', userId)
+      .gte('logged_at', thirtyDaysAgo.toISOString())
+      .order('logged_at', { ascending: false });
+
+    // Get total meal count
+    const { count: totalMeals, error: countError } = await supabase
+      .from('meal_entries')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    // Get unique days with meals for "days active"
+    const { data: uniqueDays, error: daysError } = await supabase
+      .from('daily_logs')
+      .select('date')
+      .eq('user_id', userId)
+      .gt('total_calories', 0); // Only count days with actual meals logged
+
+    if (streakError || mealsError || countError || daysError) {
+      console.error('Error fetching user stats:', { streakError, mealsError, countError, daysError });
+    }
+
+    // Calculate averages
+    const avgCalories = recentMeals?.length 
+      ? Math.round(recentMeals.reduce((sum, meal) => sum + (meal.calories || 0), 0) / recentMeals.length)
+      : 0;
+
+    const avgProtein = recentMeals?.length
+      ? Math.round(recentMeals.reduce((sum, meal) => sum + (meal.protein || 0), 0) / recentMeals.length)
+      : 0;
+
+    return {
+      success: true,
+      data: {
+        currentStreak: streakData?.current_streak || 0,
+        longestStreak: streakData?.longest_streak || 0,
+        totalMeals: totalMeals || 0,
+        avgCalories,
+        avgProtein,
+        daysActive: uniqueDays?.length || 0,
+        totalDaysLogged: streakData?.total_days_logged || 0,
+      },
+    };
+  } catch (error) {
+    console.error('Error getting user stats:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch user stats',
+      data: {
+        currentStreak: 0,
+        longestStreak: 0,
+        totalMeals: 0,
+        avgCalories: 0,
+        avgProtein: 0,
+        daysActive: 0,
+        totalDaysLogged: 0,
+      },
+    };
+  }
+}
+
+/**
  * Delete a meal entry
  */
 export async function deleteMealEntry(

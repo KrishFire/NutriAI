@@ -15,11 +15,17 @@ import {
 } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { HomeStackParamList } from '../types/navigation';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { HomeStackParamList, AppTabParamList, RootStackParamList } from '../types/navigation';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-type HomeScreenNavigationProp = StackNavigationProp<
-  HomeStackParamList,
-  'HomeScreen'
+type HomeScreenNavigationProp = CompositeNavigationProp<
+  StackNavigationProp<HomeStackParamList, 'HomeScreen'>,
+  CompositeNavigationProp<
+    BottomTabNavigationProp<AppTabParamList>,
+    NativeStackNavigationProp<RootStackParamList>
+  >
 >;
 import { Button, DailyProgress, LoadingSpinner } from '../components';
 import { useAuth } from '../contexts/AuthContext';
@@ -137,15 +143,24 @@ export default function HomeScreen() {
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActionRow}>
             <Button
+              title="📊 Barcode"
+              onPress={() => navigation.navigate('AddMealFlow', { screen: 'BarcodeScanner' })}
+              variant="secondary"
+              size="medium"
+              style={styles.quickActionButton}
+            />
+            <Button
               title="🎤 Voice Log"
-              onPress={() => console.log('Voice logging')}
+              onPress={() => navigation.navigate('AddMealFlow', { 
+                screen: 'VoiceLog'
+              })}
               variant="secondary"
               size="medium"
               style={styles.quickActionButton}
             />
             <Button
               title="📝 Manual Entry"
-              onPress={() => console.log('Manual entry')}
+              onPress={() => navigation.navigate('AddMealFlow', { screen: 'ManualEntry' })}
               variant="secondary"
               size="medium"
               style={styles.quickActionButton}

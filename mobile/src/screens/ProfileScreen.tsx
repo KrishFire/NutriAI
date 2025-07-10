@@ -9,89 +9,123 @@ import {
   Switch,
   TextInput,
   SafeAreaView,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../hooks/useAuth';
-
-interface UserPreferences {
-  dailyCalories: number;
-  dailyProtein: number;
-  dailyCarbs: number;
-  dailyFat: number;
-  weightGoal: 'lose' | 'maintain' | 'gain';
-  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
-  units: 'metric' | 'imperial';
-  notifications: boolean;
-  reminderTime: string;
-}
+import {
+  getUserPreferences,
+  updateUserPreferences,
+  getOrCreateUserPreferences,
+  UserPreferences,
+  UserPreferencesInput,
+  validateUserPreferences,
+} from '../services/userPreferences';
+import { getUserStats } from '../services/meals';
 
 interface UserStats {
   currentStreak: number;
+  longestStreak: number;
   totalMeals: number;
   avgCalories: number;
   avgProtein: number;
   daysActive: number;
+  totalDaysLogged: number;
 }
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
-  const [preferences, setPreferences] = useState<UserPreferences>({
-    dailyCalories: 2000,
-    dailyProtein: 150,
-    dailyCarbs: 250,
-    dailyFat: 67,
-    weightGoal: 'maintain',
-    activityLevel: 'moderate',
-    units: 'metric',
-    notifications: true,
-    reminderTime: '20:00',
-  });
-
+  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [stats, setStats] = useState<UserStats>({
     currentStreak: 0,
+    longestStreak: 0,
     totalMeals: 0,
     avgCalories: 0,
     avgProtein: 0,
     daysActive: 0,
+    totalDaysLogged: 0,
   });
 
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadUserData();
-  }, []);
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
 
   const loadUserData = async () => {
+    if (!user) return;
+
     setLoading(true);
+    setError(null);
+    
     try {
-      // TODO: Load actual user preferences and stats from Supabase
-      // This is a placeholder implementation
-      setStats({
-        currentStreak: 7,
-        totalMeals: 42,
-        avgCalories: 1850,
-        avgProtein: 142,
-        daysActive: 14,
-      });
-    } catch (error) {
-      console.error('Error loading user data:', error);
+      console.log('[ProfileScreen] Loading user data for:', user.id);
+
+      // Load preferences and stats in parallel
+      const [prefsResult, statsResult] = await Promise.all([
+        getOrCreateUserPreferences(user.id),
+        getUserStats(user.id),
+      ]);
+
+      if (prefsResult.error) {
+        console.error('[ProfileScreen] Error loading preferences:', prefsResult.error);
+        setError(prefsResult.error.message);
+      } else if (prefsResult.data) {
+        console.log('[ProfileScreen] Loaded preferences:', prefsResult.data);
+        setPreferences(prefsResult.data);
+      }
+
+      if (statsResult.success) {
+        console.log('[ProfileScreen] Loaded stats:', statsResult.data);
+        setStats(statsResult.data);
+      } else {
+        console.error('[ProfileScreen] Error loading stats:', statsResult.error);
+      }
+    } catch (err) {
+      console.error('[ProfileScreen] Error loading user data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load user data');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSavePreferences = async () => {
-    setLoading(true);
+  const handleSavePreferences = async (updatedPrefs: UserPreferencesInput) => {
+    if (!user || !preferences) return;
+
+    setSaving(true);
     try {
-      // TODO: Save preferences to Supabase
-      console.log('Saving preferences:', preferences);
-      setEditing(null);
-    } catch (error) {
-      console.error('Error saving preferences:', error);
+      console.log('[ProfileScreen] Saving preferences:', updatedPrefs);
+
+      // Validate preferences first
+      const validationError = validateUserPreferences(updatedPrefs);
+      if (validationError) {
+        Alert.alert('Invalid Input', validationError.message);
+        return;
+      }
+
+      const result = await updateUserPreferences(user.id, updatedPrefs);
+      
+      if (result.error) {
+        console.error('[ProfileScreen] Error saving preferences:', result.error);
+        Alert.alert('Error', result.error.message);
+      } else if (result.data) {
+        console.log('[ProfileScreen] Preferences saved successfully');
+        setPreferences(result.data);
+        setEditing(null);
+        Alert.alert('Success', 'Preferences saved successfully');
+      }
+    } catch (err) {
+      console.error('[ProfileScreen] Error saving preferences:', err);
       Alert.alert('Error', 'Failed to save preferences');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -104,6 +138,58 @@ export default function ProfileScreen() {
         onPress: () => signOut(),
       },
     ]);
+  };
+
+  const handleEditPreference = (field: string, currentValue: string | number) => {
+    setEditing(field);
+    setEditValue(currentValue.toString());
+  };
+
+  const handleSaveEdit = () => {
+    if (!editing || !preferences) return;
+
+    const numericValue = parseInt(editValue);
+    if (isNaN(numericValue)) {
+      Alert.alert('Invalid Input', 'Please enter a valid number');
+      return;
+    }
+
+    const updates: UserPreferencesInput = {};
+    
+    switch (editing) {
+      case 'calories':
+        updates.daily_calorie_goal = numericValue;
+        break;
+      case 'protein':
+        updates.daily_protein_goal = numericValue;
+        break;
+      case 'carbs':
+        updates.daily_carb_goal = numericValue;
+        break;
+      case 'fat':
+        updates.daily_fat_goal = numericValue;
+        break;
+      default:
+        return;
+    }
+
+    handleSavePreferences(updates);
+  };
+
+  const handleToggleNotifications = () => {
+    if (!preferences) return;
+    
+    handleSavePreferences({
+      notifications_enabled: !preferences.notifications_enabled,
+    });
+  };
+
+  const formatWeightGoal = (goal: string) => {
+    return goal.replace('_', ' ').charAt(0).toUpperCase() + goal.replace('_', ' ').slice(1);
+  };
+
+  const formatActivityLevel = (level: string) => {
+    return level.replace('_', ' ').charAt(0).toUpperCase() + level.replace('_', ' ').slice(1);
   };
 
   const renderStatCard = (
@@ -136,6 +222,34 @@ export default function ProfileScreen() {
     </TouchableOpacity>
   );
 
+  // Show loading state
+  if (loading || !preferences) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Loading your profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color="#FF3B30" />
+          <Text style={styles.errorTitle}>Failed to load profile</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadUserData}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -161,26 +275,26 @@ export default function ProfileScreen() {
           <View style={styles.preferencesContainer}>
             {renderPreferenceRow(
               'Calories',
-              preferences.dailyCalories,
-              () => setEditing('calories'),
+              preferences.daily_calorie_goal,
+              () => handleEditPreference('calories', preferences.daily_calorie_goal),
               'kcal'
             )}
             {renderPreferenceRow(
               'Protein',
-              preferences.dailyProtein,
-              () => setEditing('protein'),
+              preferences.daily_protein_goal,
+              () => handleEditPreference('protein', preferences.daily_protein_goal),
               'g'
             )}
             {renderPreferenceRow(
               'Carbs',
-              preferences.dailyCarbs,
-              () => setEditing('carbs'),
+              preferences.daily_carb_goal,
+              () => handleEditPreference('carbs', preferences.daily_carb_goal),
               'g'
             )}
             {renderPreferenceRow(
               'Fat',
-              preferences.dailyFat,
-              () => setEditing('fat'),
+              preferences.daily_fat_goal,
+              () => handleEditPreference('fat', preferences.daily_fat_goal),
               'g'
             )}
           </View>
@@ -193,37 +307,30 @@ export default function ProfileScreen() {
             <View style={styles.preferenceRow}>
               <Text style={styles.preferenceLabel}>Notifications</Text>
               <Switch
-                value={preferences.notifications}
-                onValueChange={value =>
-                  setPreferences(prev => ({ ...prev, notifications: value }))
-                }
+                value={preferences.notifications_enabled}
+                onValueChange={handleToggleNotifications}
                 trackColor={{ false: '#E0E0E0', true: '#007AFF' }}
                 thumbColor="#FFFFFF"
+                disabled={saving}
               />
             </View>
 
             {renderPreferenceRow(
               'Weight Goal',
-              preferences.weightGoal.charAt(0).toUpperCase() +
-                preferences.weightGoal.slice(1),
-              () => setEditing('weightGoal')
+              formatWeightGoal(preferences.weight_goal),
+              () => Alert.alert('Coming Soon', 'Weight goal editing will be available soon')
             )}
 
             {renderPreferenceRow(
               'Activity Level',
-              preferences.activityLevel
-                .replace('_', ' ')
-                .charAt(0)
-                .toUpperCase() +
-                preferences.activityLevel.replace('_', ' ').slice(1),
-              () => setEditing('activityLevel')
+              formatActivityLevel(preferences.activity_level),
+              () => Alert.alert('Coming Soon', 'Activity level editing will be available soon')
             )}
 
             {renderPreferenceRow(
               'Units',
-              preferences.units.charAt(0).toUpperCase() +
-                preferences.units.slice(1),
-              () => setEditing('units')
+              preferences.unit_system.charAt(0).toUpperCase() + preferences.unit_system.slice(1),
+              () => Alert.alert('Coming Soon', 'Unit system editing will be available soon')
             )}
           </View>
         </View>
@@ -246,6 +353,64 @@ export default function ProfileScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* Edit Modal */}
+      <Modal
+        visible={editing !== null}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setEditing(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Edit {editing?.charAt(0).toUpperCase()}{editing?.slice(1)}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setEditing(null)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Text style={styles.inputLabel}>
+                Enter new {editing} value:
+              </Text>
+              <TextInput
+                style={styles.textInput}
+                value={editValue}
+                onChangeText={setEditValue}
+                keyboardType="numeric"
+                placeholder="Enter value"
+                autoFocus
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonSecondary]}
+                onPress={() => setEditing(null)}
+              >
+                <Text style={styles.buttonSecondaryText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonPrimary]}
+                onPress={handleSaveEdit}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.buttonPrimaryText}>Save</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -344,5 +509,121 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 100,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 12,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FF3B30',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    width: '80%',
+    maxWidth: 350,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E0E0E0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1A1A1A',
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalBody: {
+    padding: 20,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1A1A1A',
+    marginBottom: 12,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#F8F9FA',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 12,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonPrimary: {
+    backgroundColor: '#007AFF',
+  },
+  buttonSecondary: {
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  buttonPrimaryText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buttonSecondaryText: {
+    color: '#1A1A1A',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

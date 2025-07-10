@@ -107,7 +107,7 @@ class AuthenticatedFoodSearchTester {
           userId: this.userSession?.user?.id,
           tokenLength: this.accessToken?.length,
         },
-        logEntry: `Authentication: ${!!this.accessToken ? 'SUCCESS' : 'FAILED'}`,
+        logEntry: `Authentication: ${this.accessToken ? 'SUCCESS' : 'FAILED'}`,
       });
 
       if (!this.accessToken) {
