@@ -35,6 +35,14 @@ serve(async (req) => {
       // Handle JSON with base64 audio
       const body = await req.json();
       
+      // Debug logging
+      const debugMode = req.headers.get('x-debug-mode') === 'true';
+      if (debugMode) {
+        console.log('Incoming JSON keys:', Object.keys(body));
+        console.log('audio length:', body.audio?.length || 0);
+        console.log('mimeType:', body.mimeType);
+      }
+      
       if (body.storagePath) {
         // TODO: Implement fetching from Supabase Storage
         throw new Error('Storage path handling not yet implemented');
@@ -43,8 +51,16 @@ serve(async (req) => {
         const base64Data = body.audio;
         const mimeType = body.mimeType || 'audio/m4a';
         
+        // Clean base64 string (remove whitespace and data URL prefix if any)
+        const cleanBase64 = base64Data.replace(/^data:audio\/[a-zA-Z0-9]+;base64,/, '').replace(/\s/g, '');
+        
+        if (debugMode) {
+          console.log('Base64 cleaned, length:', cleanBase64.length);
+          console.log('First 50 chars:', cleanBase64.substring(0, 50));
+        }
+        
         // Convert base64 to Uint8Array
-        const binaryString = atob(base64Data);
+        const binaryString = atob(cleanBase64);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
@@ -59,6 +75,16 @@ serve(async (req) => {
       throw new Error(`Unsupported content type: ${contentType}`);
     }
 
+    // Log file info in debug mode
+    const debugMode = req.headers.get('x-debug-mode') === 'true';
+    if (debugMode) {
+      console.log('Audio file created:', {
+        name: audioFile.name,
+        size: audioFile.size,
+        type: audioFile.type,
+      });
+    }
+    
     // Validate file size (10MB limit after base64 decoding)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (audioFile.size > maxSize) {
@@ -68,7 +94,7 @@ serve(async (req) => {
     // Validate file type
     const allowedTypes = ['audio/mp4', 'audio/m4a', 'audio/mpeg', 'audio/wav', 'audio/webm'];
     if (!allowedTypes.includes(audioFile.type)) {
-      throw new Error(`Invalid audio format. Supported formats: ${allowedTypes.join(', ')}`);
+      throw new Error(`Invalid audio format. Supported formats: ${allowedTypes.join(', ')}, got: ${audioFile.type}`);
     }
 
     // Create form data for OpenAI API
@@ -102,7 +128,6 @@ serve(async (req) => {
     const transcription = result.text || '';
 
     // Log for debugging if debug mode is enabled
-    const debugMode = req.headers.get('x-debug-mode') === 'true';
     if (debugMode) {
       console.log('Transcription result:', {
         text: transcription,

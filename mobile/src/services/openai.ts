@@ -219,7 +219,7 @@ export async function transcribeAudio(
       headers: {
         Authorization: `Bearer ${session.access_token}`,
         'X-Debug-Mode': 'true', // Enable debug mode for detailed error info
-        'Content-Type': 'application/json',
+        // Do NOT set Content-Type - supabase.functions.invoke() handles it automatically
       },
       body: {
         audio: base64Audio,
