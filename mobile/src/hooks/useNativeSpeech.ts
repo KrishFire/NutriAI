@@ -16,7 +16,7 @@ interface UseNativeSpeechOptions {
 }
 
 export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
-  const { onSpeechEnd, onError, language = 'en-US' } = options;
+  const { onSpeechEnd: onSpeechEndCallback, onError: onErrorCallback, language = 'en-US' } = options;
 
   const [state, setState] = useState<SpeechState>('idle');
   const [text, setText] = useState<string>('');
@@ -27,57 +27,25 @@ export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
 
   const finalTextRef = useRef<string>('');
 
-  // Check if speech recognition is available
-  useEffect(() => {
-    checkAvailability();
-    
-    // Set up event listeners
-    Voice.onSpeechStart = onSpeechStart;
-    Voice.onSpeechEnd = onSpeechEnd;
-    Voice.onSpeechResults = onSpeechResults;
-    Voice.onSpeechPartialResults = onSpeechPartialResults;
-    Voice.onSpeechError = onSpeechError;
-    Voice.onSpeechVolumeChanged = onSpeechVolumeChanged;
-
-    return () => {
-      // Clean up
-      Voice.destroy().then(Voice.removeAllListeners);
-    };
-  }, []);
-
-  const checkAvailability = async () => {
-    try {
-      const available = await Voice.isAvailable();
-      setIsAvailable(available);
-      if (!available) {
-        const error = new Error('Speech recognition is not available on this device');
-        setError(error);
-        onError?.(error);
-      }
-    } catch (err) {
-      console.error('[useNativeSpeech] Availability check error:', err);
-      setIsAvailable(false);
-    }
-  };
-
-  const onSpeechStart = (e: SpeechStartEvent) => {
+  // Event handlers
+  const handleSpeechStart = useCallback((e: SpeechStartEvent) => {
     console.log('[useNativeSpeech] Speech started');
     setState('listening');
     setError(null);
-  };
+  }, []);
 
-  const onSpeechEnd = (e: SpeechEndEvent) => {
+  const handleSpeechEnd = useCallback((e: SpeechEndEvent) => {
     console.log('[useNativeSpeech] Speech ended');
     setState('processing');
     
     // Use the final text if available, otherwise use partial text
     const finalText = finalTextRef.current || partialText;
-    if (finalText && options.onSpeechEnd) {
-      options.onSpeechEnd(finalText);
+    if (finalText && onSpeechEndCallback) {
+      onSpeechEndCallback(finalText);
     }
-  };
+  }, [partialText, onSpeechEndCallback]);
 
-  const onSpeechResults = (e: SpeechResultsEvent) => {
+  const handleSpeechResults = useCallback((e: SpeechResultsEvent) => {
     console.log('[useNativeSpeech] Speech results:', e.value);
     if (e.value && e.value.length > 0) {
       const result = e.value[0];
@@ -85,25 +53,58 @@ export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
       finalTextRef.current = result;
       setState('idle');
     }
-  };
+  }, []);
 
-  const onSpeechPartialResults = (e: SpeechResultsEvent) => {
+  const handleSpeechPartialResults = useCallback((e: SpeechResultsEvent) => {
     console.log('[useNativeSpeech] Partial results:', e.value);
     if (e.value && e.value.length > 0) {
       setPartialText(e.value[0]);
     }
-  };
+  }, []);
 
-  const onSpeechError = (e: SpeechErrorEvent) => {
+  const handleSpeechError = useCallback((e: SpeechErrorEvent) => {
     console.error('[useNativeSpeech] Speech error:', e);
-    const error = new Error(e.error?.message || 'Speech recognition error');
-    setError(error);
+    const err = new Error(e.error?.message || 'Speech recognition error');
+    setError(err);
     setState('error');
-    onError?.(error);
-  };
+    onErrorCallback?.(err);
+  }, [onErrorCallback]);
 
-  const onSpeechVolumeChanged = (e: SpeechVolumeChangeEvent) => {
+  const handleSpeechVolumeChanged = useCallback((e: SpeechVolumeChangeEvent) => {
     setVolume(e.value || 0);
+  }, []);
+
+  // Check if speech recognition is available
+  useEffect(() => {
+    checkAvailability();
+    
+    // Set up event listeners
+    Voice.onSpeechStart = handleSpeechStart;
+    Voice.onSpeechEnd = handleSpeechEnd;
+    Voice.onSpeechResults = handleSpeechResults;
+    Voice.onSpeechPartialResults = handleSpeechPartialResults;
+    Voice.onSpeechError = handleSpeechError;
+    Voice.onSpeechVolumeChanged = handleSpeechVolumeChanged;
+
+    return () => {
+      // Clean up
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, [handleSpeechStart, handleSpeechEnd, handleSpeechResults, handleSpeechPartialResults, handleSpeechError, handleSpeechVolumeChanged]);
+
+  const checkAvailability = async () => {
+    try {
+      const available = await Voice.isAvailable();
+      setIsAvailable(!!available); // Convert 0/1 to boolean
+      if (!available) {
+        const err = new Error('Speech recognition is not available on this device');
+        setError(err);
+        onErrorCallback?.(err);
+      }
+    } catch (err) {
+      console.error('[useNativeSpeech] Availability check error:', err);
+      setIsAvailable(false);
+    }
   };
 
   const start = useCallback(async () => {
@@ -127,9 +128,9 @@ export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
       console.error('[useNativeSpeech] Start error:', error);
       setError(error);
       setState('error');
-      onError?.(error);
+      onErrorCallback?.(error);
     }
-  }, [isAvailable, language, onError]);
+  }, [isAvailable, language, onErrorCallback]);
 
   const stop = useCallback(async () => {
     try {
