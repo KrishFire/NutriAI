@@ -7,26 +7,43 @@ import { transcribeAudio } from '../services/openai';
 export type RecordingState = 'idle' | 'recording' | 'transcribing' | 'error';
 
 interface UseVoiceRecordingOptions {
-  maxDuration?: number; // in seconds, default 10
+  maxDuration?: number; // in seconds, default 60
   onTranscriptionComplete?: (text: string) => void;
   onError?: (error: Error) => void;
+  // Silence detection options
+  silenceThreshold?: number; // dB threshold for silence
+  silenceDuration?: number; // ms of silence before auto-stop
+  enableAutoStop?: boolean; // Enable/disable auto-stop on silence
 }
+
+// Constants for silence detection
+const DEFAULT_SILENCE_THRESHOLD = -40; // dB
+const DEFAULT_SILENCE_DURATION = 1500; // 1.5 seconds
+const METERING_INTERVAL = 200; // Check every 200ms
 
 export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
   const {
-    maxDuration = 10,
+    maxDuration = 60,
     onTranscriptionComplete,
     onError,
+    silenceThreshold = DEFAULT_SILENCE_THRESHOLD,
+    silenceDuration = DEFAULT_SILENCE_DURATION,
+    enableAutoStop = true,
   } = options;
 
   const [state, setState] = useState<RecordingState>('idle');
   const [transcription, setTranscription] = useState<string>('');
   const [error, setError] = useState<Error | null>(null);
   const [duration, setDuration] = useState<number>(0);
+  const [isAutoStopping, setIsAutoStopping] = useState<boolean>(false);
+  const [hasStartedSpeaking, setHasStartedSpeaking] = useState<boolean>(false);
   
   const recordingRef = useRef<Audio.Recording | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const durationTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const meteringIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const latestMeteringRef = useRef<number>(-160); // Store latest metering value
 
   // Request permissions on mount
   useEffect(() => {
@@ -34,17 +51,32 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
     
     return () => {
       // Cleanup on unmount
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-      if (durationTimerRef.current) {
-        clearInterval(durationTimerRef.current);
-      }
-      if (recordingRef.current) {
-        recordingRef.current.stopAndUnloadAsync().catch(() => {});
-      }
+      cleanup();
     };
   }, []);
+
+  const cleanup = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (durationTimerRef.current) {
+      clearInterval(durationTimerRef.current);
+      durationTimerRef.current = null;
+    }
+    if (meteringIntervalRef.current) {
+      clearInterval(meteringIntervalRef.current);
+      meteringIntervalRef.current = null;
+    }
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    if (recordingRef.current) {
+      recordingRef.current.stopAndUnloadAsync().catch(() => {});
+      recordingRef.current = null;
+    }
+  };
 
   const requestPermissions = async () => {
     try {
@@ -84,8 +116,11 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
       setError(null);
       setTranscription('');
       setDuration(0);
+      setIsAutoStopping(false);
+      setHasStartedSpeaking(false);
+      latestMeteringRef.current = -160;
 
-      // Configure recording options for M4A format
+      // Configure recording options for M4A format with metering enabled
       const recordingOptions: Audio.RecordingOptions = {
         isMeteringEnabled: true,
         android: {
@@ -117,17 +152,60 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
       const { recording } = await Audio.Recording.createAsync(recordingOptions);
       recordingRef.current = recording;
 
+      // Set up status update callback for metering
+      recording.setOnRecordingStatusUpdate((status) => {
+        if (status.isRecording && typeof status.metering === 'number') {
+          latestMeteringRef.current = status.metering;
+        }
+      });
+
       // Start duration timer
       durationTimerRef.current = setInterval(() => {
         setDuration(prev => prev + 1);
       }, 1000);
 
-      // Set auto-stop timer
+      // Set auto-stop timer for max duration
       timerRef.current = setTimeout(() => {
+        console.log('[useVoiceRecording] Max duration reached, stopping...');
         stopRecording();
       }, maxDuration * 1000);
 
-      console.log('[useVoiceRecording] Recording started');
+      // Start silence detection if enabled
+      if (enableAutoStop) {
+        meteringIntervalRef.current = setInterval(() => {
+          const meteringValue = latestMeteringRef.current;
+
+          // Start silence detection only after user has started speaking
+          if (!hasStartedSpeaking && meteringValue > silenceThreshold) {
+            console.log('[useVoiceRecording] Speech detected, starting silence monitoring');
+            setHasStartedSpeaking(true);
+          }
+
+          if (hasStartedSpeaking) {
+            if (meteringValue < silenceThreshold) {
+              // Sound level is below threshold (silence)
+              if (!silenceTimerRef.current) {
+                console.log('[useVoiceRecording] Silence detected, starting timer...');
+                setIsAutoStopping(true);
+                silenceTimerRef.current = setTimeout(() => {
+                  console.log('[useVoiceRecording] Silence duration exceeded, auto-stopping...');
+                  stopRecording();
+                }, silenceDuration);
+              }
+            } else {
+              // Sound detected, clear silence timer
+              if (silenceTimerRef.current) {
+                console.log('[useVoiceRecording] Sound detected, cancelling silence timer');
+                clearTimeout(silenceTimerRef.current);
+                silenceTimerRef.current = null;
+                setIsAutoStopping(false);
+              }
+            }
+          }
+        }, METERING_INTERVAL);
+      }
+
+      console.log('[useVoiceRecording] Recording started with auto-stop:', enableAutoStop);
     } catch (err) {
       const error = err as Error;
       console.error('[useVoiceRecording] Start recording error:', error);
@@ -135,7 +213,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
       setError(error);
       onError?.(error);
     }
-  }, [maxDuration, onError]);
+  }, [maxDuration, onError, enableAutoStop, silenceThreshold, silenceDuration]);
 
   const stopRecording = useCallback(async () => {
     try {
@@ -144,17 +222,11 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
         return;
       }
 
-      // Clear timers
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-      if (durationTimerRef.current) {
-        clearInterval(durationTimerRef.current);
-        durationTimerRef.current = null;
-      }
+      // Clear all timers
+      cleanup();
 
       setState('transcribing');
+      setIsAutoStopping(false);
       console.log('[useVoiceRecording] Stopping recording...');
 
       // Stop and unload recording
@@ -205,15 +277,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
 
   const cancelRecording = useCallback(async () => {
     try {
-      // Clear timers
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-      if (durationTimerRef.current) {
-        clearInterval(durationTimerRef.current);
-        durationTimerRef.current = null;
-      }
+      cleanup();
 
       if (recordingRef.current) {
         await recordingRef.current.stopAndUnloadAsync();
@@ -230,6 +294,8 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
       setDuration(0);
       setError(null);
       setTranscription('');
+      setIsAutoStopping(false);
+      setHasStartedSpeaking(false);
       
       console.log('[useVoiceRecording] Recording cancelled');
     } catch (err) {
@@ -243,6 +309,8 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
     setError(null);
     setTranscription('');
     setDuration(0);
+    setIsAutoStopping(false);
+    setHasStartedSpeaking(false);
   }, []);
 
   return {
@@ -251,6 +319,8 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
     error,
     duration,
     maxDuration,
+    isAutoStopping,
+    hasStartedSpeaking,
     startRecording,
     stopRecording,
     cancelRecording,

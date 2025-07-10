@@ -8,10 +8,6 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -25,25 +21,53 @@ import mealAIService, { aiMealToMealAnalysis } from '../services/mealAI';
 type NavigationProp = NativeStackNavigationProp<AddMealStackParamList, 'VoiceLog'>;
 type VoiceLogScreenProps = NativeStackScreenProps<AddMealStackParamList, 'VoiceLog'>;
 
-type VoiceState = 'permissions' | 'ready' | 'recording' | 'transcribing' | 'reviewing' | 'logging' | 'error';
+// State machine states
+type VoiceState = 
+  | 'idle' 
+  | 'permissions' 
+  | 'ready' 
+  | 'recording' 
+  | 'silenceDetected'
+  | 'processing' 
+  | 'success' 
+  | 'error';
+
+interface ErrorInfo {
+  message: string;
+  stage: 'permissions' | 'recording' | 'transcription' | 'analysis';
+  canRetry: boolean;
+  retryData?: {
+    audioUri?: string;
+    transcript?: string;
+  };
+}
 
 export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProps) {
   const { user, session } = useAuth();
   const [voiceState, setVoiceState] = useState<VoiceState>('permissions');
-  const [transcribedText, setTranscribedText] = useState('');
-  const [editedText, setEditedText] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
+  const [cachedTranscript, setCachedTranscript] = useState<string | null>(null);
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
   const animationRef = React.useRef<Animated.CompositeAnimation | null>(null);
 
   const voiceRecording = useVoiceRecording({
-    onTranscriptionComplete: (text) => {
-      setTranscribedText(text);
-      setEditedText(text);
-      setVoiceState('reviewing');
+    maxDuration: 60,
+    enableAutoStop: true,
+    silenceThreshold: -40,
+    silenceDuration: 1500,
+    onTranscriptionComplete: async (text) => {
+      // Cache transcript for retry
+      setCachedTranscript(text);
+      // Immediately start analysis
+      await handleAnalyzeAndLog(text);
     },
-    onError: (error) => {
-      setError(error.message);
+    onError: (err) => {
+      setError({
+        message: err.message,
+        stage: voiceState === 'recording' ? 'recording' : 'transcription',
+        canRetry: true,
+        retryData: { transcript: cachedTranscript || undefined }
+      });
       setVoiceState('error');
     },
   });
@@ -53,19 +77,30 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
     checkPermissions();
   }, []);
 
+  // Auto-start recording when ready
+  useEffect(() => {
+    if (voiceState === 'ready') {
+      // Small delay to let user see the UI before starting
+      const timer = setTimeout(() => {
+        startRecording();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [voiceState]);
+
   // Pulse animation for recording state
   useEffect(() => {
-    if (voiceState === 'recording') {
+    if (voiceState === 'recording' || voiceState === 'silenceDetected') {
       animationRef.current = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
-            toValue: 1.3,
-            duration: 1000,
+            toValue: voiceState === 'silenceDetected' ? 1.2 : 1.3,
+            duration: voiceState === 'silenceDetected' ? 500 : 1000,
             useNativeDriver: true,
           }),
           Animated.timing(pulseAnim, {
             toValue: 1,
-            duration: 1000,
+            duration: voiceState === 'silenceDetected' ? 500 : 1000,
             useNativeDriver: true,
           }),
         ])
@@ -90,6 +125,20 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
     };
   }, [voiceState, pulseAnim]);
 
+  // Update state when silence is detected
+  useEffect(() => {
+    if (voiceRecording.isAutoStopping && voiceState === 'recording') {
+      setVoiceState('silenceDetected');
+    }
+  }, [voiceRecording.isAutoStopping, voiceState]);
+
+  // Handle state changes from voice recording hook
+  useEffect(() => {
+    if (voiceRecording.state === 'transcribing' && voiceState !== 'processing') {
+      setVoiceState('processing');
+    }
+  }, [voiceRecording.state, voiceState]);
+
   const checkPermissions = async () => {
     try {
       const { status } = await Audio.getPermissionsAsync();
@@ -100,12 +149,20 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
         if (newStatus === 'granted') {
           setVoiceState('ready');
         } else {
-          setError('Microphone permission is required for voice logging');
+          setError({
+            message: 'Microphone permission is required for voice logging',
+            stage: 'permissions',
+            canRetry: false,
+          });
           setVoiceState('error');
         }
       }
     } catch (err) {
-      setError('Failed to check microphone permissions');
+      setError({
+        message: 'Failed to check microphone permissions',
+        stage: 'permissions',
+        canRetry: true,
+      });
       setVoiceState('error');
     }
   };
@@ -116,62 +173,88 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
     await voiceRecording.startRecording();
   };
 
-  const stopRecording = async () => {
-    setVoiceState('transcribing');
-    await voiceRecording.stopRecording();
-  };
-
   const cancelRecording = async () => {
     await voiceRecording.cancelRecording();
-    setVoiceState('ready');
-    setTranscribedText('');
-    setEditedText('');
+    navigation.goBack();
   };
 
-  const handleConfirmAndLog = async () => {
-    if (!editedText.trim()) {
-      Alert.alert('Empty Description', 'Please describe your meal before logging.');
+  const handleAnalyzeAndLog = async (transcriptText: string) => {
+    if (!transcriptText.trim()) {
+      setError({
+        message: 'Could not understand the recording. Please try again.',
+        stage: 'transcription',
+        canRetry: true,
+      });
+      setVoiceState('error');
       return;
     }
 
-    setVoiceState('logging');
+    setVoiceState('processing');
     setError(null);
 
     try {
       // Log the meal
-      const result = await mealAIService.logMeal(editedText.trim(), 'snack');
+      const result = await mealAIService.logMeal(transcriptText.trim(), 'snack');
       
       if (result.success && result.mealLogId && result.mealAnalysis) {
         // Convert to meal analysis format
         const analysisData = aiMealToMealAnalysis(result.mealAnalysis);
         
-        // Navigate to MealDetails
-        navigation.replace('MealDetails', {
-          mealId: result.mealLogId,
-          analysisData,
-        });
+        // Show success briefly before navigating
+        setVoiceState('success');
+        
+        // Navigate after a short delay
+        setTimeout(() => {
+          navigation.replace('MealDetails', {
+            mealId: result.mealLogId,
+            analysisData,
+          });
+        }, 800);
       } else {
-        throw new Error('Failed to log meal');
+        throw new Error('Failed to analyze meal');
       }
     } catch (err) {
-      console.error('[VoiceLogScreen] Log meal error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to log meal');
+      console.error('[VoiceLogScreen] Analysis error:', err);
+      setError({
+        message: err instanceof Error ? err.message : 'Failed to analyze meal',
+        stage: 'analysis',
+        canRetry: true,
+        retryData: { transcript: transcriptText }
+      });
       setVoiceState('error');
     }
   };
 
-  const handleEdit = () => {
-    // Could navigate to ManualEntry with pre-filled text
-    // For now, just allow inline editing
-    setVoiceState('reviewing');
-  };
+  const handleRetry = async () => {
+    if (!error) return;
 
-  const handleRetry = () => {
     setError(null);
-    setTranscribedText('');
-    setEditedText('');
-    setVoiceState('ready');
-    voiceRecording.reset();
+
+    switch (error.stage) {
+      case 'permissions':
+        setVoiceState('permissions');
+        await checkPermissions();
+        break;
+      
+      case 'recording':
+      case 'transcription':
+        // Start fresh recording
+        setCachedTranscript(null);
+        voiceRecording.reset();
+        setVoiceState('ready');
+        break;
+      
+      case 'analysis':
+        // Retry with cached transcript
+        if (error.retryData?.transcript) {
+          await handleAnalyzeAndLog(error.retryData.transcript);
+        } else {
+          // No transcript cached, start fresh
+          voiceRecording.reset();
+          setVoiceState('ready');
+        }
+        break;
+    }
   };
 
   const formatDuration = (seconds: number) => {
@@ -193,19 +276,10 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
       case 'ready':
         return (
           <View style={styles.centerContent}>
-            <Text style={styles.title}>Voice Log</Text>
+            <Text style={styles.title}>Starting Voice Log</Text>
+            <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
             <Text style={styles.subtitle}>
-              Tap the microphone to describe your meal
-            </Text>
-            <TouchableOpacity
-              style={styles.micButton}
-              onPress={startRecording}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="mic" size={64} color="#007AFF" />
-            </TouchableOpacity>
-            <Text style={styles.hint}>
-              Speak clearly and describe what you ate, including portions
+              Getting ready to listen...
             </Text>
           </View>
         );
@@ -213,9 +287,9 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
       case 'recording':
         return (
           <View style={styles.centerContent}>
-            <Text style={styles.title}>Recording...</Text>
-            <Text style={styles.timer}>
-              {formatDuration(voiceRecording.duration)} / {formatDuration(voiceRecording.maxDuration)}
+            <Text style={styles.title}>Listening...</Text>
+            <Text style={styles.subtitle}>
+              Describe your meal
             </Text>
             
             <Animated.View
@@ -227,103 +301,70 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
               <View style={styles.recordingDot} />
             </Animated.View>
 
-            <View style={styles.recordingControls}>
-              <TouchableOpacity
-                style={[styles.controlButton, styles.cancelButton]}
-                onPress={cancelRecording}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-                <Text style={styles.controlButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.controlButton, styles.stopButton]}
-                onPress={stopRecording}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="stop" size={24} color="#FFF" />
-                <Text style={[styles.controlButtonText, { color: '#FFF' }]}>
-                  Stop
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.timer}>
+              {formatDuration(voiceRecording.duration)} / {formatDuration(voiceRecording.maxDuration)}
+            </Text>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={cancelRecording}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="close-circle" size={48} color="#FF3B30" />
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         );
 
-      case 'transcribing':
+      case 'silenceDetected':
         return (
           <View style={styles.centerContent}>
-            <Text style={styles.title}>Transcribing...</Text>
+            <Text style={styles.title}>Silence Detected</Text>
+            <Text style={styles.subtitle}>
+              Stopping soon...
+            </Text>
+            
+            <Animated.View
+              style={[
+                styles.recordingIndicator,
+                styles.silenceIndicator,
+                { transform: [{ scale: pulseAnim }] },
+              ]}
+            >
+              <Ionicons name="pause" size={32} color="#FF9500" />
+            </Animated.View>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={cancelRecording}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="close-circle" size={48} color="#FF3B30" />
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+      case 'processing':
+        return (
+          <View style={styles.centerContent}>
+            <Text style={styles.title}>Analyzing Your Meal</Text>
             <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
             <Text style={styles.subtitle}>
-              Converting your voice to text
+              {voiceRecording.state === 'transcribing' 
+                ? 'Converting speech to text...' 
+                : 'Calculating nutrition information...'}
             </Text>
           </View>
         );
 
-      case 'reviewing':
-        return (
-          <KeyboardAvoidingView 
-            style={styles.reviewContainer}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          >
-            <ScrollView 
-              contentContainerStyle={styles.reviewScrollContent}
-              keyboardShouldPersistTaps="handled"
-            >
-              <Text style={styles.title}>Review Your Meal</Text>
-              <Text style={styles.subtitle}>
-                Make sure everything looks correct
-              </Text>
-
-              <View style={styles.textInputContainer}>
-                <TextInput
-                  style={styles.textInput}
-                  value={editedText}
-                  onChangeText={setEditedText}
-                  multiline
-                  placeholder="Describe your meal..."
-                  placeholderTextColor="#999"
-                  autoFocus={false}
-                />
-              </View>
-
-              <View style={styles.reviewActions}>
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.secondaryButton]}
-                  onPress={handleRetry}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="mic" size={20} color="#007AFF" />
-                  <Text style={[styles.actionButtonText, { color: '#007AFF' }]}>
-                    Re-record
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.primaryButton]}
-                  onPress={handleConfirmAndLog}
-                  activeOpacity={0.8}
-                  disabled={!editedText.trim()}
-                >
-                  <Ionicons name="checkmark" size={20} color="#FFF" />
-                  <Text style={[styles.actionButtonText, { color: '#FFF' }]}>
-                    Confirm & Log
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        );
-
-      case 'logging':
+      case 'success':
         return (
           <View style={styles.centerContent}>
-            <Text style={styles.title}>Logging Your Meal</Text>
-            <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
+            <Text style={styles.title}>Success!</Text>
+            <Ionicons name="checkmark-circle" size={64} color="#34C759" style={styles.successIcon} />
             <Text style={styles.subtitle}>
-              Analyzing nutrition information...
+              Meal logged successfully
             </Text>
           </View>
         );
@@ -334,15 +375,26 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
             <Text style={styles.title}>Oops!</Text>
             <Ionicons name="alert-circle" size={48} color="#FF3B30" style={styles.errorIcon} />
             <Text style={styles.errorText}>
-              {error || 'Something went wrong'}
+              {error?.message || 'Something went wrong'}
             </Text>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={handleRetry}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.retryButtonText}>Try Again</Text>
-            </TouchableOpacity>
+            <View style={styles.errorActions}>
+              {error?.canRetry && (
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={handleRetry}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.retryButtonText}>Try Again</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.retryButton, styles.cancelErrorButton]}
+                onPress={() => navigation.goBack()}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.retryButtonText, { color: '#666' }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         );
     }
@@ -354,6 +406,7 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.closeButton}
+          disabled={voiceState === 'processing'}
         >
           <Ionicons name="close" size={28} color="#000" />
         </TouchableOpacity>
@@ -385,15 +438,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 40,
   },
-  reviewContainer: {
-    flex: 1,
-  },
-  reviewScrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 40,
-  },
   title: {
     fontSize: 28,
     fontWeight: '700',
@@ -413,31 +457,11 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 20,
   },
-  micButton: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: '#E3F2FD',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 40,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  hint: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-    paddingHorizontal: 20,
-    lineHeight: 20,
-  },
   timer: {
     fontSize: 48,
     fontWeight: '200',
     color: '#000',
+    marginTop: 20,
     marginBottom: 40,
   },
   recordingIndicator: {
@@ -447,7 +471,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF3B301A',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 40,
+    marginBottom: 20,
+  },
+  silenceIndicator: {
+    backgroundColor: '#FF95001A',
   },
   recordingDot: {
     width: 32,
@@ -455,67 +482,21 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: '#FF3B30',
   },
-  recordingControls: {
-    flexDirection: 'row',
-    gap: 20,
-  },
-  controlButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 28,
-    gap: 8,
-  },
   cancelButton: {
-    backgroundColor: '#F2F2F7',
+    alignItems: 'center',
+    marginTop: 20,
   },
-  stopButton: {
-    backgroundColor: '#FF3B30',
-  },
-  controlButtonText: {
+  cancelText: {
     fontSize: 16,
+    color: '#FF3B30',
+    marginTop: 8,
     fontWeight: '600',
-    color: '#666',
   },
   loader: {
     marginBottom: 30,
   },
-  textInputContainer: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 30,
-    minHeight: 150,
-  },
-  textInput: {
-    fontSize: 16,
-    color: '#000',
-    lineHeight: 24,
-  },
-  reviewActions: {
-    flexDirection: 'row',
-    gap: 16,
-    marginTop: 20,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  primaryButton: {
-    backgroundColor: '#007AFF',
-  },
-  secondaryButton: {
-    backgroundColor: '#F2F2F7',
-  },
-  actionButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  successIcon: {
+    marginBottom: 20,
   },
   errorIcon: {
     marginBottom: 20,
@@ -528,11 +509,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     lineHeight: 22,
   },
+  errorActions: {
+    flexDirection: 'row',
+    gap: 16,
+  },
   retryButton: {
     paddingHorizontal: 32,
     paddingVertical: 14,
     backgroundColor: '#007AFF',
     borderRadius: 28,
+  },
+  cancelErrorButton: {
+    backgroundColor: '#F2F2F7',
   },
   retryButtonText: {
     color: '#FFF',
