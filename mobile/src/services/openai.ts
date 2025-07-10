@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase';
+import * as FileSystem from 'expo-file-system';
 
 export interface NutritionData {
   calories: number;
@@ -196,8 +197,8 @@ export async function transcribeAudio(
   audioUri: string
 ): Promise<{ transcription: string; confidence?: number }> {
   // Note: The transcribe-audio Edge Function accepts both:
-  // - multipart/form-data (current implementation)
-  // - application/json with base64 audio or storagePath
+  // - multipart/form-data (not working with React Native FormData polyfill)
+  // - application/json with base64 audio (current implementation)
   try {
     // Get current session for authentication
     const {
@@ -208,21 +209,22 @@ export async function transcribeAudio(
       throw new Error('User not authenticated');
     }
 
-    // Read audio file and convert to blob
-    const response = await fetch(audioUri);
-    const blob = await response.blob();
+    // Read audio file and convert to base64
+    const base64Audio = await FileSystem.readAsStringAsync(audioUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
 
-    // Create form data
-    const formData = new FormData();
-    formData.append('audio', blob, 'recording.m4a');
-
-    // Call the Supabase Edge Function
+    // Call the Supabase Edge Function with JSON payload
     const { data, error } = await supabase.functions.invoke('transcribe-audio', {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
         'X-Debug-Mode': 'true', // Enable debug mode for detailed error info
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: {
+        audio: base64Audio,
+        mimeType: 'audio/m4a', // expo-av default format
+      },
     });
 
     if (error) {

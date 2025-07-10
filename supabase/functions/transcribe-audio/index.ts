@@ -59,7 +59,7 @@ serve(async (req) => {
       throw new Error(`Unsupported content type: ${contentType}`);
     }
 
-    // Validate file size (10MB limit)
+    // Validate file size (10MB limit after base64 decoding)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (audioFile.size > maxSize) {
       throw new Error(`Audio file too large. Maximum size is 10MB, got ${(audioFile.size / 1024 / 1024).toFixed(2)}MB`);
@@ -76,7 +76,10 @@ serve(async (req) => {
     openAIFormData.append('file', audioFile);
     openAIFormData.append('model', 'whisper-1');
     openAIFormData.append('language', 'en'); // English for meal descriptions
-    openAIFormData.append('prompt', 'This is a meal description for a food tracking app. Include details about portions, ingredients, and preparation methods.');
+    
+    // Concise prompt for better transcription accuracy
+    const TRANSCRIPTION_PROMPT = 'Meal description with portions and ingredients.';
+    openAIFormData.append('prompt', TRANSCRIPTION_PROMPT);
 
     // Call OpenAI Whisper API
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
