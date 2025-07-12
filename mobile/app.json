@@ -16,8 +16,10 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "This app uses the microphone to record voice descriptions of your meals for easier logging.",
-        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition to convert your voice descriptions into text for meal logging."
-      }
+        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition to convert your voice descriptions into text for meal logging.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.kricel.nutriai"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +27,11 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["RECORD_AUDIO"]
+      "permissions": [
+        "RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -38,7 +44,13 @@
         {
           "microphonePermission": "Allow NutriAI to access your microphone to record meal descriptions."
         }
-      ]
-    ]
+      ],
+      "@react-native-voice/voice"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e831cce6-d335-4f5f-92d1-7752fe2d6878"
+      }
+    }
   }
 }

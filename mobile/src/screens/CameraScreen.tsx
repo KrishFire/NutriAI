@@ -15,12 +15,8 @@ import { useState, useRef, useCallback, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { BarCodeScanner } from 'expo-barcode-scanner';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import {
-  BottomSheetModal,
-  BottomSheetView,
-} from '@gorhom/bottom-sheet';
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { Button, LoadingSpinner } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadMealImage } from '../services/storage';
@@ -29,7 +25,10 @@ import {
   analyzeWithVoiceContext,
   MealAnalysis,
 } from '../services/openai';
-import { lookupBarcode, nutritionInfoToMealAnalysis } from '../services/openFoodFacts';
+import {
+  lookupBarcode,
+  nutritionInfoToMealAnalysis,
+} from '../services/openFoodFacts';
 import mealAIService from '../services/mealAI';
 import { RootStackParamList } from '../types/navigation';
 
@@ -66,19 +65,25 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
     bottomSheetModalRef.current?.dismiss();
   }, []);
 
-  const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
+  const handleBarCodeScanned = async ({
+    type,
+    data,
+  }: {
+    type: string;
+    data: string;
+  }) => {
     if (scannedBarcode) return; // Prevent multiple scans
-    
+
     setScannedBarcode(data);
     handlePresentModalPress();
     setAnalyzing(true);
 
     try {
       console.log('[CameraScreen] Barcode scanned:', data);
-      
+
       // Lookup barcode in Open Food Facts
       const lookupResult = await lookupBarcode(data);
-      
+
       if (!lookupResult.success || !lookupResult.data) {
         handleDismissModalPress();
         Alert.alert(
@@ -90,8 +95,8 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
               onPress: () => {
                 setScannedBarcode(null);
                 setScanMode('photo');
-              }
-            }
+              },
+            },
           ]
         );
         return;
@@ -99,7 +104,7 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
 
       // Convert to meal analysis format
       const analysisData = nutritionInfoToMealAnalysis(lookupResult.data);
-      
+
       if (!user) {
         Alert.alert('Error', 'User not authenticated');
         return;
@@ -115,12 +120,15 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
       } else {
         // Normal mode: Create new meal
         const mealDescription = `Scanned product: ${lookupResult.data.name}`;
-        
+
         // Auto-save meal
         const logResult = await mealAIService.logMeal(mealDescription, 'snack');
-        
+
         if (logResult.success) {
-          console.log('[CameraScreen] Barcode meal saved with ID:', logResult.mealLogId);
+          console.log(
+            '[CameraScreen] Barcode meal saved with ID:',
+            logResult.mealLogId
+          );
         }
 
         // Navigate to MealDetails
@@ -195,7 +203,7 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
       Alert.alert('Error', 'No image captured');
       return;
     }
-    
+
     if (!user) {
       Alert.alert('Error', 'User not authenticated');
       return;
@@ -224,8 +232,10 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
 
       if (addToMeal) {
         // Add mode: Return the analyzed food items to the existing meal
-        console.log('[CameraScreen] Add mode: Returning food items to existing meal');
-        
+        console.log(
+          '[CameraScreen] Add mode: Returning food items to existing meal'
+        );
+
         navigation.navigate('MealDetails', {
           mealId: addToMeal.mealId,
           imageUri: capturedImage,
@@ -370,14 +380,22 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <CameraView 
-        style={styles.camera} 
-        facing={type} 
+      <CameraView
+        style={styles.camera}
+        facing={type}
         ref={cameraRef}
-        barcodeScannerSettings={scanMode === 'barcode' ? {
-          barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'],
-        } : undefined}
-        onBarcodeScanned={scanMode === 'barcode' && !scannedBarcode ? handleBarCodeScanned : undefined}
+        barcodeScannerSettings={
+          scanMode === 'barcode'
+            ? {
+                barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'],
+              }
+            : undefined
+        }
+        onBarcodeScanned={
+          scanMode === 'barcode' && !scannedBarcode
+            ? handleBarCodeScanned
+            : undefined
+        }
       >
         <View style={styles.cameraHeader}>
           <TouchableOpacity
@@ -388,9 +406,11 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>
-            {scanMode === 'barcode' 
-              ? 'Scan Barcode' 
-              : (addToMeal ? 'Add Food Item' : 'Take a Meal Photo')}
+            {scanMode === 'barcode'
+              ? 'Scan Barcode'
+              : addToMeal
+                ? 'Add Food Item'
+                : 'Take a Meal Photo'}
           </Text>
 
           <TouchableOpacity
@@ -406,24 +426,40 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
         {/* Mode Toggle */}
         <View style={styles.modeToggleContainer}>
           <TouchableOpacity
-            style={[styles.modeButton, scanMode === 'photo' && styles.modeButtonActive]}
+            style={[
+              styles.modeButton,
+              scanMode === 'photo' && styles.modeButtonActive,
+            ]}
             onPress={() => {
               setScanMode('photo');
               setScannedBarcode(null);
             }}
           >
-            <Text style={[styles.modeButtonText, scanMode === 'photo' && styles.modeButtonTextActive]}>
+            <Text
+              style={[
+                styles.modeButtonText,
+                scanMode === 'photo' && styles.modeButtonTextActive,
+              ]}
+            >
               📸 Photo
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.modeButton, scanMode === 'barcode' && styles.modeButtonActive]}
+            style={[
+              styles.modeButton,
+              scanMode === 'barcode' && styles.modeButtonActive,
+            ]}
             onPress={() => {
               setScanMode('barcode');
               setScannedBarcode(null);
             }}
           >
-            <Text style={[styles.modeButtonText, scanMode === 'barcode' && styles.modeButtonTextActive]}>
+            <Text
+              style={[
+                styles.modeButtonText,
+                scanMode === 'barcode' && styles.modeButtonTextActive,
+              ]}
+            >
               📊 Barcode
             </Text>
           </TouchableOpacity>
@@ -435,11 +471,21 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
             onPress={pickImageFromGallery}
             disabled={scanMode === 'barcode'}
           >
-            <Text style={[styles.iconText, scanMode === 'barcode' && styles.iconDisabled]}>📷</Text>
+            <Text
+              style={[
+                styles.iconText,
+                scanMode === 'barcode' && styles.iconDisabled,
+              ]}
+            >
+              📷
+            </Text>
           </TouchableOpacity>
 
           {scanMode === 'photo' ? (
-            <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
+            <TouchableOpacity
+              style={styles.captureButton}
+              onPress={takePicture}
+            >
               <View style={styles.captureButtonInner} />
             </TouchableOpacity>
           ) : (
@@ -453,7 +499,7 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
 
         <View style={styles.instructionContainer}>
           <Text style={styles.instructionText}>
-            {scanMode === 'barcode' 
+            {scanMode === 'barcode'
               ? 'Align barcode within the camera view'
               : 'Position your meal in the center of the frame'}
           </Text>
@@ -480,7 +526,9 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
           <View style={styles.analysisModalContent}>
             <ActivityIndicator size="large" color="#007AFF" />
             <Text style={styles.analysisModalTitle}>
-              {scanMode === 'barcode' ? 'Looking up product...' : 'Analyzing your meal...'}
+              {scanMode === 'barcode'
+                ? 'Looking up product...'
+                : 'Analyzing your meal...'}
             </Text>
             <Text style={styles.analysisModalSubtext}>
               This will take just a moment
@@ -640,7 +688,7 @@ const styles = StyleSheet.create({
   },
   preview: {
     width: '100%',
-    aspectRatio: 4/3,
+    aspectRatio: 4 / 3,
     resizeMode: 'cover',
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
