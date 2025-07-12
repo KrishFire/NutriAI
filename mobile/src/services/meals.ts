@@ -350,7 +350,8 @@ export async function getMealHistory(userId: string, daysBack: number = 30) {
     // Get all meal entries for the date range with food items
     const { data: mealEntries, error: mealsError } = await supabase
       .from('meal_entries')
-      .select(`
+      .select(
+        `
         *,
         food_items (
           id,
@@ -362,7 +363,8 @@ export async function getMealHistory(userId: string, daysBack: number = 30) {
           carbs,
           fat
         )
-      `)
+      `
+      )
       .eq('user_id', userId)
       .gte('logged_at', `${startDate.toISOString().split('T')[0]}T00:00:00`)
       .lte('logged_at', `${endDate.toISOString().split('T')[0]}T23:59:59`)
@@ -374,7 +376,7 @@ export async function getMealHistory(userId: string, daysBack: number = 30) {
 
     // Group meal entries by date
     const mealsByDate: { [key: string]: any[] } = {};
-    
+
     (mealEntries || []).forEach(entry => {
       const date = entry.logged_at?.split('T')[0] || '';
       if (!mealsByDate[date]) {
@@ -386,7 +388,7 @@ export async function getMealHistory(userId: string, daysBack: number = 30) {
     // Create history data structure
     const historyData = (dailyLogs || []).map(dailyLog => {
       const dayMeals = mealsByDate[dailyLog.date] || [];
-      
+
       // Group meals by meal type for the day
       const mealsByType: { [key: string]: any[] } = {};
       dayMeals.forEach(meal => {
@@ -403,10 +405,22 @@ export async function getMealHistory(userId: string, daysBack: number = 30) {
           calories: entry.calories || 0,
         }));
 
-        const totalCalories = entries.reduce((sum, entry) => sum + (entry.calories || 0), 0);
-        const totalProtein = entries.reduce((sum, entry) => sum + (entry.protein || 0), 0);
-        const totalCarbs = entries.reduce((sum, entry) => sum + (entry.carbs || 0), 0);
-        const totalFat = entries.reduce((sum, entry) => sum + (entry.fat || 0), 0);
+        const totalCalories = entries.reduce(
+          (sum, entry) => sum + (entry.calories || 0),
+          0
+        );
+        const totalProtein = entries.reduce(
+          (sum, entry) => sum + (entry.protein || 0),
+          0
+        );
+        const totalCarbs = entries.reduce(
+          (sum, entry) => sum + (entry.carbs || 0),
+          0
+        );
+        const totalFat = entries.reduce(
+          (sum, entry) => sum + (entry.fat || 0),
+          0
+        );
 
         return {
           id: `${dailyLog.date}-${mealType}`,
@@ -441,7 +455,8 @@ export async function getMealHistory(userId: string, daysBack: number = 30) {
     console.error('Error fetching meal history:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch meal history',
+      error:
+        error instanceof Error ? error.message : 'Failed to fetch meal history',
       data: [],
     };
   }
@@ -484,16 +499,27 @@ export async function getUserStats(userId: string) {
       .gt('total_calories', 0); // Only count days with actual meals logged
 
     if (streakError || mealsError || countError || daysError) {
-      console.error('Error fetching user stats:', { streakError, mealsError, countError, daysError });
+      console.error('Error fetching user stats:', {
+        streakError,
+        mealsError,
+        countError,
+        daysError,
+      });
     }
 
     // Calculate averages
-    const avgCalories = recentMeals?.length 
-      ? Math.round(recentMeals.reduce((sum, meal) => sum + (meal.calories || 0), 0) / recentMeals.length)
+    const avgCalories = recentMeals?.length
+      ? Math.round(
+          recentMeals.reduce((sum, meal) => sum + (meal.calories || 0), 0) /
+            recentMeals.length
+        )
       : 0;
 
     const avgProtein = recentMeals?.length
-      ? Math.round(recentMeals.reduce((sum, meal) => sum + (meal.protein || 0), 0) / recentMeals.length)
+      ? Math.round(
+          recentMeals.reduce((sum, meal) => sum + (meal.protein || 0), 0) /
+            recentMeals.length
+        )
       : 0;
 
     return {
@@ -512,7 +538,8 @@ export async function getUserStats(userId: string) {
     console.error('Error getting user stats:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch user stats',
+      error:
+        error instanceof Error ? error.message : 'Failed to fetch user stats',
       data: {
         currentStreak: 0,
         longestStreak: 0,

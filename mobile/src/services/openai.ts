@@ -215,17 +215,20 @@ export async function transcribeAudio(
     });
 
     // Call the Supabase Edge Function with JSON payload
-    const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        'X-Debug-Mode': 'true', // Enable debug mode for detailed error info
-        // Do NOT set Content-Type - supabase.functions.invoke() handles it automatically
-      },
-      body: {
-        audio: base64Audio,
-        mimeType: 'audio/m4a', // expo-av default format
-      },
-    });
+    const { data, error } = await supabase.functions.invoke(
+      'transcribe-audio',
+      {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'X-Debug-Mode': 'true', // Enable debug mode for detailed error info
+          // Do NOT set Content-Type - supabase.functions.invoke() handles it automatically
+        },
+        body: {
+          audio: base64Audio,
+          mimeType: 'audio/m4a', // expo-av default format
+        },
+      }
+    );
 
     if (error) {
       console.error('Supabase function error:', error);

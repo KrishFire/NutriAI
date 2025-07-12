@@ -23,11 +23,12 @@ export default function MacroRing({
 }: MacroRingProps) {
   const [displayCurrent, setDisplayCurrent] = useState(0);
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
-  
+
   const percentage = Math.min((current / target) * 100, 100);
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (animatedPercentage / 100) * circumference;
+  const strokeDashoffset =
+    circumference - (animatedPercentage / 100) * circumference;
 
   // Animate the number counting up
   useEffect(() => {
@@ -45,9 +46,7 @@ export default function MacroRing({
   useEffect(() => {
     const timer = setTimeout(() => {
       if (animatedPercentage < percentage) {
-        setAnimatedPercentage(prev =>
-          Math.min(prev + 2, percentage)
-        );
+        setAnimatedPercentage(prev => Math.min(prev + 2, percentage));
       }
     }, 30);
     return () => clearTimeout(timer);

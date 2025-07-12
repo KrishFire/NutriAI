@@ -3,7 +3,10 @@
  * Tests the OpenFoodFacts API integration and barcode scanning functionality
  */
 
-import { lookupBarcode, nutritionInfoToMealAnalysis } from '../services/openFoodFacts';
+import {
+  lookupBarcode,
+  nutritionInfoToMealAnalysis,
+} from '../services/openFoodFacts';
 
 describe('Barcode Scanner Integration', () => {
   describe('OpenFoodFacts Service', () => {
@@ -37,7 +40,9 @@ describe('Barcode Scanner Integration', () => {
       expect(result.foods[0].nutrition.protein).toBe(20); // 10 * 2
       expect(result.foods[0].confidence).toBe(1.0);
       expect(result.totalNutrition.calories).toBe(500);
-      expect(result.notes).toContain('Scanned product: Test Brand Test Product');
+      expect(result.notes).toContain(
+        'Scanned product: Test Brand Test Product'
+      );
     });
 
     it('should handle products without brand names', () => {
@@ -61,12 +66,12 @@ describe('Barcode Scanner Integration', () => {
     it('should support common barcode formats', () => {
       // The CameraScreen component supports these barcode types
       const supportedTypes = ['ean13', 'ean8', 'upc_a', 'upc_e'];
-      
+
       // EAN-13: European Article Number (most common globally)
       // EAN-8: Shortened version for small products
       // UPC-A: Universal Product Code (common in US/Canada)
       // UPC-E: Compressed UPC for small products
-      
+
       expect(supportedTypes).toContain('ean13');
       expect(supportedTypes).toContain('upc_a');
     });

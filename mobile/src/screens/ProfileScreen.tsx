@@ -64,7 +64,7 @@ export default function ProfileScreen() {
 
     setLoading(true);
     setError(null);
-    
+
     try {
       console.log('[ProfileScreen] Loading user data for:', user.id);
 
@@ -75,7 +75,10 @@ export default function ProfileScreen() {
       ]);
 
       if (prefsResult.error) {
-        console.error('[ProfileScreen] Error loading preferences:', prefsResult.error);
+        console.error(
+          '[ProfileScreen] Error loading preferences:',
+          prefsResult.error
+        );
         setError(prefsResult.error.message);
       } else if (prefsResult.data) {
         console.log('[ProfileScreen] Loaded preferences:', prefsResult.data);
@@ -86,7 +89,10 @@ export default function ProfileScreen() {
         console.log('[ProfileScreen] Loaded stats:', statsResult.data);
         setStats(statsResult.data);
       } else {
-        console.error('[ProfileScreen] Error loading stats:', statsResult.error);
+        console.error(
+          '[ProfileScreen] Error loading stats:',
+          statsResult.error
+        );
       }
     } catch (err) {
       console.error('[ProfileScreen] Error loading user data:', err);
@@ -111,9 +117,12 @@ export default function ProfileScreen() {
       }
 
       const result = await updateUserPreferences(user.id, updatedPrefs);
-      
+
       if (result.error) {
-        console.error('[ProfileScreen] Error saving preferences:', result.error);
+        console.error(
+          '[ProfileScreen] Error saving preferences:',
+          result.error
+        );
         Alert.alert('Error', result.error.message);
       } else if (result.data) {
         console.log('[ProfileScreen] Preferences saved successfully');
@@ -140,7 +149,10 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const handleEditPreference = (field: string, currentValue: string | number) => {
+  const handleEditPreference = (
+    field: string,
+    currentValue: string | number
+  ) => {
     setEditing(field);
     setEditValue(currentValue.toString());
   };
@@ -155,7 +167,7 @@ export default function ProfileScreen() {
     }
 
     const updates: UserPreferencesInput = {};
-    
+
     switch (editing) {
       case 'calories':
         updates.daily_calorie_goal = numericValue;
@@ -178,18 +190,24 @@ export default function ProfileScreen() {
 
   const handleToggleNotifications = () => {
     if (!preferences) return;
-    
+
     handleSavePreferences({
       notifications_enabled: !preferences.notifications_enabled,
     });
   };
 
   const formatWeightGoal = (goal: string) => {
-    return goal.replace('_', ' ').charAt(0).toUpperCase() + goal.replace('_', ' ').slice(1);
+    return (
+      goal.replace('_', ' ').charAt(0).toUpperCase() +
+      goal.replace('_', ' ').slice(1)
+    );
   };
 
   const formatActivityLevel = (level: string) => {
-    return level.replace('_', ' ').charAt(0).toUpperCase() + level.replace('_', ' ').slice(1);
+    return (
+      level.replace('_', ' ').charAt(0).toUpperCase() +
+      level.replace('_', ' ').slice(1)
+    );
   };
 
   const renderStatCard = (
@@ -276,13 +294,18 @@ export default function ProfileScreen() {
             {renderPreferenceRow(
               'Calories',
               preferences.daily_calorie_goal,
-              () => handleEditPreference('calories', preferences.daily_calorie_goal),
+              () =>
+                handleEditPreference(
+                  'calories',
+                  preferences.daily_calorie_goal
+                ),
               'kcal'
             )}
             {renderPreferenceRow(
               'Protein',
               preferences.daily_protein_goal,
-              () => handleEditPreference('protein', preferences.daily_protein_goal),
+              () =>
+                handleEditPreference('protein', preferences.daily_protein_goal),
               'g'
             )}
             {renderPreferenceRow(
@@ -318,19 +341,32 @@ export default function ProfileScreen() {
             {renderPreferenceRow(
               'Weight Goal',
               formatWeightGoal(preferences.weight_goal),
-              () => Alert.alert('Coming Soon', 'Weight goal editing will be available soon')
+              () =>
+                Alert.alert(
+                  'Coming Soon',
+                  'Weight goal editing will be available soon'
+                )
             )}
 
             {renderPreferenceRow(
               'Activity Level',
               formatActivityLevel(preferences.activity_level),
-              () => Alert.alert('Coming Soon', 'Activity level editing will be available soon')
+              () =>
+                Alert.alert(
+                  'Coming Soon',
+                  'Activity level editing will be available soon'
+                )
             )}
 
             {renderPreferenceRow(
               'Units',
-              preferences.unit_system.charAt(0).toUpperCase() + preferences.unit_system.slice(1),
-              () => Alert.alert('Coming Soon', 'Unit system editing will be available soon')
+              preferences.unit_system.charAt(0).toUpperCase() +
+                preferences.unit_system.slice(1),
+              () =>
+                Alert.alert(
+                  'Coming Soon',
+                  'Unit system editing will be available soon'
+                )
             )}
           </View>
         </View>
@@ -365,7 +401,8 @@ export default function ProfileScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                Edit {editing?.charAt(0).toUpperCase()}{editing?.slice(1)}
+                Edit {editing?.charAt(0).toUpperCase()}
+                {editing?.slice(1)}
               </Text>
               <TouchableOpacity
                 onPress={() => setEditing(null)}
@@ -376,9 +413,7 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>
-                Enter new {editing} value:
-              </Text>
+              <Text style={styles.inputLabel}>Enter new {editing} value:</Text>
               <TextInput
                 style={styles.textInput}
                 value={editValue}

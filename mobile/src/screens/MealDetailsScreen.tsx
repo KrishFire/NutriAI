@@ -32,7 +32,8 @@ export default function MealDetailsScreen({
   route,
 }: MealDetailsScreenProps) {
   const { user } = useAuth();
-  const { imageUri, analysisData, uploadedImageUrl, mealId, newFoodItems } = route.params;
+  const { imageUri, analysisData, uploadedImageUrl, mealId, newFoodItems } =
+    route.params;
 
   const [editedAnalysis, setEditedAnalysis] = useState<MealAnalysis>(
     analysisData || {
@@ -49,10 +50,10 @@ export default function MealDetailsScreen({
   useEffect(() => {
     if (newFoodItems && newFoodItems.length > 0) {
       console.log('[MealDetailsScreen] Merging new food items:', newFoodItems);
-      
+
       // Add new food items to existing analysis
       const updatedFoods = [...editedAnalysis.foods, ...newFoodItems];
-      
+
       // Recalculate total nutrition
       const totalNutrition = updatedFoods.reduce(
         (total, food) => ({
@@ -350,7 +351,10 @@ export default function MealDetailsScreen({
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Food Items</Text>
-            <TouchableOpacity onPress={() => setShowAddFoodModal(true)} style={styles.addButton}>
+            <TouchableOpacity
+              onPress={() => setShowAddFoodModal(true)}
+              style={styles.addButton}
+            >
               <Text style={styles.addButtonText}>+ Add Item</Text>
             </TouchableOpacity>
           </View>
@@ -374,8 +378,8 @@ export default function MealDetailsScreen({
 
           {/* Bottom Add Item Button - only show if there are existing items */}
           {editedAnalysis.foods.length > 0 && (
-            <TouchableOpacity 
-              onPress={() => setShowAddFoodModal(true)} 
+            <TouchableOpacity
+              onPress={() => setShowAddFoodModal(true)}
               style={styles.bottomAddButton}
             >
               <Text style={styles.bottomAddButtonText}>+ Add Another Item</Text>
@@ -463,7 +467,7 @@ export default function MealDetailsScreen({
                 <Text style={styles.modalCloseText}>✕</Text>
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.methodOptions}>
               <TouchableOpacity
                 style={styles.methodOption}
@@ -475,7 +479,9 @@ export default function MealDetailsScreen({
                 <Text style={styles.methodIcon}>📷</Text>
                 <View style={styles.methodContent}>
                   <Text style={styles.methodTitle}>Take Photo</Text>
-                  <Text style={styles.methodDescription}>Capture an image of your food</Text>
+                  <Text style={styles.methodDescription}>
+                    Capture an image of your food
+                  </Text>
                 </View>
               </TouchableOpacity>
 
@@ -489,7 +495,9 @@ export default function MealDetailsScreen({
                 <Text style={styles.methodIcon}>💬</Text>
                 <View style={styles.methodContent}>
                   <Text style={styles.methodTitle}>Describe Food</Text>
-                  <Text style={styles.methodDescription}>Type what you ate</Text>
+                  <Text style={styles.methodDescription}>
+                    Type what you ate
+                  </Text>
                 </View>
               </TouchableOpacity>
 
@@ -503,7 +511,9 @@ export default function MealDetailsScreen({
                 <Text style={styles.methodIcon}>✏️</Text>
                 <View style={styles.methodContent}>
                   <Text style={styles.methodTitle}>Manual Entry</Text>
-                  <Text style={styles.methodDescription}>Enter nutrition manually</Text>
+                  <Text style={styles.methodDescription}>
+                    Enter nutrition manually
+                  </Text>
                 </View>
               </TouchableOpacity>
             </View>

@@ -60,6 +60,18 @@ You need a new EAS build when:
 - ❌ Making JS/React changes (hot reload works)
 - ❌ Changing styles or assets (hot reload works)
 
+### Important: Prebuild for Native Changes
+When changing permissions, entitlements, or native configurations:
+```bash
+# Run locally to ensure changes are applied
+npx expo prebuild --clean --platform ios
+
+# Then build with cache cleared
+eas build --platform ios --profile development --clear-cache
+```
+
+Without `--clean` or `--clear-cache`, EAS might use cached native files and miss your changes!
+
 ## Troubleshooting
 
 ### "Native module not found" in Expo Go
@@ -86,6 +98,8 @@ Check that speech recognition entitlement is enabled:
   }
 }
 ```
+
+**iOS Note**: Voice.isAvailable() may return 0 initially. The actual availability is determined when Voice.start() is called and the user grants permission.
 
 ## Best Practices
 

@@ -12,16 +12,25 @@ import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button, LoadingSpinner } from '../components';
 import { useAuth } from '../contexts/AuthContext';
-import { lookupBarcode, nutritionInfoToMealAnalysis } from '../services/openFoodFacts';
+import {
+  lookupBarcode,
+  nutritionInfoToMealAnalysis,
+} from '../services/openFoodFacts';
 import mealAIService from '../services/mealAI';
 import { AddMealStackParamList } from '../types/navigation';
 
-type BarcodeScannerScreenProps = NativeStackScreenProps<AddMealStackParamList, 'BarcodeScanner'>;
+type BarcodeScannerScreenProps = NativeStackScreenProps<
+  AddMealStackParamList,
+  'BarcodeScanner'
+>;
 
-export default function BarcodeScannerScreen({ navigation, route }: BarcodeScannerScreenProps) {
+export default function BarcodeScannerScreen({
+  navigation,
+  route,
+}: BarcodeScannerScreenProps) {
   const { user } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
-  
+
   // Use ref for immediate scan locking
   const isScannedRef = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -30,20 +39,26 @@ export default function BarcodeScannerScreen({ navigation, route }: BarcodeScann
   // Check if we're in add mode
   const { addToMeal } = route.params || {};
 
-  const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
+  const handleBarCodeScanned = async ({
+    type,
+    data,
+  }: {
+    type: string;
+    data: string;
+  }) => {
     // Prevent multiple scans using ref for immediate effect
     if (isScannedRef.current) return;
     isScannedRef.current = true;
-    
+
     setIsProcessing(true);
     setScannedData(data);
 
     try {
       console.log('[BarcodeScanner] Barcode scanned:', data);
-      
+
       // Lookup barcode in Open Food Facts
       const lookupResult = await lookupBarcode(data);
-      
+
       if (!lookupResult.success || !lookupResult.data) {
         Alert.alert(
           'Product Not Found',
@@ -53,7 +68,7 @@ export default function BarcodeScannerScreen({ navigation, route }: BarcodeScann
               text: 'Take Photo',
               onPress: () => {
                 navigation.replace('Camera', route.params);
-              }
+              },
             },
             {
               text: 'Scan Again',
@@ -61,8 +76,8 @@ export default function BarcodeScannerScreen({ navigation, route }: BarcodeScann
                 isScannedRef.current = false;
                 setScannedData(null);
                 setIsProcessing(false);
-              }
-            }
+              },
+            },
           ]
         );
         return;
@@ -70,7 +85,7 @@ export default function BarcodeScannerScreen({ navigation, route }: BarcodeScann
 
       // Convert to meal analysis format
       const analysisData = nutritionInfoToMealAnalysis(lookupResult.data);
-      
+
       if (!user) {
         Alert.alert('Error', 'User not authenticated');
         return;
@@ -86,12 +101,15 @@ export default function BarcodeScannerScreen({ navigation, route }: BarcodeScann
       } else {
         // Normal mode: Create new meal
         const mealDescription = `Scanned product: ${lookupResult.data.name}`;
-        
+
         // Auto-save meal
         const logResult = await mealAIService.logMeal(mealDescription, 'snack');
-        
+
         if (logResult.success) {
-          console.log('[BarcodeScanner] Meal saved with ID:', logResult.mealLogId);
+          console.log(
+            '[BarcodeScanner] Meal saved with ID:',
+            logResult.mealLogId
+          );
         }
 
         // Navigate to MealDetails
@@ -111,8 +129,8 @@ export default function BarcodeScannerScreen({ navigation, route }: BarcodeScann
               isScannedRef.current = false;
               setScannedData(null);
               setIsProcessing(false);
-            }
-          }
+            },
+          },
         ]
       );
       console.error('Barcode scan error:', error);
@@ -159,13 +177,15 @@ export default function BarcodeScannerScreen({ navigation, route }: BarcodeScann
 
   return (
     <SafeAreaView style={styles.container}>
-      <CameraView 
-        style={styles.camera} 
+      <CameraView
+        style={styles.camera}
         facing="back"
         barcodeScannerSettings={{
           barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'],
         }}
-        onBarcodeScanned={!isScannedRef.current ? handleBarCodeScanned : undefined}
+        onBarcodeScanned={
+          !isScannedRef.current ? handleBarCodeScanned : undefined
+        }
       >
         <View style={styles.cameraHeader}>
           <TouchableOpacity
@@ -190,7 +210,7 @@ export default function BarcodeScannerScreen({ navigation, route }: BarcodeScann
             <View style={styles.cornerBL} />
             <View style={styles.cornerBR} />
           </View>
-          
+
           <Text style={styles.instructionText}>
             Align barcode within the frame
           </Text>

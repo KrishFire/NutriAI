@@ -91,9 +91,7 @@ export default function VoiceRecordingBottomSheet({
             >
               <Ionicons name="mic" size={48} color="#007AFF" />
             </TouchableOpacity>
-            <Text style={styles.hint}>
-              Speak clearly and describe portions
-            </Text>
+            <Text style={styles.hint}>Speak clearly and describe portions</Text>
           </>
         );
 
@@ -137,10 +135,12 @@ export default function VoiceRecordingBottomSheet({
         return (
           <>
             <Text style={styles.title}>Transcribing...</Text>
-            <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
-            <Text style={styles.subtitle}>
-              Converting your voice to text
-            </Text>
+            <ActivityIndicator
+              size="large"
+              color="#007AFF"
+              style={styles.loader}
+            />
+            <Text style={styles.subtitle}>Converting your voice to text</Text>
           </>
         );
 
@@ -148,7 +148,12 @@ export default function VoiceRecordingBottomSheet({
         return (
           <>
             <Text style={styles.title}>Error</Text>
-            <Ionicons name="alert-circle" size={48} color="#FF3B30" style={styles.errorIcon} />
+            <Ionicons
+              name="alert-circle"
+              size={48}
+              color="#FF3B30"
+              style={styles.errorIcon}
+            />
             <Text style={styles.errorText}>
               {error?.message || 'Failed to process recording'}
             </Text>
@@ -170,7 +175,7 @@ export default function VoiceRecordingBottomSheet({
       snapPoints={['50%']}
       enablePanDownToClose
       onClose={onClose}
-      backdropComponent={(props) => (
+      backdropComponent={props => (
         <BottomSheetBackdrop
           {...props}
           appearsOnIndex={0}
@@ -179,9 +184,7 @@ export default function VoiceRecordingBottomSheet({
         />
       )}
     >
-      <View style={styles.container}>
-        {renderContent()}
-      </View>
+      <View style={styles.container}>{renderContent()}</View>
     </BottomSheet>
   );
 }

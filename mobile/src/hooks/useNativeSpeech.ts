@@ -174,8 +174,14 @@ export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
 
     try {
       const available = await Voice.isAvailable();
-      setIsAvailable(!!available); // Convert 0/1 to boolean
-      if (!available) {
+      // On iOS, isAvailable() may return 0 initially until permission is granted
+      // We'll treat this as potentially available and let start() handle the actual check
+      const isDefinitelyAvailable = available === 1 || available === true;
+      const isPotentiallyAvailable = Platform.OS === 'ios' && available === 0;
+      
+      setIsAvailable(isDefinitelyAvailable || isPotentiallyAvailable);
+      
+      if (!isDefinitelyAvailable && !isPotentiallyAvailable) {
         const err = new Error(
           'Speech recognition is not available on this device'
         );

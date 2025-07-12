@@ -12,7 +12,10 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import {
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+} from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { AddMealStackParamList } from '../types/navigation';
 import { useNativeSpeech } from '../hooks/useNativeSpeech';
@@ -20,12 +23,21 @@ import { useVoiceRecording } from '../hooks/useVoiceRecording';
 import { useAuth } from '../hooks/useAuth';
 import mealAIService, { aiMealToMealAnalysis } from '../services/mealAI';
 
-type NavigationProp = NativeStackNavigationProp<AddMealStackParamList, 'VoiceLog'>;
-type VoiceLogScreenProps = NativeStackScreenProps<AddMealStackParamList, 'VoiceLog'>;
+type NavigationProp = NativeStackNavigationProp<
+  AddMealStackParamList,
+  'VoiceLog'
+>;
+type VoiceLogScreenProps = NativeStackScreenProps<
+  AddMealStackParamList,
+  'VoiceLog'
+>;
 
 type VoiceMode = 'native' | 'whisper';
 
-export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProps) {
+export default function VoiceLogScreen({
+  navigation,
+  route,
+}: VoiceLogScreenProps) {
   const { user, session } = useAuth();
   const [voiceMode, setVoiceMode] = useState<VoiceMode>('native');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -34,12 +46,12 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
 
   // Native speech recognition
   const nativeSpeech = useNativeSpeech({
-    onSpeechEnd: async (text) => {
+    onSpeechEnd: async text => {
       if (text.trim() && voiceMode === 'native') {
         await handleSubmit(text);
       }
     },
-    onError: (err) => {
+    onError: err => {
       console.error('[VoiceLogScreen] Native speech error:', err);
       // Fall back to Whisper on native STT error
       if (!hasAttemptedNative) {
@@ -57,10 +69,10 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
   const whisperRecording = useVoiceRecording({
     maxDuration: 30,
     enableAutoStop: false, // Simple recording without silence detection
-    onTranscriptionComplete: async (text) => {
+    onTranscriptionComplete: async text => {
       await handleSubmit(text);
     },
-    onError: (err) => {
+    onError: err => {
       console.error('[VoiceLogScreen] Whisper error:', err);
       setError(err.message);
       setIsProcessing(false);
@@ -72,7 +84,7 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
     if (voiceMode === 'native' && !hasAttemptedNative) {
       const startListening = async () => {
         await new Promise(resolve => setTimeout(resolve, 300));
-        
+
         if (nativeSpeech.isAvailable) {
           await nativeSpeech.start();
         } else {
@@ -108,7 +120,7 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
 
       // Log the meal
       const result = await mealAIService.logMeal(text.trim(), 'snack');
-      
+
       if (result.success && result.mealLogId && result.mealAnalysis) {
         const analysisData = aiMealToMealAnalysis(result.mealAnalysis);
         navigation.replace('MealDetails', {
@@ -122,7 +134,7 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
       console.error('[VoiceLogScreen] Submit error:', err);
       setError(err instanceof Error ? err.message : 'Failed to log meal');
       setIsProcessing(false);
-      
+
       // Restart listening after error (native mode only)
       if (voiceMode === 'native') {
         setTimeout(() => {
@@ -154,7 +166,7 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
           </TouchableOpacity>
         </View>
 
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
           style={styles.content}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
@@ -162,7 +174,12 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
             {nativeSpeech.state === 'listening' ? (
               <View style={styles.listeningIndicator}>
                 <Ionicons name="mic" size={48} color="#007AFF" />
-                <View style={[styles.volumeBar, { height: 2 + (nativeSpeech.volume * 20) }]} />
+                <View
+                  style={[
+                    styles.volumeBar,
+                    { height: 2 + nativeSpeech.volume * 20 },
+                  ]}
+                />
               </View>
             ) : (
               <Ionicons name="mic-off" size={48} color="#999" />
@@ -170,11 +187,15 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
           </View>
 
           <Text style={styles.statusText}>
-            {isProcessing ? 'Processing your meal...' :
-             error ? error :
-             nativeSpeech.state === 'listening' && !nativeSpeech.text ? 'Start talking - we\'re listening' :
-             nativeSpeech.state === 'listening' && nativeSpeech.text ? 'Keep talking or tap the arrow to submit' :
-             'Getting ready...'}
+            {isProcessing
+              ? 'Processing your meal...'
+              : error
+                ? error
+                : nativeSpeech.state === 'listening' && !nativeSpeech.text
+                  ? "Start talking - we're listening"
+                  : nativeSpeech.state === 'listening' && nativeSpeech.text
+                    ? 'Keep talking or tap the arrow to submit'
+                    : 'Getting ready...'}
           </Text>
 
           {(nativeSpeech.text || nativeSpeech.partialText) && (
@@ -217,14 +238,20 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
       <View style={styles.content}>
         <Text style={styles.title}>Voice Recording</Text>
         <Text style={styles.subtitle}>
-          {whisperRecording.state === 'idle' ? 'Tap to record your meal' :
-           whisperRecording.state === 'recording' ? 'Recording... Tap to stop' :
-           whisperRecording.state === 'transcribing' ? 'Processing...' :
-           'Error occurred'}
+          {whisperRecording.state === 'idle'
+            ? 'Tap to record your meal'
+            : whisperRecording.state === 'recording'
+              ? 'Recording... Tap to stop'
+              : whisperRecording.state === 'transcribing'
+                ? 'Processing...'
+                : 'Error occurred'}
         </Text>
 
         <TouchableOpacity
-          style={[styles.recordButton, whisperRecording.state === 'recording' && styles.recordingButton]}
+          style={[
+            styles.recordButton,
+            whisperRecording.state === 'recording' && styles.recordingButton,
+          ]}
           onPress={() => {
             if (whisperRecording.state === 'idle') {
               whisperRecording.startRecording();
@@ -235,10 +262,10 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
           disabled={whisperRecording.state === 'transcribing' || isProcessing}
           activeOpacity={0.8}
         >
-          <Ionicons 
-            name={whisperRecording.state === 'recording' ? 'stop' : 'mic'} 
-            size={48} 
-            color="#FFF" 
+          <Ionicons
+            name={whisperRecording.state === 'recording' ? 'stop' : 'mic'}
+            size={48}
+            color="#FFF"
           />
         </TouchableOpacity>
 
@@ -250,12 +277,14 @@ export default function VoiceLogScreen({ navigation, route }: VoiceLogScreenProp
         )}
 
         {(whisperRecording.state === 'transcribing' || isProcessing) && (
-          <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
+          <ActivityIndicator
+            size="large"
+            color="#007AFF"
+            style={styles.loader}
+          />
         )}
 
-        {error && (
-          <Text style={styles.errorText}>{error}</Text>
-        )}
+        {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
     </SafeAreaView>
   );

@@ -17,7 +17,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { HomeStackParamList, AppTabParamList, RootStackParamList } from '../types/navigation';
+import {
+  HomeStackParamList,
+  AppTabParamList,
+  RootStackParamList,
+} from '../types/navigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
@@ -144,23 +148,29 @@ export default function HomeScreen() {
           <View style={styles.quickActionRow}>
             <Button
               title="📊 Barcode"
-              onPress={() => navigation.navigate('AddMealFlow', { screen: 'BarcodeScanner' })}
+              onPress={() =>
+                navigation.navigate('AddMealFlow', { screen: 'BarcodeScanner' })
+              }
               variant="secondary"
               size="medium"
               style={styles.quickActionButton}
             />
             <Button
               title="🎤 Voice Log"
-              onPress={() => navigation.navigate('AddMealFlow', { 
-                screen: 'VoiceLog'
-              })}
+              onPress={() =>
+                navigation.navigate('AddMealFlow', {
+                  screen: 'VoiceLog',
+                })
+              }
               variant="secondary"
               size="medium"
               style={styles.quickActionButton}
             />
             <Button
               title="📝 Manual Entry"
-              onPress={() => navigation.navigate('AddMealFlow', { screen: 'ManualEntry' })}
+              onPress={() =>
+                navigation.navigate('AddMealFlow', { screen: 'ManualEntry' })
+              }
               variant="secondary"
               size="medium"
               style={styles.quickActionButton}

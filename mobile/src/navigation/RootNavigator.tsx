@@ -41,7 +41,7 @@ const AddMealStack = createNativeStackNavigator<AddMealStackParamList>();
 // Close button component for modal exit
 function CloseButton() {
   const navigation = useNavigation();
-  
+
   return (
     <TouchableOpacity
       onPress={() => navigation.getParent()?.goBack()}
@@ -60,16 +60,16 @@ function AddMealStackNavigator() {
         animation: 'slide_from_right',
       }}
     >
-      <AddMealStack.Screen 
-        name="Camera" 
+      <AddMealStack.Screen
+        name="Camera"
         component={CameraScreen}
         options={{
           headerShown: false, // CameraScreen has its own header
         }}
         initialParams={{}}
       />
-      <AddMealStack.Screen 
-        name="ManualEntry" 
+      <AddMealStack.Screen
+        name="ManualEntry"
         component={ManualEntryScreen}
         options={{
           title: 'Manual Entry',
@@ -77,23 +77,23 @@ function AddMealStackNavigator() {
         }}
         initialParams={undefined}
       />
-      <AddMealStack.Screen 
-        name="BarcodeScanner" 
+      <AddMealStack.Screen
+        name="BarcodeScanner"
         component={BarcodeScannerScreen}
         options={{
           headerShown: false, // BarcodeScannerScreen has its own header
         }}
         initialParams={undefined}
       />
-      <AddMealStack.Screen 
-        name="VoiceLog" 
+      <AddMealStack.Screen
+        name="VoiceLog"
         component={VoiceLogScreen}
         options={{
           headerShown: false, // VoiceLogScreen has its own header
         }}
       />
-      <AddMealStack.Screen 
-        name="MealDetails" 
+      <AddMealStack.Screen
+        name="MealDetails"
         component={MealDetailsScreen}
         options={{
           title: 'Meal Details',
@@ -165,9 +165,15 @@ function FABWithNavigation() {
 
   return (
     <ExpandableFAB
-      onCameraPress={() => navigation.navigate('AddMealFlow', { screen: 'Camera' })}
-      onManualPress={() => navigation.navigate('AddMealFlow', { screen: 'ManualEntry' })}
-      onBarcodePress={() => navigation.navigate('AddMealFlow', { screen: 'BarcodeScanner' })}
+      onCameraPress={() =>
+        navigation.navigate('AddMealFlow', { screen: 'Camera' })
+      }
+      onManualPress={() =>
+        navigation.navigate('AddMealFlow', { screen: 'ManualEntry' })
+      }
+      onBarcodePress={() =>
+        navigation.navigate('AddMealFlow', { screen: 'BarcodeScanner' })
+      }
     />
   );
 }

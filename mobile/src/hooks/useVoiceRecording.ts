@@ -37,7 +37,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
   const [duration, setDuration] = useState<number>(0);
   const [isAutoStopping, setIsAutoStopping] = useState<boolean>(false);
   const [hasStartedSpeaking, setHasStartedSpeaking] = useState<boolean>(false);
-  
+
   const recordingRef = useRef<Audio.Recording | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const durationTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -48,7 +48,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
   // Request permissions on mount
   useEffect(() => {
     requestPermissions();
-    
+
     return () => {
       // Cleanup on unmount
       cleanup();
@@ -84,7 +84,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
       if (status !== 'granted') {
         throw new Error('Microphone permission denied');
       }
-      
+
       // Set audio mode for iOS
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
@@ -153,7 +153,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
       recordingRef.current = recording;
 
       // Set up status update callback for metering
-      recording.setOnRecordingStatusUpdate((status) => {
+      recording.setOnRecordingStatusUpdate(status => {
         if (status.isRecording && typeof status.metering === 'number') {
           latestMeteringRef.current = status.metering;
         }
@@ -177,7 +177,9 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
 
           // Start silence detection only after user has started speaking
           if (!hasStartedSpeaking && meteringValue > silenceThreshold) {
-            console.log('[useVoiceRecording] Speech detected, starting silence monitoring');
+            console.log(
+              '[useVoiceRecording] Speech detected, starting silence monitoring'
+            );
             setHasStartedSpeaking(true);
           }
 
@@ -185,17 +187,23 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
             if (meteringValue < silenceThreshold) {
               // Sound level is below threshold (silence)
               if (!silenceTimerRef.current) {
-                console.log('[useVoiceRecording] Silence detected, starting timer...');
+                console.log(
+                  '[useVoiceRecording] Silence detected, starting timer...'
+                );
                 setIsAutoStopping(true);
                 silenceTimerRef.current = setTimeout(() => {
-                  console.log('[useVoiceRecording] Silence duration exceeded, auto-stopping...');
+                  console.log(
+                    '[useVoiceRecording] Silence duration exceeded, auto-stopping...'
+                  );
                   stopRecording();
                 }, silenceDuration);
               }
             } else {
               // Sound detected, clear silence timer
               if (silenceTimerRef.current) {
-                console.log('[useVoiceRecording] Sound detected, cancelling silence timer');
+                console.log(
+                  '[useVoiceRecording] Sound detected, cancelling silence timer'
+                );
                 clearTimeout(silenceTimerRef.current);
                 silenceTimerRef.current = null;
                 setIsAutoStopping(false);
@@ -205,7 +213,10 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
         }, METERING_INTERVAL);
       }
 
-      console.log('[useVoiceRecording] Recording started with auto-stop:', enableAutoStop);
+      console.log(
+        '[useVoiceRecording] Recording started with auto-stop:',
+        enableAutoStop
+      );
     } catch (err) {
       const error = err as Error;
       console.error('[useVoiceRecording] Start recording error:', error);
@@ -246,25 +257,28 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
 
       // Transcribe the audio
       const result = await transcribeAudio(uri);
-      
+
       // Clean up temporary file
       await FileSystem.deleteAsync(uri, { idempotent: true });
 
       // Update state with transcription
       setTranscription(result.transcription);
       setState('idle');
-      
+
       // Notify callback
       onTranscriptionComplete?.(result.transcription);
 
-      console.log('[useVoiceRecording] Transcription complete:', result.transcription);
+      console.log(
+        '[useVoiceRecording] Transcription complete:',
+        result.transcription
+      );
     } catch (err) {
       const error = err as Error;
       console.error('[useVoiceRecording] Stop recording error:', error);
       setState('error');
       setError(error);
       onError?.(error);
-      
+
       // Clean up recording if it exists
       if (recordingRef.current) {
         try {
@@ -296,7 +310,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
       setTranscription('');
       setIsAutoStopping(false);
       setHasStartedSpeaking(false);
-      
+
       console.log('[useVoiceRecording] Recording cancelled');
     } catch (err) {
       console.error('[useVoiceRecording] Cancel recording error:', err);

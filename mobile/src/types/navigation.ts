@@ -14,25 +14,31 @@ export type RootStackParamList = {
 
 // Add Meal stack for the modal flow
 export type AddMealStackParamList = {
-  Camera: {
-    addToMeal?: {
-      mealId: string;
-      existingAnalysis: MealAnalysis;
-    };
-  } | undefined;
-  ManualEntry: {
-    addToMeal?: {
-      mealId: string;
-      existingAnalysis: MealAnalysis;
-    };
-    openVoiceRecording?: boolean;
-  } | undefined;
-  BarcodeScanner: {
-    addToMeal?: {
-      mealId: string;
-      existingAnalysis: MealAnalysis;
-    };
-  } | undefined;
+  Camera:
+    | {
+        addToMeal?: {
+          mealId: string;
+          existingAnalysis: MealAnalysis;
+        };
+      }
+    | undefined;
+  ManualEntry:
+    | {
+        addToMeal?: {
+          mealId: string;
+          existingAnalysis: MealAnalysis;
+        };
+        openVoiceRecording?: boolean;
+      }
+    | undefined;
+  BarcodeScanner:
+    | {
+        addToMeal?: {
+          mealId: string;
+          existingAnalysis: MealAnalysis;
+        };
+      }
+    | undefined;
   VoiceLog: undefined;
   MealDetails: {
     mealId?: string;

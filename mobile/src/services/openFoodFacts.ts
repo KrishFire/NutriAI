@@ -1,9 +1,9 @@
 /**
  * Open Food Facts API Integration Service
- * 
+ *
  * This service integrates with the Open Food Facts database to fetch
  * nutrition information for products via barcode scanning.
- * 
+ *
  * API Documentation: https://openfoodfacts.github.io/api-documentation/
  */
 
@@ -66,7 +66,9 @@ export interface BarcodeLookupResult {
 /**
  * Fetch product information from Open Food Facts API
  */
-export async function lookupBarcode(barcode: string): Promise<BarcodeLookupResult> {
+export async function lookupBarcode(
+  barcode: string
+): Promise<BarcodeLookupResult> {
   try {
     console.log('[OpenFoodFacts] Looking up barcode:', barcode);
 
@@ -84,7 +86,7 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeLookupResul
       {
         method: 'GET',
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'User-Agent': 'NutriAI/1.0 (React Native Expo App)',
         },
       }
@@ -125,9 +127,15 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeLookupResul
       protein: Math.round((nutriments.proteins_100g || 0) * 10) / 10,
       carbs: Math.round((nutriments.carbohydrates_100g || 0) * 10) / 10,
       fat: Math.round((nutriments.fat_100g || 0) * 10) / 10,
-      fiber: nutriments.fiber_100g ? Math.round(nutriments.fiber_100g * 10) / 10 : undefined,
-      sugar: nutriments.sugars_100g ? Math.round(nutriments.sugars_100g * 10) / 10 : undefined,
-      sodium: nutriments.sodium_100g ? Math.round(nutriments.sodium_100g * 1000) / 10 : undefined, // Convert to mg
+      fiber: nutriments.fiber_100g
+        ? Math.round(nutriments.fiber_100g * 10) / 10
+        : undefined,
+      sugar: nutriments.sugars_100g
+        ? Math.round(nutriments.sugars_100g * 10) / 10
+        : undefined,
+      sodium: nutriments.sodium_100g
+        ? Math.round(nutriments.sodium_100g * 1000) / 10
+        : undefined, // Convert to mg
       servingSize: product.serving_size || '100g',
       servingQuantity: product.serving_quantity,
       imageUrl: product.image_url || undefined,
@@ -146,7 +154,8 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeLookupResul
     console.error('[OpenFoodFacts] Error looking up barcode:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to lookup barcode',
+      error:
+        error instanceof Error ? error.message : 'Failed to lookup barcode',
     };
   }
 }
@@ -155,7 +164,10 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeLookupResul
  * Parse serving size string to extract numeric value in grams
  * Examples: "28g" -> 28, "1 oz (28.35g)" -> 28.35, "30 ml" -> 30
  */
-function parseServingSize(servingSize: string, servingQuantity?: number): number | null {
+function parseServingSize(
+  servingSize: string,
+  servingQuantity?: number
+): number | null {
   // First check if we have a numeric serving_quantity from the API
   if (servingQuantity && servingQuantity > 0) {
     console.log('[OpenFoodFacts] Using serving_quantity:', servingQuantity);
@@ -192,7 +204,10 @@ function parseServingSize(servingSize: string, servingQuantity?: number): number
   }
 
   // If we found matches but couldn't process them
-  console.log('[OpenFoodFacts] Found matches but could not process:', servingSize);
+  console.log(
+    '[OpenFoodFacts] Found matches but could not process:',
+    servingSize
+  );
   return null;
 }
 
@@ -206,34 +221,49 @@ export function nutritionInfoToMealAnalysis(
 ): any {
   // Calculate serving size multiplier
   let multiplier = quantity;
-  
+
   // If we're dealing with servings, calculate based on actual serving size
   if (unit === 'serving') {
-    const servingSizeGrams = parseServingSize(nutrition.servingSize || '', nutrition.servingQuantity);
-    
+    const servingSizeGrams = parseServingSize(
+      nutrition.servingSize || '',
+      nutrition.servingQuantity
+    );
+
     if (servingSizeGrams) {
       // Convert from per-100g to per-serving
       multiplier = (servingSizeGrams / 100) * quantity;
-      console.log(`[OpenFoodFacts] Serving size: ${servingSizeGrams}g, multiplier: ${multiplier}`);
+      console.log(
+        `[OpenFoodFacts] Serving size: ${servingSizeGrams}g, multiplier: ${multiplier}`
+      );
     } else {
       // Fallback: Show per-100g with a note
-      console.log('[OpenFoodFacts] Using per-100g values (could not parse serving size)');
+      console.log(
+        '[OpenFoodFacts] Using per-100g values (could not parse serving size)'
+      );
     }
   }
-  
+
   return {
     foods: [
       {
-        name: nutrition.brand ? `${nutrition.brand} ${nutrition.name}` : nutrition.name,
+        name: nutrition.brand
+          ? `${nutrition.brand} ${nutrition.name}`
+          : nutrition.name,
         quantity: `${quantity} ${unit}`,
         nutrition: {
           calories: Math.round(nutrition.calories * multiplier),
           protein: Math.round(nutrition.protein * multiplier * 10) / 10,
           carbs: Math.round(nutrition.carbs * multiplier * 10) / 10,
           fat: Math.round(nutrition.fat * multiplier * 10) / 10,
-          fiber: nutrition.fiber ? Math.round(nutrition.fiber * multiplier * 10) / 10 : 0,
-          sugar: nutrition.sugar ? Math.round(nutrition.sugar * multiplier * 10) / 10 : 0,
-          sodium: nutrition.sodium ? Math.round(nutrition.sodium * multiplier * 10) / 10 : 0,
+          fiber: nutrition.fiber
+            ? Math.round(nutrition.fiber * multiplier * 10) / 10
+            : 0,
+          sugar: nutrition.sugar
+            ? Math.round(nutrition.sugar * multiplier * 10) / 10
+            : 0,
+          sodium: nutrition.sodium
+            ? Math.round(nutrition.sodium * multiplier * 10) / 10
+            : 0,
         },
         confidence: 1.0, // High confidence for barcode scanned items
       },
@@ -246,8 +276,9 @@ export function nutritionInfoToMealAnalysis(
     },
     confidence: 1.0,
     notes: `Scanned product: ${nutrition.brand ? `${nutrition.brand} ` : ''}${nutrition.name} (Barcode: ${nutrition.barcode})${nutrition.nutritionGrade ? ` - Nutri-Score: ${nutrition.nutritionGrade}` : ''}${
-      unit === 'serving' && !parseServingSize(nutrition.servingSize || '', nutrition.servingQuantity) 
-        ? ' - Nutrition shown per 100g' 
+      unit === 'serving' &&
+      !parseServingSize(nutrition.servingSize || '', nutrition.servingQuantity)
+        ? ' - Nutrition shown per 100g'
         : ''
     }`,
   };
@@ -256,7 +287,10 @@ export function nutritionInfoToMealAnalysis(
 /**
  * Search for products by name (optional feature for manual search)
  */
-export async function searchProducts(query: string, limit: number = 10): Promise<BarcodeLookupResult[]> {
+export async function searchProducts(
+  query: string,
+  limit: number = 10
+): Promise<BarcodeLookupResult[]> {
   try {
     console.log('[OpenFoodFacts] Searching products:', query);
 
@@ -265,7 +299,7 @@ export async function searchProducts(query: string, limit: number = 10): Promise
       {
         method: 'GET',
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'User-Agent': 'NutriAI/1.0 (React Native Expo App)',
         },
       }
@@ -280,7 +314,7 @@ export async function searchProducts(query: string, limit: number = 10): Promise
 
     return products.map((product: OpenFoodFactsProduct) => {
       const nutriments = product.nutriments || {};
-      
+
       let calories = nutriments.energy_100g || 0;
       if (nutriments.energy_unit === 'kJ' && calories > 0) {
         calories = Math.round(calories / 4.184);
@@ -296,9 +330,15 @@ export async function searchProducts(query: string, limit: number = 10): Promise
         protein: Math.round((nutriments.proteins_100g || 0) * 10) / 10,
         carbs: Math.round((nutriments.carbohydrates_100g || 0) * 10) / 10,
         fat: Math.round((nutriments.fat_100g || 0) * 10) / 10,
-        fiber: nutriments.fiber_100g ? Math.round(nutriments.fiber_100g * 10) / 10 : undefined,
-        sugar: nutriments.sugars_100g ? Math.round(nutriments.sugars_100g * 10) / 10 : undefined,
-        sodium: nutriments.sodium_100g ? Math.round(nutriments.sodium_100g * 1000) / 10 : undefined,
+        fiber: nutriments.fiber_100g
+          ? Math.round(nutriments.fiber_100g * 10) / 10
+          : undefined,
+        sugar: nutriments.sugars_100g
+          ? Math.round(nutriments.sugars_100g * 10) / 10
+          : undefined,
+        sodium: nutriments.sodium_100g
+          ? Math.round(nutriments.sodium_100g * 1000) / 10
+          : undefined,
         servingSize: product.serving_size || '100g',
         imageUrl: product.image_url || undefined,
         categories: product.categories || undefined,

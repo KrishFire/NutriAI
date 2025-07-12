@@ -13,7 +13,10 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import {
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+} from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { debounce } from 'lodash';
 import { RootStackParamList } from '../types/navigation';
@@ -39,10 +42,13 @@ interface MealAnalysisState {
   error: string | null;
 }
 
-export default function ManualEntryScreen({ navigation, route }: ManualEntryScreenProps) {
+export default function ManualEntryScreen({
+  navigation,
+  route,
+}: ManualEntryScreenProps) {
   const { user, session } = useAuth();
   const [description, setDescription] = useState('');
-  
+
   // Check if we're in add mode
   const { addToMeal } = route.params || {};
   const [analysisState, setAnalysisState] = useState<MealAnalysisState>({
@@ -88,11 +94,13 @@ export default function ManualEntryScreen({ navigation, route }: ManualEntryScre
 
         // Immediately navigate to MealDetails after successful analysis
         const analysisData = aiMealToMealAnalysis(analysis);
-        
+
         if (addToMeal) {
           // Add mode: Return the analyzed food items to the existing meal
-          console.log('[ManualEntryScreen] Add mode: Returning food items to existing meal');
-          
+          console.log(
+            '[ManualEntryScreen] Add mode: Returning food items to existing meal'
+          );
+
           navigation.navigate('MealDetails', {
             mealId: addToMeal.mealId,
             analysisData: addToMeal.existingAnalysis,
@@ -102,11 +110,17 @@ export default function ManualEntryScreen({ navigation, route }: ManualEntryScre
           // Normal mode: Save meal first, then navigate with fresh meal ID
           try {
             console.log('[ManualEntryScreen] Saving meal before navigation...');
-            const result = await mealAIService.logMeal(mealDescription, 'snack');
-            
+            const result = await mealAIService.logMeal(
+              mealDescription,
+              'snack'
+            );
+
             if (result.success && result.mealLogId) {
-              console.log('[ManualEntryScreen] Meal saved with ID:', result.mealLogId);
-              
+              console.log(
+                '[ManualEntryScreen] Meal saved with ID:',
+                result.mealLogId
+              );
+
               navigation.navigate('MealDetails', {
                 analysisData,
                 mealId: result.mealLogId,
@@ -139,8 +153,6 @@ export default function ManualEntryScreen({ navigation, route }: ManualEntryScre
     [user, session, navigation, addToMeal]
   );
 
-
-
   // Effect to trigger analysis when description changes
   useEffect(() => {
     debouncedAnalysis(description);
@@ -150,7 +162,6 @@ export default function ManualEntryScreen({ navigation, route }: ManualEntryScre
       debouncedAnalysis.cancel();
     };
   }, [description, debouncedAnalysis]);
-
 
   const handleClearDescription = () => {
     setDescription('');

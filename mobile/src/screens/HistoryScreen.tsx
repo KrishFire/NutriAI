@@ -62,13 +62,17 @@ export default function HistoryScreen() {
 
     setLoading(true);
     setError(null);
-    
+
     try {
       console.log('[HistoryScreen] Loading meal history for user:', user.id);
       const result = await getMealHistory(user.id, 30); // Last 30 days
-      
+
       if (result.success) {
-        console.log('[HistoryScreen] Loaded', result.data.length, 'days of history');
+        console.log(
+          '[HistoryScreen] Loaded',
+          result.data.length,
+          'days of history'
+        );
         setHistoryData(result.data);
       } else {
         console.error('[HistoryScreen] Failed to load history:', result.error);
@@ -76,7 +80,9 @@ export default function HistoryScreen() {
       }
     } catch (err) {
       console.error('[HistoryScreen] Error loading history data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load meal history');
+      setError(
+        err instanceof Error ? err.message : 'Failed to load meal history'
+      );
     } finally {
       setLoading(false);
     }
@@ -173,8 +179,8 @@ export default function HistoryScreen() {
           <Ionicons name="alert-circle-outline" size={64} color="#FF3B30" />
           <Text style={styles.emptyTitle}>Failed to load history</Text>
           <Text style={styles.emptySubtitle}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton} 
+          <TouchableOpacity
+            style={styles.retryButton}
             onPress={loadHistoryData}
           >
             <Text style={styles.retryButtonText}>Try Again</Text>
