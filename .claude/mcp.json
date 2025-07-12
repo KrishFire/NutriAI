@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ExpoServer": {
+      "type": "SSE",
+      "url": "http://localhost:8383/sse"
+    }
+  }
+} 

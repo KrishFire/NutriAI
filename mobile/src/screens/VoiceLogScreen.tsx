@@ -76,8 +76,6 @@ export default function VoiceLogScreen({
     };
   }, []);
 
-  // Show different UI for fallback mode (Whisper recording)
-  const isFallbackMode = !nativeSpeech.isNativeSupported;
 
   const handleSubmit = async (text: string) => {
     if (!text.trim() || isProcessing) return;
@@ -126,28 +124,14 @@ export default function VoiceLogScreen({
     if (isProcessing) return 'Processing your meal...';
     if (error) return error;
 
-    if (isFallbackMode) {
-      // Fallback mode (Whisper recording)
-      if (nativeSpeech.state === 'listening') {
-        return 'Recording... Tap stop when done';
-      }
-      if (nativeSpeech.state === 'processing') {
-        return 'Transcribing your recording...';
-      }
-      return 'Tap the microphone to start recording';
-    } else {
-      // Native mode
-      if (nativeSpeech.state === 'listening' && !nativeSpeech.text) {
-        return "Start talking - we're listening";
-      }
-      if (nativeSpeech.state === 'listening' && nativeSpeech.text) {
-        return 'Keep talking or tap the arrow to submit';
-      }
-      if (nativeSpeech.state === 'processing') {
-        return 'Processing...';
-      }
-      return 'Getting ready...';
+    // Whisper recording mode status messages
+    if (nativeSpeech.state === 'listening') {
+      return 'Recording... Tap stop when done';
     }
+    if (nativeSpeech.state === 'processing') {
+      return 'Transcribing your recording...';
+    }
+    return 'Tap the microphone to start recording';
   };
 
   const canSubmit = nativeSpeech.text.trim().length > 0 && !isProcessing;
@@ -165,43 +149,27 @@ export default function VoiceLogScreen({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.micContainer}>
-          {isFallbackMode ? (
-            // Fallback mode: Show record/stop button
-            <TouchableOpacity
-              onPress={() => {
-                if (nativeSpeech.state === 'listening') {
-                  nativeSpeech.stop();
-                } else if (nativeSpeech.state === 'idle') {
-                  nativeSpeech.start();
-                }
-              }}
-              style={[
-                styles.recordButton,
-                nativeSpeech.state === 'listening' && styles.recordingButton,
-              ]}
-              disabled={nativeSpeech.state === 'processing' || isProcessing}
-            >
-              <Ionicons
-                name={nativeSpeech.state === 'listening' ? 'stop' : 'mic'}
-                size={48}
-                color="#FFF"
-              />
-            </TouchableOpacity>
-          ) : // Native mode: Show listening indicator
-          nativeSpeech.state === 'listening' ? (
-            <View style={styles.listeningIndicator}>
-              <Ionicons name="mic" size={48} color="#007AFF" />
-              {/* Simple volume indicator */}
-              <View
-                style={[
-                  styles.volumeBar,
-                  { height: 2 + nativeSpeech.volume * 20 },
-                ]}
-              />
-            </View>
-          ) : (
-            <Ionicons name="mic-off" size={48} color="#999" />
-          )}
+          {/* Recording mode: Show record/stop button */}
+          <TouchableOpacity
+            onPress={() => {
+              if (nativeSpeech.state === 'listening') {
+                nativeSpeech.stop();
+              } else if (nativeSpeech.state === 'idle') {
+                nativeSpeech.start();
+              }
+            }}
+            style={[
+              styles.recordButton,
+              nativeSpeech.state === 'listening' && styles.recordingButton,
+            ]}
+            disabled={nativeSpeech.state === 'processing' || isProcessing}
+          >
+            <Ionicons
+              name={nativeSpeech.state === 'listening' ? 'stop' : 'mic'}
+              size={48}
+              color="#FFF"
+            />
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.statusText}>{getStatusText()}</Text>

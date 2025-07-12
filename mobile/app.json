@@ -17,13 +17,9 @@
       "infoPlist": {
         "NSCameraUsageDescription": "NutriAI needs camera access to scan barcodes and take photos of meals.",
         "NSMicrophoneUsageDescription": "This app uses the microphone to record voice descriptions of your meals for easier logging.",
-        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition to convert your voice descriptions into text for meal logging.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "entitlements": {
-        "com.apple.developer.speechrecognition": true
-      },
-      "bundleIdentifier": "com.kricel.nutriai"
+      "bundleIdentifier": "com.kricel.nutriai.v2"
     },
     "android": {
       "adaptiveIcon": {
@@ -48,8 +44,7 @@
         {
           "microphonePermission": "Allow NutriAI to access your microphone to record meal descriptions."
         }
-      ],
-      "@react-native-voice/voice"
+      ]
     ],
     "extra": {
       "eas": {

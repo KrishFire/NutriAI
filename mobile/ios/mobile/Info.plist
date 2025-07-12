@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.kricel.nutriai</string>
+          <string>com.kricel.nutriai.v2</string>
         </array>
       </dict>
       <dict>
@@ -56,8 +56,6 @@
     <string>NutriAI needs camera access to scan barcodes and take photos of meals.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow NutriAI to access your microphone to record meal descriptions.</string>
-    <key>NSSpeechRecognitionUsageDescription</key>
-    <string>This app uses speech recognition to convert your voice descriptions into text for meal logging.</string>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

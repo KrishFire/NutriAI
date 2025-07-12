@@ -257,7 +257,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.kricel.nutriai";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.kricel.nutriai.v2";
 				PRODUCT_NAME = "mobile";
 				SWIFT_OBJC_BRIDGING_HEADER = "mobile/mobile-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -286,7 +286,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.kricel.nutriai";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.kricel.nutriai.v2";
 				PRODUCT_NAME = "mobile";
 				SWIFT_OBJC_BRIDGING_HEADER = "mobile/mobile-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
