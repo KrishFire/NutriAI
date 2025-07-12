@@ -6,7 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Running the App
 
-- `npm start` - Start Expo development server
+- `npm start` - Start Expo development server (Expo Go)
+- `npm start --dev-client` - Start with EAS development build
 - `npm run ios` - Run on iOS simulator
 - `npm run android` - Run on Android emulator/device
 - `npm run web` - Run in web browser
@@ -17,6 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. Use `npx expo start` for more Expo CLI options
 3. Press 'r' in terminal to reload the app
 4. Press 'm' to toggle menu in Expo CLI
+5. See [DEVELOPMENT.md](./DEVELOPMENT.md) for detailed workflow guide
 
 ## Architecture Overview
 

@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import Voice, {
+import { NativeModules, Platform } from 'react-native';
+import { useVoiceRecording } from './useVoiceRecording';
+
+// Type-only import for TypeScript support
+import type VoiceType from '@react-native-voice/voice';
+import type {
   SpeechResultsEvent,
   SpeechErrorEvent,
   SpeechStartEvent,
@@ -15,8 +20,59 @@ interface UseNativeSpeechOptions {
   language?: string; // e.g., 'en-US'
 }
 
+// Lazy load the Voice module with safer dynamic guard
+let Voice: typeof VoiceType | null = null;
+let isNativeVoiceAvailable = false;
+
+// Try to load the native module only if it exists
+if (Platform.OS !== 'web' && NativeModules.Voice) {
+  try {
+    Voice = require('@react-native-voice/voice').default;
+    isNativeVoiceAvailable = true;
+  } catch (error) {
+    console.warn('[useNativeSpeech] Native voice module not available:', error);
+    isNativeVoiceAvailable = false;
+  }
+}
+
 export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
-  const { onSpeechEnd: onSpeechEndCallback, onError: onErrorCallback, language = 'en-US' } = options;
+  // If native voice is not available, fallback to Whisper recording
+  const whisperFallback = useVoiceRecording({
+    maxDuration: 30,
+    enableAutoStop: false,
+    onTranscriptionComplete: options.onSpeechEnd,
+    onError: options.onError,
+  });
+
+  // Return whisper fallback if native voice is not available
+  if (!isNativeVoiceAvailable || !Voice) {
+    console.warn(
+      '[useNativeSpeech] Native STT unavailable – falling back to Whisper recording'
+    );
+    return {
+      state:
+        whisperFallback.state === 'recording'
+          ? ('listening' as SpeechState)
+          : whisperFallback.state === 'transcribing'
+            ? ('processing' as SpeechState)
+            : (whisperFallback.state as SpeechState),
+      text: whisperFallback.transcription,
+      partialText: '',
+      error: whisperFallback.error,
+      isAvailable: true, // Whisper is always available
+      volume: 0, // Whisper doesn't provide volume
+      start: whisperFallback.startRecording,
+      stop: whisperFallback.stopRecording,
+      cancel: whisperFallback.cancelRecording,
+      reset: whisperFallback.reset,
+      isNativeSupported: false,
+    };
+  }
+  const {
+    onSpeechEnd: onSpeechEndCallback,
+    onError: onErrorCallback,
+    language = 'en-US',
+  } = options;
 
   const [state, setState] = useState<SpeechState>('idle');
   const [text, setText] = useState<string>('');
@@ -34,16 +90,19 @@ export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
     setError(null);
   }, []);
 
-  const handleSpeechEnd = useCallback((e: SpeechEndEvent) => {
-    console.log('[useNativeSpeech] Speech ended');
-    setState('processing');
-    
-    // Use the final text if available, otherwise use partial text
-    const finalText = finalTextRef.current || partialText;
-    if (finalText && onSpeechEndCallback) {
-      onSpeechEndCallback(finalText);
-    }
-  }, [partialText, onSpeechEndCallback]);
+  const handleSpeechEnd = useCallback(
+    (e: SpeechEndEvent) => {
+      console.log('[useNativeSpeech] Speech ended');
+      setState('processing');
+
+      // Use the final text if available, otherwise use partial text
+      const finalText = finalTextRef.current || partialText;
+      if (finalText && onSpeechEndCallback) {
+        onSpeechEndCallback(finalText);
+      }
+    },
+    [partialText, onSpeechEndCallback]
+  );
 
   const handleSpeechResults = useCallback((e: SpeechResultsEvent) => {
     console.log('[useNativeSpeech] Speech results:', e.value);
@@ -62,22 +121,30 @@ export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
     }
   }, []);
 
-  const handleSpeechError = useCallback((e: SpeechErrorEvent) => {
-    console.error('[useNativeSpeech] Speech error:', e);
-    const err = new Error(e.error?.message || 'Speech recognition error');
-    setError(err);
-    setState('error');
-    onErrorCallback?.(err);
-  }, [onErrorCallback]);
+  const handleSpeechError = useCallback(
+    (e: SpeechErrorEvent) => {
+      console.error('[useNativeSpeech] Speech error:', e);
+      const err = new Error(e.error?.message || 'Speech recognition error');
+      setError(err);
+      setState('error');
+      onErrorCallback?.(err);
+    },
+    [onErrorCallback]
+  );
 
-  const handleSpeechVolumeChanged = useCallback((e: SpeechVolumeChangeEvent) => {
-    setVolume(e.value || 0);
-  }, []);
+  const handleSpeechVolumeChanged = useCallback(
+    (e: SpeechVolumeChangeEvent) => {
+      setVolume(e.value || 0);
+    },
+    []
+  );
 
   // Check if speech recognition is available
   useEffect(() => {
+    if (!Voice) return;
+
     checkAvailability();
-    
+
     // Set up event listeners
     Voice.onSpeechStart = handleSpeechStart;
     Voice.onSpeechEnd = handleSpeechEnd;
@@ -88,16 +155,30 @@ export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
 
     return () => {
       // Clean up
-      Voice.destroy().then(Voice.removeAllListeners);
+      Voice.destroy().then(Voice.removeAllListeners).catch(console.error);
     };
-  }, [handleSpeechStart, handleSpeechEnd, handleSpeechResults, handleSpeechPartialResults, handleSpeechError, handleSpeechVolumeChanged]);
+  }, [
+    handleSpeechStart,
+    handleSpeechEnd,
+    handleSpeechResults,
+    handleSpeechPartialResults,
+    handleSpeechError,
+    handleSpeechVolumeChanged,
+  ]);
 
   const checkAvailability = async () => {
+    if (!Voice) {
+      setIsAvailable(false);
+      return;
+    }
+
     try {
       const available = await Voice.isAvailable();
       setIsAvailable(!!available); // Convert 0/1 to boolean
       if (!available) {
-        const err = new Error('Speech recognition is not available on this device');
+        const err = new Error(
+          'Speech recognition is not available on this device'
+        );
         setError(err);
         onErrorCallback?.(err);
       }
@@ -109,7 +190,7 @@ export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
 
   const start = useCallback(async () => {
     try {
-      if (!isAvailable) {
+      if (!isAvailable || !Voice) {
         throw new Error('Speech recognition is not available');
       }
 
@@ -133,6 +214,8 @@ export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
   }, [isAvailable, language, onErrorCallback]);
 
   const stop = useCallback(async () => {
+    if (!Voice) return;
+
     try {
       await Voice.stop();
       setState('processing');
@@ -144,6 +227,8 @@ export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
   }, []);
 
   const cancel = useCallback(async () => {
+    if (!Voice) return;
+
     try {
       await Voice.cancel();
       setText('');
@@ -176,11 +261,14 @@ export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
     error,
     isAvailable,
     volume,
-    
+
     // Actions
     start,
     stop,
     cancel,
     reset,
+
+    // Native support flag
+    isNativeSupported: true,
   };
 }
