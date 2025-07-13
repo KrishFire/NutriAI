@@ -97,6 +97,7 @@ export default function BarcodeScannerScreen({
           mealId: addToMeal.mealId,
           analysisData: addToMeal.existingAnalysis,
           newFoodItems: analysisData.foods,
+          isAddingToExisting: true,
         });
       } else {
         // Normal mode: Create new meal

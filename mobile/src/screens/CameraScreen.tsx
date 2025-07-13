@@ -116,6 +116,7 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
           mealId: addToMeal.mealId,
           analysisData: addToMeal.existingAnalysis,
           newFoodItems: analysisData.foods,
+          isAddingToExisting: true,
         });
       } else {
         // Normal mode: Create new meal
@@ -242,6 +243,7 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
           analysisData: addToMeal.existingAnalysis,
           uploadedImageUrl,
           newFoodItems: analysisData.foods,
+          isAddingToExisting: true,
         });
       } else {
         // Normal mode: Create new meal

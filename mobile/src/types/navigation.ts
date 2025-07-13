@@ -1,11 +1,12 @@
 // Navigation type definitions
 
 import { MealAnalysis } from '../services/openai';
+import { NavigatorScreenParams } from '@react-navigation/native';
 
 // Root stack for auth and main app
 export type RootStackParamList = {
   AuthStack: undefined;
-  AppTabs: undefined;
+  AppTabs: NavigatorScreenParams<AppTabParamList> | undefined;
   AddMealFlow: {
     screen: 'Camera' | 'ManualEntry' | 'BarcodeScanner';
     params?: AddMealStackParamList[keyof AddMealStackParamList];
@@ -16,6 +17,7 @@ export type RootStackParamList = {
     analysisData?: MealAnalysis;
     uploadedImageUrl?: string;
     newFoodItems?: MealAnalysis['foods'];
+    isAddingToExisting?: boolean;
   };
 };
 

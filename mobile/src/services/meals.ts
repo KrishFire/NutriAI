@@ -264,6 +264,141 @@ async function updateUserStreak(userId: string): Promise<void> {
 }
 
 /**
+ * Generate a UUID compatible with React Native
+ */
+const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
+/**
+ * Update an existing meal by deleting old entries and creating new ones
+ */
+export async function updateExistingMeal(
+  mealId: string,
+  userId: string,
+  analysis: MealAnalysis,
+  imageUrl?: string,
+  notes?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Parse synthetic meal ID to get date and meal type
+    const parts = mealId.split('-');
+    if (parts.length < 4) {
+      return { success: false, error: 'Invalid meal ID format' };
+    }
+    
+    const date = `${parts[0]}-${parts[1]}-${parts[2]}`;
+    const mealType = parts[3] as MealEntry['meal_type'];
+    
+    // Start a transaction-like operation
+    // 1. First, get the meal_group_id for existing entries
+    const { data: existingEntries } = await supabase
+      .from('meal_entries')
+      .select('meal_group_id')
+      .eq('user_id', userId)
+      .gte('logged_at', `${date}T00:00:00`)
+      .lte('logged_at', `${date}T23:59:59`)
+      .eq('meal_type', mealType)
+      .limit(1);
+    
+    const existingGroupId = existingEntries?.[0]?.meal_group_id;
+    
+    // 2. Delete existing meal entries for this date/mealType
+    const { error: deleteError } = await supabase
+      .from('meal_entries')
+      .delete()
+      .eq('user_id', userId)
+      .gte('logged_at', `${date}T00:00:00`)
+      .lte('logged_at', `${date}T23:59:59`)
+      .eq('meal_type', mealType);
+    
+    if (deleteError) {
+      throw new Error(`Failed to delete existing entries: ${deleteError.message}`);
+    }
+    
+    // 3. Create new entries with updated data
+    // Use existing group ID if available, otherwise generate new one
+    const mealGroupId = existingGroupId || generateUUID();
+    const loggedAt = new Date(`${date}T${new Date().toTimeString().slice(0, 8)}`).toISOString();
+    
+    // Prepare meal entries
+    const mealEntries: Partial<MealEntry>[] = analysis.foods.map(food => ({
+      user_id: userId,
+      meal_type: mealType,
+      logged_at: loggedAt,
+      food_name: food.name,
+      quantity: food.quantity,
+      calories: Math.round(food.nutrition.calories || 0),
+      protein: Math.round(food.nutrition.protein || 0),
+      carbs: Math.round(food.nutrition.carbs || 0),
+      fat: Math.round(food.nutrition.fat || 0),
+      fiber: food.nutrition.fiber ? Math.round(food.nutrition.fiber) : null,
+      sugar: food.nutrition.sugar ? Math.round(food.nutrition.sugar) : null,
+      sodium: food.nutrition.sodium ? Math.round(food.nutrition.sodium) : null,
+      image_url: imageUrl,
+      notes: notes,
+      confidence_score: food.confidence,
+      meal_group_id: mealGroupId,
+    }));
+    
+    // Insert new meal entries
+    const { error: insertError } = await supabase
+      .from('meal_entries')
+      .insert(mealEntries);
+    
+    if (insertError) {
+      throw new Error(`Failed to insert updated entries: ${insertError.message}`);
+    }
+    
+    // 4. Recalculate and update daily totals
+    const { data: allMealsToday } = await supabase
+      .from('meal_entries')
+      .select('calories, protein, carbs, fat')
+      .eq('user_id', userId)
+      .gte('logged_at', `${date}T00:00:00`)
+      .lte('logged_at', `${date}T23:59:59`);
+    
+    if (allMealsToday && allMealsToday.length > 0) {
+      const dailyTotals = allMealsToday.reduce((acc, meal) => ({
+        total_calories: acc.total_calories + (meal.calories || 0),
+        total_protein: acc.total_protein + (meal.protein || 0),
+        total_carbs: acc.total_carbs + (meal.carbs || 0),
+        total_fat: acc.total_fat + (meal.fat || 0)
+      }), { total_calories: 0, total_protein: 0, total_carbs: 0, total_fat: 0 });
+      
+      // Update or create daily log
+      const { error: dailyLogError } = await supabase
+        .from('daily_logs')
+        .upsert({
+          user_id: userId,
+          date: date,
+          ...dailyTotals
+        }, {
+          onConflict: 'user_id,date'
+        });
+      
+      if (dailyLogError) {
+        console.error('Error updating daily log:', dailyLogError);
+      }
+    }
+    
+    console.log(`[updateExistingMeal] Successfully updated meal for ${date} ${mealType}`);
+    return { success: true };
+    
+  } catch (error) {
+    console.error('Error updating existing meal:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update meal'
+    };
+  }
+}
+
+/**
  * Get today's meals for a user
  */
 export async function getTodaysMeals(userId: string): Promise<MealEntry[]> {
@@ -422,8 +557,12 @@ export async function getMealHistory(userId: string, daysBack: number = 30) {
           0
         );
 
+        // Use the meal_group_id from the first entry if available, otherwise fall back to synthetic ID
+        const mealGroupId = entries[0]?.meal_group_id;
+        const mealId = mealGroupId || `${dailyLog.date}-${mealType}`;
+
         return {
-          id: `${dailyLog.date}-${mealType}`,
+          id: mealId,
           date: dailyLog.date,
           mealType: mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
           foods,
@@ -432,6 +571,7 @@ export async function getMealHistory(userId: string, daysBack: number = 30) {
           totalCarbs,
           totalFat,
           imageUrl: entries.find(e => e.image_url)?.image_url,
+          hasMealGroupId: !!mealGroupId, // Flag to indicate if this meal can be refined
         };
       });
 
@@ -612,6 +752,163 @@ export async function deleteMealEntry(
     return true;
   } catch (error) {
     console.error('Error deleting meal:', error);
+    return false;
+  }
+}
+
+/**
+ * Get meal details by date and meal type (for grouped meals)
+ * This is used when navigating from History screen with synthetic meal IDs
+ */
+export async function getMealDetailsByDateAndType(
+  userId: string,
+  date: string,
+  mealType: string
+): Promise<{
+  success: boolean;
+  data?: MealAnalysis;
+  mealGroupId?: string;
+  error?: string;
+}> {
+  try {
+    // Query all meal entries for this date and meal type
+    const { data: mealEntries, error } = await supabase
+      .from('meal_entries')
+      .select(
+        `
+        *,
+        food_items (
+          id,
+          name,
+          brand,
+          serving_size,
+          serving_unit,
+          calories,
+          protein,
+          carbs,
+          fat,
+          fiber,
+          sugar,
+          sodium
+        )
+      `
+      )
+      .eq('user_id', userId)
+      .gte('logged_at', `${date}T00:00:00`)
+      .lte('logged_at', `${date}T23:59:59`)
+      .eq('meal_type', mealType)
+      .order('logged_at', { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch meal entries: ${error.message}`);
+    }
+
+    if (!mealEntries || mealEntries.length === 0) {
+      return {
+        success: false,
+        error: 'No meal found for this date and type',
+      };
+    }
+
+    // Transform meal entries into MealAnalysis format
+    const foods: FoodItem[] = mealEntries.map(entry => ({
+      name: entry.food_items?.name || entry.notes || 'Unknown Food',
+      brand: entry.food_items?.brand,
+      quantity: Number(entry.quantity) || 1,
+      unit: entry.unit || 'serving',
+      nutrition: {
+        calories: Number(entry.calories) || 0,
+        protein: Number(entry.protein) || 0,
+        carbs: Number(entry.carbs) || 0,
+        fat: Number(entry.fat) || 0,
+        fiber: entry.food_items?.fiber ? Number(entry.food_items.fiber) : undefined,
+        sugar: entry.food_items?.sugar ? Number(entry.food_items.sugar) : undefined,
+        sodium: entry.food_items?.sodium ? Number(entry.food_items.sodium) : undefined,
+      },
+    }));
+
+    // Calculate total nutrition
+    const totalNutrition = foods.reduce(
+      (total, food) => ({
+        calories: total.calories + (food.nutrition.calories || 0),
+        protein: total.protein + (food.nutrition.protein || 0),
+        carbs: total.carbs + (food.nutrition.carbs || 0),
+        fat: total.fat + (food.nutrition.fat || 0),
+        fiber: (total.fiber || 0) + (food.nutrition.fiber || 0),
+        sugar: (total.sugar || 0) + (food.nutrition.sugar || 0),
+        sodium: (total.sodium || 0) + (food.nutrition.sodium || 0),
+      }),
+      {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        fiber: 0,
+        sugar: 0,
+        sodium: 0,
+      }
+    );
+
+    const mealAnalysis: MealAnalysis = {
+      foods,
+      totalNutrition,
+      confidence: 0.95, // High confidence since this is from database
+    };
+
+    // Get the meal_group_id from the first entry
+    const mealGroupId = mealEntries[0]?.meal_group_id;
+
+    return {
+      success: true,
+      data: mealAnalysis,
+      mealGroupId,
+    };
+  } catch (error) {
+    console.error('Error fetching meal details:', error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to fetch meal details',
+    };
+  }
+}
+
+/**
+ * Update a meal entry
+ */
+export async function updateMealEntry(
+  entryId: string,
+  updates: {
+    quantity?: number;
+    unit?: string;
+    calories?: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+    notes?: string;
+  }
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('meal_entries')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', entryId);
+
+    if (error) {
+      console.error('Error updating meal entry:', error);
+      return false;
+    }
+
+    // TODO: Update daily_logs totals if macros changed
+
+    return true;
+  } catch (error) {
+    console.error('Error updating meal entry:', error);
     return false;
   }
 }

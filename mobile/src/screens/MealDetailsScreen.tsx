@@ -12,18 +12,19 @@ import {
 import { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { CommonActions } from '@react-navigation/native';
 import { Button, LoadingSpinner, MealCorrectionModal } from '../components';
 import { useAuth } from '../contexts/AuthContext';
-import { AddMealStackParamList } from '../types/navigation';
+import { RootStackParamList } from '../types/navigation';
 import { MealAnalysis, FoodItem, NutritionData } from '../services/openai';
-import { saveMealAnalysis } from '../services/meals';
+import { saveMealAnalysis, getMealDetailsByDateAndType, updateExistingMeal } from '../services/meals';
 import {
   MealAnalysis as SharedMealAnalysis,
   ChatMessage,
 } from '../../../shared/types';
 
 type MealDetailsScreenProps = NativeStackScreenProps<
-  AddMealStackParamList,
+  RootStackParamList,
   'MealDetails'
 >;
 
@@ -32,7 +33,7 @@ export default function MealDetailsScreen({
   route,
 }: MealDetailsScreenProps) {
   const { user } = useAuth();
-  const { imageUri, analysisData, uploadedImageUrl, mealId, newFoodItems } =
+  const { imageUri, analysisData, uploadedImageUrl, mealId, newFoodItems, isAddingToExisting } =
     route.params;
 
   const [editedAnalysis, setEditedAnalysis] = useState<MealAnalysis>(
@@ -45,6 +46,71 @@ export default function MealDetailsScreen({
   const [saving, setSaving] = useState(false);
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
   const [showAddFoodModal, setShowAddFoodModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isExistingMeal, setIsExistingMeal] = useState(false);
+  const [existingMealType, setExistingMealType] = useState<string | null>(null);
+  const [canRefineWithAI, setCanRefineWithAI] = useState(false);
+
+  // Set canRefineWithAI based on mealId format (UUID vs synthetic)
+  useEffect(() => {
+    if (mealId) {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(mealId);
+      setCanRefineWithAI(isUUID);
+    }
+  }, [mealId]);
+
+  // Load meal data if only mealId is provided (from History screen)
+  useEffect(() => {
+    async function loadMealData() {
+      if (!mealId || analysisData || !user) return;
+      
+      // Check if this is a real meal_group_id (UUID format) or synthetic ID
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(mealId);
+      setCanRefineWithAI(isUUID);
+      
+      if (!isUUID) {
+        // Parse synthetic mealId format: "2025-07-13-lunch"
+        const parts = mealId.split('-');
+        if (parts.length < 4) return;
+        
+        const date = `${parts[0]}-${parts[1]}-${parts[2]}`;
+        const mealType = parts[3];
+        
+        setLoading(true);
+        setError(null);
+        
+        try {
+          const result = await getMealDetailsByDateAndType(user.id, date, mealType);
+          
+          if (result.success && result.data) {
+            setEditedAnalysis(result.data);
+            setIsExistingMeal(true);
+            setExistingMealType(mealType);
+            
+            // If we got a real meal_group_id, update the navigation params and enable refinement
+            if (result.mealGroupId) {
+              navigation.setParams({ mealId: result.mealGroupId });
+              setCanRefineWithAI(true);
+            }
+          } else {
+            setError(result.error || 'Failed to load meal details');
+          }
+        } catch (err) {
+          setError('Failed to load meal details');
+          console.error('[MealDetailsScreen] Error loading meal:', err);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // For UUID meal IDs, we need to implement a proper loading mechanism
+        // For now, set canRefineWithAI to true since it's a real meal_group_id
+        setCanRefineWithAI(true);
+      }
+    }
+    
+    loadMealData();
+  }, [mealId, analysisData, user]);
 
   // Handle new food items returned from add food flow
   useEffect(() => {
@@ -76,16 +142,62 @@ export default function MealDetailsScreen({
         }
       );
 
-      setEditedAnalysis({
+      const updatedAnalysis = {
         ...editedAnalysis,
         foods: updatedFoods,
         totalNutrition,
-      });
+      };
+
+      setEditedAnalysis(updatedAnalysis);
 
       // Clear navigation param to prevent re-adding on re-render
-      navigation.setParams({ newFoodItems: undefined });
+      navigation.setParams({ newFoodItems: undefined, isAddingToExisting: undefined });
+
+      // If adding to existing meal, save automatically
+      if (isAddingToExisting && mealId && user) {
+        setSaving(true);
+        updateExistingMeal(
+          mealId,
+          user.id,
+          updatedAnalysis,
+          uploadedImageUrl,
+          updatedAnalysis.notes
+        ).then(result => {
+          setSaving(false);
+          if (result.success) {
+            Alert.alert('Success!', 'Food items added successfully!', [
+              {
+                text: 'OK',
+                onPress: () => {
+                  // Use CommonActions.reset to reliably navigate to History tab
+                  navigation.dispatch(
+                    CommonActions.reset({
+                      index: 0,
+                      routes: [
+                        {
+                          name: 'AppTabs',
+                          state: {
+                            index: 1, // History tab
+                            routes: [
+                              { name: 'Home' },
+                              { name: 'History' },
+                              { name: 'Profile' }
+                            ]
+                          }
+                        }
+                      ]
+                    })
+                  );
+                },
+              },
+            ]);
+          } else {
+            Alert.alert('Error', result.error || 'Failed to add food items');
+          }
+        });
+      }
     }
-  }, [newFoodItems]);
+  }, [newFoodItems, isAddingToExisting, mealId, user, uploadedImageUrl]);
 
   const updateFoodItem = (index: number, updatedFood: FoodItem) => {
     const newFoods = [...editedAnalysis.foods];
@@ -171,10 +283,13 @@ export default function MealDetailsScreen({
       return;
     }
 
-    navigation.navigate('Camera', {
-      addToMeal: {
-        mealId,
-        existingAnalysis: editedAnalysis,
+    navigation.navigate('AddMealFlow', {
+      screen: 'Camera',
+      params: {
+        addToMeal: {
+          mealId,
+          existingAnalysis: editedAnalysis,
+        },
       },
     });
   };
@@ -185,10 +300,13 @@ export default function MealDetailsScreen({
       return;
     }
 
-    navigation.navigate('ManualEntry', {
-      addToMeal: {
-        mealId,
-        existingAnalysis: editedAnalysis,
+    navigation.navigate('AddMealFlow', {
+      screen: 'ManualEntry',
+      params: {
+        addToMeal: {
+          mealId,
+          existingAnalysis: editedAnalysis,
+        },
       },
     });
   };
@@ -206,33 +324,76 @@ export default function MealDetailsScreen({
 
     setSaving(true);
     try {
-      // Show meal type selection
-      Alert.alert('Select Meal Type', 'What type of meal is this?', [
-        {
-          text: 'Breakfast',
-          onPress: () => saveMealWithType('breakfast'),
-        },
-        {
-          text: 'Lunch',
-          onPress: () => saveMealWithType('lunch'),
-        },
-        {
-          text: 'Dinner',
-          onPress: () => saveMealWithType('dinner'),
-        },
-        {
-          text: 'Snack',
-          onPress: () => saveMealWithType('snack'),
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => setSaving(false),
-        },
-      ]);
+      if (isExistingMeal && existingMealType && mealId) {
+        // Update existing meal using the new updateExistingMeal function
+        const result = await updateExistingMeal(
+          mealId,
+          user.id,
+          editedAnalysis,
+          uploadedImageUrl,
+          editedAnalysis.notes
+        );
+        
+        if (result.success) {
+          Alert.alert('Success!', 'Meal updated successfully!', [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Use CommonActions.reset to reliably navigate to History tab
+                navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [
+                      {
+                        name: 'AppTabs',
+                        state: {
+                          index: 1, // History tab
+                          routes: [
+                            { name: 'Home' },
+                            { name: 'History' },
+                            { name: 'Profile' }
+                          ]
+                        }
+                      }
+                    ]
+                  })
+                );
+              },
+            },
+          ]);
+        } else {
+          Alert.alert('Error', result.error || 'Failed to update meal');
+        }
+      } else {
+        // Show meal type selection for new meals
+        Alert.alert('Select Meal Type', 'What type of meal is this?', [
+          {
+            text: 'Breakfast',
+            onPress: () => saveMealWithType('breakfast'),
+          },
+          {
+            text: 'Lunch',
+            onPress: () => saveMealWithType('lunch'),
+          },
+          {
+            text: 'Dinner',
+            onPress: () => saveMealWithType('dinner'),
+          },
+          {
+            text: 'Snack',
+            onPress: () => saveMealWithType('snack'),
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => setSaving(false),
+          },
+        ]);
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to save meal');
       console.error('Save meal error:', error);
+    } finally {
       setSaving(false);
     }
   };
@@ -253,7 +414,27 @@ export default function MealDetailsScreen({
         Alert.alert('Success!', 'Meal saved successfully!', [
           {
             text: 'OK',
-            onPress: () => navigation.getParent()?.goBack(),
+            onPress: () => {
+              // Use CommonActions.reset to reliably navigate to Home tab
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [
+                    {
+                      name: 'AppTabs',
+                      state: {
+                        index: 0, // Home tab
+                        routes: [
+                          { name: 'Home' },
+                          { name: 'History' },
+                          { name: 'Profile' }
+                        ]
+                      }
+                    }
+                  ]
+                })
+              );
+            },
           },
         ]);
       } else {
@@ -277,7 +458,7 @@ export default function MealDetailsScreen({
 
   const handleCorrectionComplete = (
     newAnalysis: SharedMealAnalysis,
-    newHistory: ChatMessage[]
+    _newHistory: ChatMessage[]
   ) => {
     // Convert shared meal analysis back to openai service format
     const convertedAnalysis: MealAnalysis = {
@@ -310,19 +491,35 @@ export default function MealDetailsScreen({
     console.log('[MealDetailsScreen] Analysis corrected:', convertedAnalysis);
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <LoadingSpinner size="large" />
+          <Text style={styles.loadingText}>Loading meal details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Button
+            title="Go Back"
+            onPress={() => navigation.navigate('AppTabs', { screen: 'History' })}
+            variant="primary"
+            size="medium"
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Meal Details</Text>
-        <View style={styles.placeholder} />
-      </View>
-
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -400,7 +597,7 @@ export default function MealDetailsScreen({
 
         {/* Action Buttons */}
         <View style={styles.actionContainer}>
-          {mealId && (
+          {mealId && canRefineWithAI && (
             <Button
               title="Refine with AI"
               onPress={handleCorrectAnalysis}
@@ -410,7 +607,7 @@ export default function MealDetailsScreen({
             />
           )}
           <Button
-            title="Save Meal"
+            title={isExistingMeal ? "Update Meal" : "Save Meal"}
             onPress={saveMeal}
             variant="primary"
             loading={saving}
@@ -429,7 +626,7 @@ export default function MealDetailsScreen({
             foods: editedAnalysis.foods.map(food => ({
               name: food.name,
               quantity: parseFloat(food.quantity) || 1,
-              unit: food.quantity.replace(/[0-9.]/g, '').trim() || 'serving',
+              unit: (typeof food.quantity === 'string' ? food.quantity.replace(/[0-9.]/g, '').trim() : '') || 'serving',
               calories: food.nutrition.calories,
               protein: food.nutrition.protein,
               carbs: food.nutrition.carbs,
@@ -785,31 +982,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  header: {
-    flexDirection: 'row',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    gap: 16,
   },
-  backButton: {
-    padding: 8,
-  },
-  backButtonText: {
+  loadingText: {
     fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
+    color: '#6c757d',
   },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2c3e50',
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    gap: 20,
   },
-  placeholder: {
-    width: 60,
+  errorText: {
+    fontSize: 16,
+    color: '#dc3545',
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,

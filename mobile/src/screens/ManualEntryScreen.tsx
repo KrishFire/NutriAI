@@ -105,6 +105,7 @@ export default function ManualEntryScreen({
             mealId: addToMeal.mealId,
             analysisData: addToMeal.existingAnalysis,
             newFoodItems: analysisData.foods,
+            isAddingToExisting: true,
           });
         } else {
           // Normal mode: Save meal first, then navigate with fresh meal ID
@@ -153,15 +154,12 @@ export default function ManualEntryScreen({
     [user, session, navigation, addToMeal]
   );
 
-  // Effect to trigger analysis when description changes
-  useEffect(() => {
-    debouncedAnalysis(description);
-
-    // Cleanup
-    return () => {
-      debouncedAnalysis.cancel();
-    };
-  }, [description, debouncedAnalysis]);
+  // Manual analyze function
+  const handleAnalyzePress = () => {
+    if (description.trim().length > 3) {
+      debouncedAnalysis(description);
+    }
+  };
 
   const handleClearDescription = () => {
     setDescription('');
@@ -174,7 +172,7 @@ export default function ManualEntryScreen({
 
   const handleSuggestionPress = (suggestion: string) => {
     setDescription(suggestion);
-    debouncedAnalysis(suggestion);
+    // Don't auto-analyze, let user press analyze button
   };
 
   const renderContent = () => {
@@ -194,7 +192,7 @@ export default function ManualEntryScreen({
           <Text style={styles.errorText}>{analysisState.error}</Text>
           <TouchableOpacity
             style={styles.retryButton}
-            onPress={() => debouncedAnalysis(description)}
+            onPress={handleAnalyzePress}
           >
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
@@ -290,7 +288,7 @@ export default function ManualEntryScreen({
             !analysisState.isLoading && (
               <TouchableOpacity
                 style={styles.analyzeButton}
-                onPress={() => debouncedAnalysis(description)}
+                onPress={handleAnalyzePress}
               >
                 <Ionicons name="analytics" size={16} color="#FFFFFF" />
                 <Text style={styles.analyzeButtonText}>Analyze Meal</Text>
