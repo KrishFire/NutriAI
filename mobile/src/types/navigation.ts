@@ -7,8 +7,15 @@ export type RootStackParamList = {
   AuthStack: undefined;
   AppTabs: undefined;
   AddMealFlow: {
-    screen: 'Camera' | 'ManualEntry' | 'MealDetails' | 'BarcodeScanner';
+    screen: 'Camera' | 'ManualEntry' | 'BarcodeScanner';
     params?: AddMealStackParamList[keyof AddMealStackParamList];
+  };
+  MealDetails: {
+    mealId?: string;
+    imageUri?: string;
+    analysisData?: MealAnalysis;
+    uploadedImageUrl?: string;
+    newFoodItems?: MealAnalysis['foods'];
   };
 };
 
@@ -40,13 +47,6 @@ export type AddMealStackParamList = {
       }
     | undefined;
   VoiceLog: undefined;
-  MealDetails: {
-    mealId?: string;
-    imageUri?: string;
-    analysisData?: MealAnalysis;
-    uploadedImageUrl?: string;
-    newFoodItems?: MealAnalysis['foods'];
-  };
 };
 
 // Auth stack for login/signup

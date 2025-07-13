@@ -92,14 +92,6 @@ function AddMealStackNavigator() {
           headerShown: false, // VoiceLogScreen has its own header
         }}
       />
-      <AddMealStack.Screen
-        name="MealDetails"
-        component={MealDetailsScreen}
-        options={{
-          title: 'Meal Details',
-          gestureEnabled: false, // Prevent accidental swipe dismissal with data
-        }}
-      />
     </AddMealStack.Navigator>
   );
 }
@@ -258,6 +250,15 @@ function AppStack() {
           }}
         />
       </RootStack.Group>
+      <RootStack.Screen
+        name="MealDetails"
+        component={MealDetailsScreen}
+        options={{
+          title: 'Meal Details',
+          headerShown: true,
+          animation: 'slide_from_right',
+        }}
+      />
     </RootStack.Navigator>
   );
 }

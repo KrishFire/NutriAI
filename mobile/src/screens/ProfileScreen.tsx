@@ -35,8 +35,7 @@ interface UserStats {
 }
 
 export default function ProfileScreen() {
-  const { user, signOut } = useAuth();
-  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
+  const { user, signOut, preferences: authPreferences, updatePreferences, preferencesLoading } = useAuth();
   const [stats, setStats] = useState<UserStats>({
     currentStreak: 0,
     longestStreak: 0,
@@ -66,24 +65,10 @@ export default function ProfileScreen() {
     setError(null);
 
     try {
-      console.log('[ProfileScreen] Loading user data for:', user.id);
+      console.log('[ProfileScreen] Loading user stats for:', user.id);
 
-      // Load preferences and stats in parallel
-      const [prefsResult, statsResult] = await Promise.all([
-        getOrCreateUserPreferences(user.id),
-        getUserStats(user.id),
-      ]);
-
-      if (prefsResult.error) {
-        console.error(
-          '[ProfileScreen] Error loading preferences:',
-          prefsResult.error
-        );
-        setError(prefsResult.error.message);
-      } else if (prefsResult.data) {
-        console.log('[ProfileScreen] Loaded preferences:', prefsResult.data);
-        setPreferences(prefsResult.data);
-      }
+      // Load stats (authPreferences are now loaded from AuthContext)
+      const statsResult = await getUserStats(user.id);
 
       if (statsResult.success) {
         console.log('[ProfileScreen] Loaded stats:', statsResult.data);
@@ -103,36 +88,35 @@ export default function ProfileScreen() {
   };
 
   const handleSavePreferences = async (updatedPrefs: UserPreferencesInput) => {
-    if (!user || !preferences) return;
+    if (!user || !authPreferences) return;
 
     setSaving(true);
     try {
-      console.log('[ProfileScreen] Saving preferences:', updatedPrefs);
+      console.log('[ProfileScreen] Saving authPreferences:', updatedPrefs);
 
-      // Validate preferences first
+      // Validate authPreferences first
       const validationError = validateUserPreferences(updatedPrefs);
       if (validationError) {
         Alert.alert('Invalid Input', validationError.message);
         return;
       }
 
-      const result = await updateUserPreferences(user.id, updatedPrefs);
+      const result = await updatePreferences(updatedPrefs);
 
       if (result.error) {
         console.error(
-          '[ProfileScreen] Error saving preferences:',
+          '[ProfileScreen] Error saving authPreferences:',
           result.error
         );
         Alert.alert('Error', result.error.message);
-      } else if (result.data) {
+      } else {
         console.log('[ProfileScreen] Preferences saved successfully');
-        setPreferences(result.data);
         setEditing(null);
         Alert.alert('Success', 'Preferences saved successfully');
       }
     } catch (err) {
-      console.error('[ProfileScreen] Error saving preferences:', err);
-      Alert.alert('Error', 'Failed to save preferences');
+      console.error('[ProfileScreen] Error saving authPreferences:', err);
+      Alert.alert('Error', 'Failed to save authPreferences');
     } finally {
       setSaving(false);
     }
@@ -158,7 +142,7 @@ export default function ProfileScreen() {
   };
 
   const handleSaveEdit = () => {
-    if (!editing || !preferences) return;
+    if (!editing || !authPreferences) return;
 
     const numericValue = parseInt(editValue);
     if (isNaN(numericValue)) {
@@ -189,10 +173,10 @@ export default function ProfileScreen() {
   };
 
   const handleToggleNotifications = () => {
-    if (!preferences) return;
+    if (!authPreferences) return;
 
     handleSavePreferences({
-      notifications_enabled: !preferences.notifications_enabled,
+      notifications_enabled: !authPreferences.notifications_enabled,
     });
   };
 
@@ -241,7 +225,7 @@ export default function ProfileScreen() {
   );
 
   // Show loading state
-  if (loading || !preferences) {
+  if (loading || preferencesLoading || !authPreferences) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -290,34 +274,34 @@ export default function ProfileScreen() {
         {/* Daily Goals Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Daily Goals</Text>
-          <View style={styles.preferencesContainer}>
+          <View style={styles.authPreferencesContainer}>
             {renderPreferenceRow(
               'Calories',
-              preferences.daily_calorie_goal,
+              authPreferences.daily_calorie_goal,
               () =>
                 handleEditPreference(
                   'calories',
-                  preferences.daily_calorie_goal
+                  authPreferences.daily_calorie_goal
                 ),
               'kcal'
             )}
             {renderPreferenceRow(
               'Protein',
-              preferences.daily_protein_goal,
+              authPreferences.daily_protein_goal,
               () =>
-                handleEditPreference('protein', preferences.daily_protein_goal),
+                handleEditPreference('protein', authPreferences.daily_protein_goal),
               'g'
             )}
             {renderPreferenceRow(
               'Carbs',
-              preferences.daily_carb_goal,
-              () => handleEditPreference('carbs', preferences.daily_carb_goal),
+              authPreferences.daily_carb_goal,
+              () => handleEditPreference('carbs', authPreferences.daily_carb_goal),
               'g'
             )}
             {renderPreferenceRow(
               'Fat',
-              preferences.daily_fat_goal,
-              () => handleEditPreference('fat', preferences.daily_fat_goal),
+              authPreferences.daily_fat_goal,
+              () => handleEditPreference('fat', authPreferences.daily_fat_goal),
               'g'
             )}
           </View>
@@ -326,11 +310,11 @@ export default function ProfileScreen() {
         {/* Settings Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
-          <View style={styles.preferencesContainer}>
+          <View style={styles.authPreferencesContainer}>
             <View style={styles.preferenceRow}>
               <Text style={styles.preferenceLabel}>Notifications</Text>
               <Switch
-                value={preferences.notifications_enabled}
+                value={authPreferences.notifications_enabled}
                 onValueChange={handleToggleNotifications}
                 trackColor={{ false: '#E0E0E0', true: '#007AFF' }}
                 thumbColor="#FFFFFF"
@@ -340,7 +324,7 @@ export default function ProfileScreen() {
 
             {renderPreferenceRow(
               'Weight Goal',
-              formatWeightGoal(preferences.weight_goal),
+              formatWeightGoal(authPreferences.weight_goal),
               () =>
                 Alert.alert(
                   'Coming Soon',
@@ -350,7 +334,7 @@ export default function ProfileScreen() {
 
             {renderPreferenceRow(
               'Activity Level',
-              formatActivityLevel(preferences.activity_level),
+              formatActivityLevel(authPreferences.activity_level),
               () =>
                 Alert.alert(
                   'Coming Soon',
@@ -360,8 +344,8 @@ export default function ProfileScreen() {
 
             {renderPreferenceRow(
               'Units',
-              preferences.unit_system.charAt(0).toUpperCase() +
-                preferences.unit_system.slice(1),
+              authPreferences.unit_system.charAt(0).toUpperCase() +
+                authPreferences.unit_system.slice(1),
               () =>
                 Alert.alert(
                   'Coming Soon',
@@ -374,7 +358,7 @@ export default function ProfileScreen() {
         {/* Account Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
-          <View style={styles.preferencesContainer}>
+          <View style={styles.authPreferencesContainer}>
             <TouchableOpacity
               style={styles.preferenceRow}
               onPress={handleSignOut}
@@ -509,7 +493,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  preferencesContainer: {
+  authPreferencesContainer: {
     backgroundColor: '#FFFFFF',
     marginHorizontal: 20,
     borderRadius: 12,
