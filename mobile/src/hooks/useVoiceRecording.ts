@@ -55,7 +55,10 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
     };
   }, []);
 
-  const cleanup = () => {
+  // Add a flag to prevent concurrent stop operations
+  const isStoppingRef = useRef<boolean>(false);
+
+  const cleanup = (preserveRecording = false) => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -72,7 +75,8 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
     }
-    if (recordingRef.current) {
+    // Only handle recording cleanup if not preserving it for stopRecording
+    if (!preserveRecording && recordingRef.current) {
       recordingRef.current.stopAndUnloadAsync().catch(() => {});
       recordingRef.current = null;
     }
@@ -119,6 +123,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
       setIsAutoStopping(false);
       setHasStartedSpeaking(false);
       latestMeteringRef.current = -160;
+      isStoppingRef.current = false; // Reset stopping flag
 
       // Configure recording options for M4A format with metering enabled
       const recordingOptions: Audio.RecordingOptions = {
@@ -228,22 +233,34 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
 
   const stopRecording = useCallback(async () => {
     try {
+      // Prevent concurrent stop operations
+      if (isStoppingRef.current) {
+        console.warn('[useVoiceRecording] Stop already in progress, ignoring...');
+        return;
+      }
+
       if (!recordingRef.current) {
         console.warn('[useVoiceRecording] No active recording to stop');
         return;
       }
 
-      // Clear all timers
-      cleanup();
+      // Mark that we're stopping
+      isStoppingRef.current = true;
+
+      // Clear all timers but preserve the recording reference
+      cleanup(true);
 
       setState('transcribing');
       setIsAutoStopping(false);
       console.log('[useVoiceRecording] Stopping recording...');
 
+      // Save the recording reference before any async operations
+      const recording = recordingRef.current;
+      recordingRef.current = null; // Clear it immediately to prevent double-stop
+
       // Stop and unload recording
-      await recordingRef.current.stopAndUnloadAsync();
-      const uri = recordingRef.current.getURI();
-      recordingRef.current = null;
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
 
       if (!uri) {
         throw new Error('No recording URI available');
@@ -278,25 +295,32 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
       setState('error');
       setError(error);
       onError?.(error);
-
-      // Clean up recording if it exists
-      if (recordingRef.current) {
-        try {
-          await recordingRef.current.stopAndUnloadAsync();
-        } catch {}
-        recordingRef.current = null;
-      }
+    } finally {
+      // Always clear the stopping flag
+      isStoppingRef.current = false;
     }
   }, [onTranscriptionComplete, onError]);
 
   const cancelRecording = useCallback(async () => {
     try {
-      cleanup();
+      // Prevent concurrent stop/cancel operations
+      if (isStoppingRef.current) {
+        console.warn('[useVoiceRecording] Stop/cancel already in progress, ignoring...');
+        return;
+      }
+
+      // Mark that we're stopping
+      isStoppingRef.current = true;
+
+      // Clear timers but preserve recording for proper cleanup
+      cleanup(true);
 
       if (recordingRef.current) {
-        await recordingRef.current.stopAndUnloadAsync();
-        const uri = recordingRef.current.getURI();
-        recordingRef.current = null;
+        const recording = recordingRef.current;
+        recordingRef.current = null; // Clear immediately to prevent double operations
+
+        await recording.stopAndUnloadAsync();
+        const uri = recording.getURI();
 
         // Clean up temporary file
         if (uri) {
@@ -315,6 +339,9 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
     } catch (err) {
       console.error('[useVoiceRecording] Cancel recording error:', err);
       setState('idle');
+    } finally {
+      // Always clear the stopping flag
+      isStoppingRef.current = false;
     }
   }, []);
 
