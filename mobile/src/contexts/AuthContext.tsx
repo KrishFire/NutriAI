@@ -175,6 +175,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await loadUserPreferences(user.id);
   };
 
+  const completeOnboarding = async () => {
+    if (!user) return;
+    
+    try {
+      await updatePrefs({ has_completed_onboarding: true });
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+    }
+  };
+
   const contextValue: AuthContextType = {
     user,
     session,
@@ -187,6 +197,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     resetPassword,
     updatePreferences: updatePrefs,
     refreshPreferences,
+    completeOnboarding,
   };
 
   return (

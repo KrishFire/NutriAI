@@ -2,6 +2,43 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🚨 CRITICAL: Managing Native Dependencies
+
+### Installing Packages with Native Code
+
+**ALWAYS use `npx expo install` for packages with native dependencies!**
+
+When adding libraries that contain native iOS/Android code (e.g., expo-notifications, expo-camera, expo-background-fetch), you MUST:
+
+1. **Install with Expo CLI** (NOT npm or yarn):
+   ```bash
+   cd mobile
+   npx expo install <package-name>
+   ```
+
+2. **Rebuild the native app** to include new native modules:
+   ```bash
+   # For iOS
+   npx expo run:ios
+   
+   # For Android
+   npx expo run:android
+   ```
+
+3. **If you see "Cannot find native module" errors**, the native code is missing. Fix by:
+   ```bash
+   cd mobile/ios
+   pod install
+   cd ..
+   npx expo run:ios
+   ```
+
+### Common Native Module Errors
+
+- **"Cannot find native module 'ExpoPushTokenManager'"** - expo-notifications not linked
+- **"Invariant Violation"** - Native module missing from build
+- **Solution**: Always rebuild after adding native dependencies!
+
 ## Development Commands
 
 ### Running the App
@@ -102,6 +139,13 @@ No testing framework is currently configured. When adding tests:
 - ✅ **User Preferences Table**: Created missing table with proper schema and RLS policies
 - ✅ **AuthContext Enhancement**: Added preferences management to centralized state
 - ✅ **ProfileScreen**: Updated to use preferences from AuthContext instead of direct DB queries
+
+### Recent Features (Phase 2 - Streak Tracking)
+- ✅ **Streak Tracking System**: Complete implementation with StreakContext, database integration, and UI components
+- ✅ **Push Notifications**: expo-notifications setup with permission handling
+- ✅ **Background Tasks**: expo-background-fetch for nutrition reminders
+- ✅ **Streak UI Components**: DailyStreakCard, StreakBadge, StreakCelebration with animations
+- ✅ **Native Module Fix**: Resolved ExpoPushTokenManager error with proper pod installation
 
 ### Pending Features (from development plan)
 - ⏳ **Phase 2 - Auth & Monetization**: Google/Apple login, basic premium features, RevenueCat

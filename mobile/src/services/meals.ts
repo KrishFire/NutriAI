@@ -341,7 +341,6 @@ export async function updateExistingMeal(
       sodium: food.nutrition.sodium ? Math.round(food.nutrition.sodium) : null,
       image_url: imageUrl,
       notes: notes,
-      confidence_score: food.confidence,
       meal_group_id: mealGroupId,
     }));
     
@@ -557,12 +556,13 @@ export async function getMealHistory(userId: string, daysBack: number = 30) {
           0
         );
 
-        // Use the meal_group_id from the first entry if available, otherwise fall back to synthetic ID
+        // Use the meal_group_id from the first entry if available
         const mealGroupId = entries[0]?.meal_group_id;
-        const mealId = mealGroupId || `${dailyLog.date}-${mealType}`;
+        const syntheticId = `${dailyLog.date}-${mealType}`;
 
         return {
-          id: mealId,
+          id: syntheticId,
+          mealGroupId: mealGroupId, // Pass the real UUID separately
           date: dailyLog.date,
           mealType: mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
           foods,

@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { supabase } from '../services/supabase';
+import { supabase } from '../config/supabase';
 
 type TestResult = {
   scenario: string;

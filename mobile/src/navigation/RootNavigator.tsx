@@ -15,13 +15,24 @@ import {
   HistoryStackParamList,
   ProfileStackParamList,
   AddMealStackParamList,
+  OnboardingStackParamList,
 } from '../types/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { LoadingSpinner } from '../components';
 import ExpandableFAB from '../components/ExpandableFAB';
-import HomeScreen from '../screens/HomeScreen';
-import LoginScreen from '../screens/LoginScreen';
+
+// Import navigators
+import OnboardingStack from './OnboardingStack';
+import BottomTabNavigator from './BottomTabNavigator';
+
+// Import auth screens
+import LoginScreen from '../screens/auth/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import DeleteAccountScreen from '../screens/auth/DeleteAccountScreen';
+
+// Import old screens for compatibility
+import HomeScreen from '../screens/HomeScreen';
 import CameraScreen from '../screens/CameraScreen';
 import MealDetailsScreen from '../screens/MealDetailsScreen';
 import HistoryScreen from '../screens/HistoryScreen';
@@ -107,6 +118,8 @@ function AuthStackNavigator() {
     >
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Signup" component={SignupScreen} />
+      <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <AuthStack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
     </AuthStack.Navigator>
   );
 }
@@ -234,6 +247,14 @@ function AppStack() {
       }}
     >
       <RootStack.Screen
+        name="Main"
+        component={BottomTabNavigator}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      {/* Legacy tab navigator for compatibility */}
+      <RootStack.Screen
         name="AppTabs"
         component={AppTabNavigator}
         options={{
@@ -264,15 +285,33 @@ function AppStack() {
 }
 
 export default function RootNavigator() {
-  const { user, loading } = useAuth();
+  const { user, loading, preferences } = useAuth();
 
   if (loading) {
     return <LoadingSpinner text="Loading..." overlay />;
   }
 
+  // Check if user has completed onboarding
+  const hasCompletedOnboarding = user && preferences?.has_completed_onboarding;
+
   return (
     <NavigationContainer>
-      {user ? <AppStack /> : <AuthStackNavigator />}
+      {!user ? (
+        // Show onboarding for new users
+        <RootStack.Navigator screenOptions={{ headerShown: false }}>
+          <RootStack.Screen name="Onboarding" component={OnboardingStack} />
+          <RootStack.Screen name="AuthStack" component={AuthStackNavigator} />
+        </RootStack.Navigator>
+      ) : hasCompletedOnboarding ? (
+        // Show main app for users who completed onboarding
+        <AppStack />
+      ) : (
+        // Show onboarding for authenticated users who haven't completed it
+        <RootStack.Navigator screenOptions={{ headerShown: false }}>
+          <RootStack.Screen name="Onboarding" component={OnboardingStack} />
+          <RootStack.Screen name="Main" component={BottomTabNavigator} />
+        </RootStack.Navigator>
+      )}
     </NavigationContainer>
   );
 }

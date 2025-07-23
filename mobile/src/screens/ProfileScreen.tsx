@@ -1,648 +1,318 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Alert,
-  Switch,
-  TextInput,
-  SafeAreaView,
-  Modal,
-  ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../hooks/useAuth';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/navigation';
 import {
-  getUserPreferences,
-  updateUserPreferences,
-  getOrCreateUserPreferences,
-  UserPreferences,
-  UserPreferencesInput,
-  validateUserPreferences,
-} from '../services/userPreferences';
-import { getUserStats } from '../services/meals';
+  User2,
+  LogOut,
+  CreditCard,
+  Settings,
+  HelpCircle,
+  Bell,
+  Heart,
+  Target,
+  Calendar,
+  Lock,
+  ChevronRight,
+  Star,
+  Zap,
+  Trophy,
+} from 'lucide-react-native';
+import { MotiView } from 'moti';
+import { TAB_BAR_HEIGHT } from '../utils/tokens';
+import { hapticFeedback } from '../utils/haptics';
+import { Avatar } from '../components/ui/Avatar';
+import { Berry } from '../components/ui/Berry';
+import { Card } from '../components/ui/Card';
 
-interface UserStats {
-  currentStreak: number;
-  longestStreak: number;
-  totalMeals: number;
-  avgCalories: number;
-  avgProtein: number;
-  daysActive: number;
-  totalDaysLogged: number;
-}
+type ProfileScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Profile'
+>;
 
 export default function ProfileScreen() {
-  const { user, signOut, preferences: authPreferences, updatePreferences, preferencesLoading } = useAuth();
-  const [stats, setStats] = useState<UserStats>({
-    currentStreak: 0,
-    longestStreak: 0,
-    totalMeals: 0,
-    avgCalories: 0,
-    avgProtein: 0,
-    daysActive: 0,
-    totalDaysLogged: 0,
-  });
-
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      loadUserData();
-    }
-  }, [user]);
-
-  const loadUserData = async () => {
-    if (!user) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      console.log('[ProfileScreen] Loading user stats for:', user.id);
-
-      // Load stats (authPreferences are now loaded from AuthContext)
-      const statsResult = await getUserStats(user.id);
-
-      if (statsResult.success) {
-        console.log('[ProfileScreen] Loaded stats:', statsResult.data);
-        setStats(statsResult.data);
-      } else {
-        console.error(
-          '[ProfileScreen] Error loading stats:',
-          statsResult.error
-        );
-      }
-    } catch (err) {
-      console.error('[ProfileScreen] Error loading user data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load user data');
-    } finally {
-      setLoading(false);
-    }
+  const navigation = useNavigation<ProfileScreenNavigationProp>();
+  
+  // Mock user data - TODO: Replace with real auth context
+  const userData = {
+    name: 'Alex Johnson',
+    email: 'alex.johnson@example.com',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
   };
-
-  const handleSavePreferences = async (updatedPrefs: UserPreferencesInput) => {
-    if (!user || !authPreferences) return;
-
-    setSaving(true);
-    try {
-      console.log('[ProfileScreen] Saving authPreferences:', updatedPrefs);
-
-      // Validate authPreferences first
-      const validationError = validateUserPreferences(updatedPrefs);
-      if (validationError) {
-        Alert.alert('Invalid Input', validationError.message);
-        return;
-      }
-
-      const result = await updatePreferences(updatedPrefs);
-
-      if (result.error) {
-        console.error(
-          '[ProfileScreen] Error saving authPreferences:',
-          result.error
-        );
-        Alert.alert('Error', result.error.message);
-      } else {
-        console.log('[ProfileScreen] Preferences saved successfully');
-        setEditing(null);
-        Alert.alert('Success', 'Preferences saved successfully');
-      }
-    } catch (err) {
-      console.error('[ProfileScreen] Error saving authPreferences:', err);
-      Alert.alert('Error', 'Failed to save authPreferences');
-    } finally {
-      setSaving(false);
-    }
+  
+  // Mock streak data - TODO: Replace with real streak context
+  const streakData = {
+    current: 7,
+    max: 21,
   };
+  
+  const menuItems = [
+    {
+      id: 'account',
+      title: 'Account',
+      items: [
+        {
+          id: 'personal-info',
+          title: 'Personal Information',
+          icon: User2,
+          screen: 'PersonalInfo' as keyof RootStackParamList,
+        },
+        {
+          id: 'payment-method',
+          title: 'Payment Methods',
+          icon: CreditCard,
+          screen: 'PaymentMethod' as keyof RootStackParamList,
+        },
+        {
+          id: 'notifications',
+          title: 'Notifications',
+          icon: Bell,
+          screen: 'Notifications' as keyof RootStackParamList,
+          badge: 3,
+        },
+        {
+          id: 'favorites',
+          title: 'Favorites',
+          icon: Heart,
+          screen: 'Favorites' as keyof RootStackParamList,
+        },
+      ],
+    },
+    {
+      id: 'goals',
+      title: 'Goals & Progress',
+      items: [
+        {
+          id: 'goals-progress',
+          title: 'Goals & Progress',
+          icon: Target,
+          screen: 'GoalsProgress' as keyof RootStackParamList,
+        },
+        {
+          id: 'history',
+          title: 'History',
+          icon: Calendar,
+          screen: 'History' as keyof RootStackParamList,
+        },
+      ],
+    },
+    {
+      id: 'app',
+      title: 'App Settings',
+      items: [
+        {
+          id: 'subscription',
+          title: 'Subscription',
+          icon: Star,
+          screen: 'Subscription' as keyof RootStackParamList,
+          badge: 'PRO',
+        },
+        {
+          id: 'settings',
+          title: 'Settings',
+          icon: Settings,
+          screen: 'Settings' as keyof RootStackParamList,
+        },
+        {
+          id: 'help-support',
+          title: 'Help & Support',
+          icon: HelpCircle,
+          screen: 'HelpSupport' as keyof RootStackParamList,
+        },
+        {
+          id: 'privacy',
+          title: 'Privacy & Security',
+          icon: Lock,
+          screen: 'Privacy' as keyof RootStackParamList,
+        },
+      ],
+    },
+  ];
 
-  const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+  const handleNavigate = (screen: keyof RootStackParamList) => {
+    hapticFeedback.selection();
+    // TODO: Navigate to actual screens when they exist
+    console.log(`Navigate to ${screen}`);
+  };
+  
+  const handleUpgrade = () => {
+    hapticFeedback.selection();
+    // TODO: Navigate to upgrade screen
+    console.log('Navigate to upgrade');
+  };
+  
+  const handleLogout = () => {
+    hapticFeedback.selection();
+    Alert.alert('Log Out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Sign Out',
+        text: 'Log Out',
         style: 'destructive',
-        onPress: () => signOut(),
+        onPress: () => {
+          // TODO: Implement actual logout
+          console.log('User logged out');
+        },
       },
     ]);
   };
 
-  const handleEditPreference = (
-    field: string,
-    currentValue: string | number
-  ) => {
-    setEditing(field);
-    setEditValue(currentValue.toString());
-  };
-
-  const handleSaveEdit = () => {
-    if (!editing || !authPreferences) return;
-
-    const numericValue = parseInt(editValue);
-    if (isNaN(numericValue)) {
-      Alert.alert('Invalid Input', 'Please enter a valid number');
-      return;
-    }
-
-    const updates: UserPreferencesInput = {};
-
-    switch (editing) {
-      case 'calories':
-        updates.daily_calorie_goal = numericValue;
-        break;
-      case 'protein':
-        updates.daily_protein_goal = numericValue;
-        break;
-      case 'carbs':
-        updates.daily_carb_goal = numericValue;
-        break;
-      case 'fat':
-        updates.daily_fat_goal = numericValue;
-        break;
-      default:
-        return;
-    }
-
-    handleSavePreferences(updates);
-  };
-
-  const handleToggleNotifications = () => {
-    if (!authPreferences) return;
-
-    handleSavePreferences({
-      notifications_enabled: !authPreferences.notifications_enabled,
-    });
-  };
-
-  const formatWeightGoal = (goal: string) => {
-    return (
-      goal.replace('_', ' ').charAt(0).toUpperCase() +
-      goal.replace('_', ' ').slice(1)
-    );
-  };
-
-  const formatActivityLevel = (level: string) => {
-    return (
-      level.replace('_', ' ').charAt(0).toUpperCase() +
-      level.replace('_', ' ').slice(1)
-    );
-  };
-
-  const renderStatCard = (
-    title: string,
-    value: string | number,
-    icon: string
-  ) => (
-    <View style={styles.statCard}>
-      <Ionicons name={icon as any} size={24} color="#007AFF" />
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statTitle}>{title}</Text>
-    </View>
-  );
-
-  const renderPreferenceRow = (
-    label: string,
-    value: string | number,
-    onPress: () => void,
-    unit?: string
-  ) => (
-    <TouchableOpacity style={styles.preferenceRow} onPress={onPress}>
-      <Text style={styles.preferenceLabel}>{label}</Text>
-      <View style={styles.preferenceValue}>
-        <Text style={styles.preferenceText}>
-          {value}
-          {unit ? ` ${unit}` : ''}
-        </Text>
-        <Ionicons name="chevron-forward" size={16} color="#999" />
-      </View>
-    </TouchableOpacity>
-  );
-
-  // Show loading state
-  if (loading || preferencesLoading || !authPreferences) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Loading your profile...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color="#FF3B30" />
-          <Text style={styles.errorTitle}>Failed to load profile</Text>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadUserData}>
-            <Text style={styles.retryButtonText}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View className="flex-1 bg-white">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: TAB_BAR_HEIGHT + 20 }}
+      >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-          <Text style={styles.email}>{user?.email}</Text>
+        <View className="px-4 pt-12 pb-4">
+          <Text className="text-2xl font-bold text-gray-900">Profile</Text>
         </View>
-
-        {/* Stats Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Progress</Text>
-          <View style={styles.statsContainer}>
-            {renderStatCard('Day Streak', stats.currentStreak, 'flame')}
-            {renderStatCard('Total Meals', stats.totalMeals, 'restaurant')}
-            {renderStatCard('Avg Calories', stats.avgCalories, 'speedometer')}
-          </View>
-        </View>
-
-        {/* Daily Goals Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Daily Goals</Text>
-          <View style={styles.authPreferencesContainer}>
-            {renderPreferenceRow(
-              'Calories',
-              authPreferences.daily_calorie_goal,
-              () =>
-                handleEditPreference(
-                  'calories',
-                  authPreferences.daily_calorie_goal
-                ),
-              'kcal'
-            )}
-            {renderPreferenceRow(
-              'Protein',
-              authPreferences.daily_protein_goal,
-              () =>
-                handleEditPreference('protein', authPreferences.daily_protein_goal),
-              'g'
-            )}
-            {renderPreferenceRow(
-              'Carbs',
-              authPreferences.daily_carb_goal,
-              () => handleEditPreference('carbs', authPreferences.daily_carb_goal),
-              'g'
-            )}
-            {renderPreferenceRow(
-              'Fat',
-              authPreferences.daily_fat_goal,
-              () => handleEditPreference('fat', authPreferences.daily_fat_goal),
-              'g'
-            )}
-          </View>
-        </View>
-
-        {/* Settings Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Settings</Text>
-          <View style={styles.authPreferencesContainer}>
-            <View style={styles.preferenceRow}>
-              <Text style={styles.preferenceLabel}>Notifications</Text>
-              <Switch
-                value={authPreferences.notifications_enabled}
-                onValueChange={handleToggleNotifications}
-                trackColor={{ false: '#E0E0E0', true: '#007AFF' }}
-                thumbColor="#FFFFFF"
-                disabled={saving}
-              />
-            </View>
-
-            {renderPreferenceRow(
-              'Weight Goal',
-              formatWeightGoal(authPreferences.weight_goal),
-              () =>
-                Alert.alert(
-                  'Coming Soon',
-                  'Weight goal editing will be available soon'
-                )
-            )}
-
-            {renderPreferenceRow(
-              'Activity Level',
-              formatActivityLevel(authPreferences.activity_level),
-              () =>
-                Alert.alert(
-                  'Coming Soon',
-                  'Activity level editing will be available soon'
-                )
-            )}
-
-            {renderPreferenceRow(
-              'Units',
-              authPreferences.unit_system.charAt(0).toUpperCase() +
-                authPreferences.unit_system.slice(1),
-              () =>
-                Alert.alert(
-                  'Coming Soon',
-                  'Unit system editing will be available soon'
-                )
-            )}
-          </View>
-        </View>
-
-        {/* Account Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          <View style={styles.authPreferencesContainer}>
-            <TouchableOpacity
-              style={styles.preferenceRow}
-              onPress={handleSignOut}
-            >
-              <Text style={[styles.preferenceLabel, { color: '#FF3B30' }]}>
-                Sign Out
+        
+        {/* Profile Info */}
+        <View className="px-4 py-4">
+          <View className="flex-row items-center mb-6">
+            <Avatar src={userData.avatar} size="large" />
+            <View className="ml-4 flex-1">
+              <Text className="text-xl font-semibold text-gray-900">
+                {userData.name}
               </Text>
-              <Ionicons name="exit-outline" size={20} color="#FF3B30" />
+              <Text className="text-gray-600">{userData.email}</Text>
+            </View>
+            <TouchableOpacity
+              className="px-3 py-1 bg-primary/10 rounded-full flex-row items-center"
+              activeOpacity={0.7}
+              onPress={handleUpgrade}
+            >
+              <Star size={12} color="#320DFF" />
+              <Text className="text-xs font-medium text-primary ml-1">
+                Upgrade
+              </Text>
             </TouchableOpacity>
           </View>
-        </View>
-
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
-
-      {/* Edit Modal */}
-      <Modal
-        visible={editing !== null}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setEditing(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                Edit {editing?.charAt(0).toUpperCase()}
-                {editing?.slice(1)}
-              </Text>
+          
+          {/* Streak indicators */}
+          <Card className="p-4 mb-6">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center">
+                <Berry variant="happy" size="tiny" className="mr-2" />
+                <Text className="font-medium text-gray-900">Your Streaks</Text>
+              </View>
               <TouchableOpacity
-                onPress={() => setEditing(null)}
-                style={styles.modalCloseButton}
+                activeOpacity={0.7}
+                onPress={() => handleNavigate('GoalsProgress')}
               >
-                <Ionicons name="close" size={24} color="#666" />
+                <Text className="text-xs text-primary">View Details</Text>
               </TouchableOpacity>
             </View>
-
-            <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>Enter new {editing} value:</Text>
-              <TextInput
-                style={styles.textInput}
-                value={editValue}
-                onChangeText={setEditValue}
-                keyboardType="numeric"
-                placeholder="Enter value"
-                autoFocus
-              />
+            
+            <View className="flex-row mt-3 space-x-4">
+              <View className="flex-1 bg-primary/5 rounded-lg p-3">
+                <View className="flex-row items-center mb-1">
+                  <Zap size={14} color="#320DFF" />
+                  <Text className="text-xs text-gray-600 ml-1">
+                    Current Streak
+                  </Text>
+                </View>
+                <View className="flex-row items-baseline">
+                  <Text className="text-2xl font-bold text-gray-900">
+                    {streakData.current}
+                  </Text>
+                  <Text className="ml-1 text-gray-600 text-sm">days</Text>
+                </View>
+              </View>
+              
+              <View className="flex-1 bg-primary/5 rounded-lg p-3">
+                <View className="flex-row items-center mb-1">
+                  <Trophy size={14} color="#320DFF" />
+                  <Text className="text-xs text-gray-600 ml-1">Max Streak</Text>
+                </View>
+                <View className="flex-row items-baseline">
+                  <Text className="text-2xl font-bold text-gray-900">
+                    {streakData.max}
+                  </Text>
+                  <Text className="ml-1 text-gray-600 text-sm">days</Text>
+                </View>
+              </View>
             </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.button, styles.buttonSecondary]}
-                onPress={() => setEditing(null)}
-              >
-                <Text style={styles.buttonSecondaryText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.buttonPrimary]}
-                onPress={handleSaveEdit}
-                disabled={saving}
-              >
-                {saving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.buttonPrimaryText}>Save</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+          </Card>
+          
+          {/* Menu Sections */}
+          <View className="space-y-6">
+            {menuItems.map((section) => (
+              <View key={section.id}>
+                <Text className="text-sm font-medium text-gray-500 mb-2">
+                  {section.title}
+                </Text>
+                <Card className="overflow-hidden">
+                  {section.items.map((item, index) => (
+                    <MotiView
+                      key={item.id}
+                      from={{ opacity: 0, translateX: -20 }}
+                      animate={{ opacity: 1, translateX: 0 }}
+                      transition={{ delay: index * 50 }}
+                    >
+                      <TouchableOpacity
+                        className="flex-row items-center justify-between p-4 border-b border-gray-100"
+                        activeOpacity={0.7}
+                        onPress={() => handleNavigate(item.screen)}
+                      >
+                        <View className="flex-row items-center">
+                          <View className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center mr-3">
+                            <item.icon size={18} color="#6B7280" />
+                          </View>
+                          <Text className="font-medium text-gray-900">
+                            {item.title}
+                          </Text>
+                        </View>
+                        <View className="flex-row items-center">
+                          {item.badge && (
+                            <View
+                              className={`mr-2 px-2 py-0.5 rounded-full ${
+                                typeof item.badge === 'number'
+                                  ? 'bg-red-500'
+                                  : 'bg-primary/10'
+                              }`}
+                            >
+                              <Text
+                                className={`text-xs font-medium ${
+                                  typeof item.badge === 'number'
+                                    ? 'text-white'
+                                    : 'text-primary'
+                                }`}
+                              >
+                                {item.badge}
+                              </Text>
+                            </View>
+                          )}
+                          <ChevronRight size={18} color="#9CA3AF" />
+                        </View>
+                      </TouchableOpacity>
+                    </MotiView>
+                  ))}
+                </Card>
+              </View>
+            ))}
           </View>
+          
+          {/* Log Out Button */}
+          <TouchableOpacity
+            className="flex-row items-center justify-center w-full mt-8 p-4 rounded-xl border border-red-100"
+            activeOpacity={0.7}
+            onPress={handleLogout}
+          >
+            <LogOut size={18} color="#EF4444" />
+            <Text className="font-medium text-red-600 ml-2">Log Out</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
-    </SafeAreaView>
+      </ScrollView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  header: {
-    padding: 20,
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-    marginBottom: 4,
-  },
-  email: {
-    fontSize: 16,
-    color: '#666',
-  },
-  section: {
-    marginTop: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: 12,
-    marginHorizontal: 20,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-    marginTop: 8,
-  },
-  statTitle: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  authPreferencesContainer: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  preferenceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
-  },
-  preferenceLabel: {
-    fontSize: 16,
-    color: '#1A1A1A',
-    fontWeight: '500',
-  },
-  preferenceValue: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  preferenceText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  bottomSpacer: {
-    height: 100,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 12,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#FF3B30',
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    width: '80%',
-    maxWidth: 350,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  modalCloseButton: {
-    padding: 4,
-  },
-  modalBody: {
-    padding: 20,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1A1A1A',
-    marginBottom: 12,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#F8F9FA',
-  },
-  modalActions: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonPrimary: {
-    backgroundColor: '#007AFF',
-  },
-  buttonSecondary: {
-    backgroundColor: '#F8F9FA',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  buttonPrimaryText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  buttonSecondaryText: {
-    color: '#1A1A1A',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

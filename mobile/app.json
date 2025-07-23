@@ -4,7 +4,7 @@
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/app_icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -30,8 +30,18 @@
       "permissions": [
         "RECORD_AUDIO",
         "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
-      ]
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK",
+        "android.permission.CAMERA",
+        "RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK",
+        "android.permission.CAMERA"
+      ],
+      "package": "com.kricel.nutriai.v2"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -44,7 +54,26 @@
         {
           "microphonePermission": "Allow NutriAI to access your microphone to record meal descriptions."
         }
-      ]
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#007AFF",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-background-fetch",
+        {
+          "stopOnTerminate": false,
+          "startOnBoot": true,
+          "requiresCharging": false,
+          "requiresDeviceIdle": false,
+          "requiredNetworkType": "ANY"
+        }
+      ],
+      "expo-barcode-scanner"
     ],
     "extra": {
       "eas": {

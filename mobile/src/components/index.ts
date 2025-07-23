@@ -20,3 +20,8 @@ export { default as DailyProgress } from './tracking/DailyProgress';
 
 // Meal components
 export { default as MealCorrectionModal } from './meals/MealCorrectionModal';
+
+// Streak components
+export { StreakBadge } from './StreakBadge';
+export { DailyStreakCard } from './DailyStreakCard';
+export { StreakCelebration } from './StreakCelebration';

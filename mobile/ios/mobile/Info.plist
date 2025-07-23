@@ -56,6 +56,12 @@
     <string>NutriAI needs camera access to scan barcodes and take photos of meals.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow NutriAI to access your microphone to record meal descriptions.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your photos</string>
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>fetch</string>
+    </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

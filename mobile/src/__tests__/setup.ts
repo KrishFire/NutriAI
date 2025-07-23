@@ -12,7 +12,7 @@ import mockAsyncStorage from '@react-native-async-storage/async-storage/jest/asy
 jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage);
 
 // Mock react-native modules
-jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
+// jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper'); // Commented out as it doesn't exist in current RN version
 
 // Mock Expo modules
 jest.mock('expo-constants', () => ({

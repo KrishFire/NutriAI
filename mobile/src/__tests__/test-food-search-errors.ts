@@ -3,7 +3,7 @@
  * Tests various error scenarios to ensure proper error messages are returned
  */
 
-import { supabase } from '../services/supabase';
+import { supabase } from '../config/supabase';
 
 // Helper to call the Edge Function
 async function testFoodSearch(query: string, scenario: string) {

@@ -4,27 +4,46 @@
     "es2022": true,
     "node": true
   },
-  "extends": ["eslint:recommended", "prettier"],
-  "plugins": ["prettier"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "prettier"
+  ],
+  "plugins": ["@typescript-eslint", "react", "react-hooks", "prettier"],
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaFeatures": {
       "jsx": true
     },
     "ecmaVersion": 2022,
-    "sourceType": "module"
+    "sourceType": "module",
+    "project": "./tsconfig.json"
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
   },
   "rules": {
     "prettier/prettier": "error",
     "no-console": "warn",
     "no-debugger": "error",
     "prefer-const": "error",
-    "no-var": "error"
+    "no-var": "error",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-explicit-any": "warn",
+    "react/react-in-jsx-scope": "off",
+    "react/prop-types": "off"
   },
   "ignorePatterns": [
     "node_modules/",
     ".expo/",
     "dist/",
     "build/",
-    "*.config.js"
+    "*.config.js",
+    "babel.config.js",
+    "metro.config.js"
   ]
 }

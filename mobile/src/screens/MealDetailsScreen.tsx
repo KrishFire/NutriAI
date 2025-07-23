@@ -33,7 +33,7 @@ export default function MealDetailsScreen({
   route,
 }: MealDetailsScreenProps) {
   const { user } = useAuth();
-  const { imageUri, analysisData, uploadedImageUrl, mealId, newFoodItems, isAddingToExisting } =
+  const { imageUri, analysisData, uploadedImageUrl, mealId, mealGroupId, newFoodItems, isAddingToExisting } =
     route.params;
 
   const [editedAnalysis, setEditedAnalysis] = useState<MealAnalysis>(
@@ -51,14 +51,15 @@ export default function MealDetailsScreen({
   const [isExistingMeal, setIsExistingMeal] = useState(false);
   const [existingMealType, setExistingMealType] = useState<string | null>(null);
   const [canRefineWithAI, setCanRefineWithAI] = useState(false);
+  const [realMealGroupId, setRealMealGroupId] = useState<string | null>(mealGroupId || null);
 
-  // Set canRefineWithAI based on mealId format (UUID vs synthetic)
+  // Set canRefineWithAI based on whether we have a real meal group ID
   useEffect(() => {
-    if (mealId) {
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(mealId);
+    if (realMealGroupId) {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(realMealGroupId);
       setCanRefineWithAI(isUUID);
     }
-  }, [mealId]);
+  }, [realMealGroupId]);
 
   // Load meal data if only mealId is provided (from History screen)
   useEffect(() => {
@@ -88,10 +89,9 @@ export default function MealDetailsScreen({
             setIsExistingMeal(true);
             setExistingMealType(mealType);
             
-            // If we got a real meal_group_id, update the navigation params and enable refinement
+            // If we got a real meal_group_id, update our state
             if (result.mealGroupId) {
-              navigation.setParams({ mealId: result.mealGroupId });
-              setCanRefineWithAI(true);
+              setRealMealGroupId(result.mealGroupId);
             }
           } else {
             setError(result.error || 'Failed to load meal details');
@@ -617,11 +617,11 @@ export default function MealDetailsScreen({
       </ScrollView>
 
       {/* AI Correction Modal */}
-      {mealId && showCorrectionModal && (
+      {realMealGroupId && showCorrectionModal && (
         <MealCorrectionModal
           visible={showCorrectionModal}
           onClose={() => setShowCorrectionModal(false)}
-          mealId={mealId}
+          mealId={realMealGroupId}
           currentAnalysis={{
             foods: editedAnalysis.foods.map(food => ({
               name: food.name,

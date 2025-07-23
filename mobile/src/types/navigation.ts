@@ -5,7 +5,9 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 
 // Root stack for auth and main app
 export type RootStackParamList = {
-  AuthStack: undefined;
+  Onboarding: NavigatorScreenParams<OnboardingStackParamList> | undefined;
+  AuthStack: NavigatorScreenParams<AuthStackParamList> | undefined;
+  Main: NavigatorScreenParams<MainTabParamList> | undefined;
   AppTabs: NavigatorScreenParams<AppTabParamList> | undefined;
   AddMealFlow: {
     screen: 'Camera' | 'ManualEntry' | 'BarcodeScanner';
@@ -13,11 +15,43 @@ export type RootStackParamList = {
   };
   MealDetails: {
     mealId?: string;
+    mealGroupId?: string;
     imageUri?: string;
     analysisData?: MealAnalysis;
     uploadedImageUrl?: string;
     newFoodItems?: MealAnalysis['foods'];
     isAddingToExisting?: boolean;
+  };
+  RecipeStack: NavigatorScreenParams<RecipeStackParamList> | undefined;
+  SettingsStack: NavigatorScreenParams<SettingsStackParamList> | undefined;
+  MetricsStack: NavigatorScreenParams<MetricsStackParamList> | undefined;
+  FoodInputStack: NavigatorScreenParams<FoodInputStackParamList> | undefined;
+  Paywall: undefined;
+  SubscriptionSuccess: undefined;
+  ManageSubscription: undefined;
+  EditMeal: {
+    mealId: string;
+    meal: any;
+  };
+  Favorites: undefined;
+  MealSaved: {
+    meal: any;
+  };
+  SearchResults: {
+    query?: string;
+    mealType?: string;
+  };
+  NutritionBreakdown: {
+    food?: any;
+    meal?: any;
+    date?: string;
+  };
+  FoodDetails: {
+    food: any;
+    mealType?: string;
+  };
+  CreateFood: {
+    searchQuery?: string;
   };
 };
 
@@ -55,6 +89,8 @@ export type AddMealStackParamList = {
 export type AuthStackParamList = {
   Login: undefined;
   Signup: undefined;
+  ForgotPassword: undefined;
+  DeleteAccount: undefined;
 };
 
 // Bottom tabs navigation
@@ -77,4 +113,63 @@ export type HistoryStackParamList = {
 // Profile stack for profile-related screens
 export type ProfileStackParamList = {
   ProfileScreen: undefined;
+};
+
+// Recipe stack for recipe-related screens
+export type RecipeStackParamList = {
+  RecipeList: undefined;
+  RecipeDetail: {
+    recipe: any; // TODO: Add proper Recipe type
+  };
+  CreateRecipe: undefined;
+  EditRecipe: {
+    recipe: any; // TODO: Add proper Recipe type
+  };
+};
+
+// Main tab navigation (new bottom tabs)
+export type MainTabParamList = {
+  Home: undefined;
+  History: undefined;
+  Log: undefined;
+  Insights: undefined;
+  Profile: undefined;
+};
+
+// Onboarding flow
+export type OnboardingStackParamList = {
+  Welcome: undefined;
+  GoalSelection: undefined;
+  PersonalInfo: undefined;
+  DietaryPreferences: undefined;
+  ActivityLevel: undefined;
+  HeightWeight: undefined;
+  NotificationSetup: undefined;
+  OnboardingComplete: undefined;
+};
+
+// Settings stack
+export type SettingsStackParamList = {
+  Settings: undefined;
+  PersonalInfo: undefined;
+  HealthData: undefined;
+  NotificationSettings: undefined;
+  PrivacySettings: undefined;
+  About: undefined;
+  Help: undefined;
+};
+
+// Metrics stack
+export type MetricsStackParamList = {
+  WeightCheckIn: undefined;
+  GoalProgressCelebration: undefined;
+};
+
+// Food input stack
+export type FoodInputStackParamList = {
+  Camera: undefined;
+  Voice: undefined;
+  Barcode: undefined;
+  Text: undefined;
+  Analyzing: undefined;
 };
