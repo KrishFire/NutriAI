@@ -31,7 +31,7 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<
 export default function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const { signIn } = useAuth();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -50,26 +50,26 @@ export default function LoginScreen() {
 
   const handleSubmit = async () => {
     setError(null);
-    
+
     // Basic validation
     if (!email.includes('@') || !email.includes('.')) {
       setError('Please enter a valid email address');
       hapticFeedback.error();
       return;
     }
-    
+
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
       hapticFeedback.error();
       return;
     }
-    
+
     // Sign in
     setIsLoading(true);
-    
+
     try {
       const { user, error: signInError } = await signIn({ email, password });
-      
+
       if (signInError) {
         setError(signInError.message);
         hapticFeedback.error();
@@ -108,7 +108,10 @@ export default function LoginScreen() {
                   }}
                   activeOpacity={0.7}
                 >
-                  <ArrowLeft size={20} className="text-gray-700 dark:text-gray-300" />
+                  <ArrowLeft
+                    size={20}
+                    className="text-gray-700 dark:text-gray-300"
+                  />
                 </TouchableOpacity>
                 <Text className="text-2xl font-bold text-gray-900 dark:text-white">
                   Log In
@@ -160,7 +163,10 @@ export default function LoginScreen() {
                 </Text>
                 <View className="relative">
                   <View className="absolute left-3 top-3.5 z-10">
-                    <Mail size={18} className="text-gray-500 dark:text-gray-400" />
+                    <Mail
+                      size={18}
+                      className="text-gray-500 dark:text-gray-400"
+                    />
                   </View>
                   <TextInput
                     value={email}
@@ -194,7 +200,10 @@ export default function LoginScreen() {
                 </View>
                 <View className="relative">
                   <View className="absolute left-3 top-3.5 z-10">
-                    <Lock size={18} className="text-gray-500 dark:text-gray-400" />
+                    <Lock
+                      size={18}
+                      className="text-gray-500 dark:text-gray-400"
+                    />
                   </View>
                   <TextInput
                     value={password}
@@ -211,9 +220,15 @@ export default function LoginScreen() {
                     activeOpacity={0.7}
                   >
                     {showPassword ? (
-                      <EyeOff size={20} className="text-gray-500 dark:text-gray-400" />
+                      <EyeOff
+                        size={20}
+                        className="text-gray-500 dark:text-gray-400"
+                      />
                     ) : (
-                      <Eye size={20} className="text-gray-500 dark:text-gray-400" />
+                      <Eye
+                        size={20}
+                        className="text-gray-500 dark:text-gray-400"
+                      />
                     )}
                   </TouchableOpacity>
                 </View>
@@ -269,3 +284,206 @@ export default function LoginScreen() {
     </PageTransition>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 24,
+    marginBottom: 32,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleContainer: {
+    marginBottom: 32,
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: '700',
+    color: '#000000',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 17,
+    color: '#6B7280',
+    lineHeight: 24,
+  },
+  socialContainer: {
+    marginBottom: 24,
+  },
+  appleButton: {
+    width: '100%',
+    height: 56,
+    backgroundColor: '#000000',
+    borderRadius: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  appleButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  googleButton: {
+    width: '100%',
+    height: 56,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 8,
+  },
+  googleButtonText: {
+    color: '#111827',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    paddingHorizontal: 16,
+    fontSize: 14,
+    color: '#9CA3AF',
+  },
+  formContainer: {
+    marginBottom: 24,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  input: {
+    width: '100%',
+    height: 56,
+    paddingHorizontal: 20,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 28,
+    fontSize: 16,
+    color: '#111827',
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  passwordHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  forgotPassword: {
+    fontSize: 14,
+    color: '#320DFF',
+    fontWeight: '500',
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    width: '100%',
+    height: 56,
+    paddingHorizontal: 20,
+    paddingRight: 50,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 28,
+    fontSize: 16,
+    color: '#111827',
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 20,
+    top: 18,
+  },
+  errorContainer: {
+    padding: 12,
+    backgroundColor: '#FEE2E2',
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 14,
+  },
+  submitButton: {
+    width: '100%',
+    height: 56,
+    backgroundColor: '#320DFF',
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#D1D5DB',
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  toggleText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  toggleLink: {
+    fontSize: 14,
+    color: '#320DFF',
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+});
+
+export default LoginScreen;
