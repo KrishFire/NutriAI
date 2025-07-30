@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
-import Animated, { 
-  useAnimatedProps, 
-  useSharedValue, 
+import Animated, {
+  useAnimatedProps,
+  useSharedValue,
   withSpring,
+  withTiming,
   useAnimatedStyle,
   interpolate,
 } from 'react-native-reanimated';
@@ -12,36 +13,42 @@ import Animated, {
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface ProgressRingProps {
-  progress: number;
+  percentage: number;
   color: string;
   size?: number;
   strokeWidth?: number;
-  showPercentage?: boolean;
-  label?: string;
+  animate?: boolean;
+  duration?: number;
+  children?: React.ReactNode;
   className?: string;
 }
 
 export const ProgressRing: React.FC<ProgressRingProps> = ({
-  progress,
+  percentage,
   color,
   size = 120,
   strokeWidth = 12,
-  showPercentage = true,
-  label,
+  animate = true,
+  duration = 1000,
+  children,
   className = '',
 }) => {
   const animatedProgress = useSharedValue(0);
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * Math.PI * 2;
 
-  React.useEffect(() => {
-    animatedProgress.value = withSpring(progress, {
-      damping: 20,
-      stiffness: 90,
-    });
-  }, [progress]);
+  useEffect(() => {
+    if (animate) {
+      animatedProgress.value = withTiming(percentage, {
+        duration: duration,
+      });
+    } else {
+      animatedProgress.value = percentage;
+    }
+  }, [percentage, animate, duration]);
 
   const animatedProps = useAnimatedProps(() => {
+    'worklet';
     const strokeDashoffset = circumference * (1 - animatedProgress.value / 100);
     return {
       strokeDashoffset,
@@ -49,9 +56,9 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
   });
 
   const animatedTextStyle = useAnimatedStyle(() => {
-    const displayProgress = Math.round(animatedProgress.value);
+    'worklet';
     return {
-      opacity: interpolate(animatedProgress.value, [0, 5], [0, 1]),
+      opacity: 1, // Always show text, even at 0%
     };
   });
 
@@ -82,21 +89,15 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
           />
         </G>
       </Svg>
-      
-      <View className="absolute items-center justify-center">
-        {showPercentage && (
-          <Animated.View style={animatedTextStyle}>
-            <Text className="text-2xl font-bold text-gray-900 dark:text-white">
-              {Math.round(progress)}%
-            </Text>
-          </Animated.View>
-        )}
-        {label && (
-          <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {label}
-          </Text>
-        )}
-      </View>
+
+      {children && (
+        <View
+          className="absolute items-center justify-center"
+          style={{ width: size, height: size }}
+        >
+          <Animated.View style={animatedTextStyle}>{children}</Animated.View>
+        </View>
+      )}
     </View>
   );
 };

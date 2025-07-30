@@ -1,16 +1,10 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { 
-  Home,
-  Calendar,
-  Plus,
-  TrendingUp,
-  User,
-} from 'lucide-react-native';
+import { Home, Calendar, Plus, TrendingUp, User } from 'lucide-react-native';
 import { hapticFeedback } from '../utils/haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import tokens from '../../tokens.json';
+import { constants, colors } from '../utils/tokens';
 
 // Import screens (will be created later)
 import HomeScreen from '../screens/HomeScreen';
@@ -33,15 +27,35 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const CustomTabBar = ({ state, descriptors, navigation }: any) => {
   const insets = useSafeAreaInsets();
 
+  // Use solid background instead of blur for consistent appearance
+  const TabBarComponent = View;
+  const tabBarProps = {};
+
   return (
-    <View 
-      className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800"
-      style={{
-        paddingBottom: insets.bottom,
-        height: tokens.constants.TAB_BAR_HEIGHT + insets.bottom,
-      }}
+    <TabBarComponent
+      style={[
+        {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: constants.TAB_BAR_HEIGHT + insets.bottom,
+          backgroundColor: '#FFFFFF',
+        },
+      ]}
+      {...tabBarProps}
     >
-      <View className="flex-row items-center justify-around h-full px-4">
+      <View
+        className="flex-row items-center justify-around"
+        style={[
+          {
+            height: constants.TAB_BAR_HEIGHT,
+            backgroundColor: '#FFFFFF',
+            borderTopWidth: 1,
+            borderTopColor: '#E5E7EB',
+          },
+        ]}
+      >
         {state.routes.map((route: any, index: number) => {
           const { options } = descriptors[route.key];
           const label = route.name;
@@ -49,7 +63,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
 
           const onPress = async () => {
             await hapticFeedback.selection();
-            
+
             const event = navigation.emit({
               type: 'tabPress',
               target: route.key,
@@ -63,9 +77,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
 
           const getIcon = () => {
             const iconSize = label === 'Log' ? 28 : 24;
-            const iconColor = isFocused 
-              ? tokens.colors.primary.DEFAULT 
-              : '#9CA3AF';
+            const iconColor = isFocused ? colors.primary.DEFAULT : '#9CA3AF';
 
             switch (label) {
               case 'Home':
@@ -89,22 +101,37 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
               <Pressable
                 key={route.key}
                 onPress={onPress}
-                className="items-center justify-center -mt-4"
+                className="items-center justify-center"
+                style={{ marginTop: -20 }}
               >
-                <View 
-                  className={`
-                    w-14 h-14 rounded-full items-center justify-center
-                    ${isFocused ? 'bg-primary' : 'bg-primary/90'}
-                  `}
+                <View
                   style={{
-                    shadowColor: tokens.colors.primary.DEFAULT,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 5,
+                    width: 64,
+                    height: 64,
+                    borderRadius: 32,
+                    backgroundColor: '#320DFF',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    paddingTop: 10,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 8,
+                    elevation: 8,
                   }}
                 >
-                  <Plus size={28} color="#FFFFFF" />
+                  <Plus size={24} color="#FFFFFF" />
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: '#FFFFFF',
+                      fontWeight: '500',
+                      position: 'absolute',
+                      bottom: 10,
+                    }}
+                  >
+                    Log
+                  </Text>
                 </View>
               </Pressable>
             );
@@ -114,18 +141,18 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
             <Pressable
               key={route.key}
               onPress={onPress}
-              className="flex-1 items-center justify-center py-2"
+              className="flex-1 items-center justify-center"
+              style={{ paddingTop: 6, paddingBottom: 4 }}
             >
               <View className="items-center">
                 {getIcon()}
-                <Text 
-                  className={`
-                    text-xs mt-1
-                    ${isFocused 
-                      ? 'text-primary font-medium' 
-                      : 'text-gray-500 dark:text-gray-400'
-                    }
-                  `}
+                <Text
+                  style={{
+                    fontSize: 10,
+                    marginTop: 4,
+                    color: isFocused ? '#320DFF' : '#9CA3AF',
+                    fontWeight: isFocused ? '500' : '400',
+                  }}
                 >
                   {label}
                 </Text>
@@ -134,14 +161,14 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
           );
         })}
       </View>
-    </View>
+    </TabBarComponent>
   );
 };
 
 export default function BottomTabNavigator() {
   return (
     <Tab.Navigator
-      tabBar={(props) => <CustomTabBar {...props} />}
+      tabBar={props => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
       }}
