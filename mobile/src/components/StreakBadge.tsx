@@ -37,30 +37,30 @@ export const StreakBadge: React.FC<StreakBadgeProps> = ({
   style,
 }) => {
   const { icon: iconSize, font: fontSize, padding } = SIZES[size];
-  
+
   // Shared values for animation
   const flameScale = useSharedValue(1);
   const glowIntensity = useSharedValue(0);
   const badgeOpacity = useSharedValue(0);
   const badgeScale = useSharedValue(0.8);
-  
+
   // Color values
   const activeColor = '#FF6B6B'; // Vibrant red-orange
   const inactiveColor = '#9CA3AF'; // Gray
   const glowColor = '#FFA500'; // Orange for glow
-  
+
   // Entrance animation
   useEffect(() => {
-    badgeOpacity.value = withTiming(1, { 
-      duration: 500, 
-      easing: Easing.out(Easing.ease) 
+    badgeOpacity.value = withTiming(1, {
+      duration: 500,
+      easing: Easing.out(Easing.ease),
     });
     badgeScale.value = withSequence(
       withTiming(1.1, { duration: 300, easing: Easing.out(Easing.ease) }),
       withTiming(1, { duration: 200, easing: Easing.out(Easing.ease) })
     );
   }, []);
-  
+
   // State change animations
   useEffect(() => {
     if (isActive && streakCount > 0) {
@@ -73,7 +73,7 @@ export const StreakBadge: React.FC<StreakBadgeProps> = ({
         -1,
         false
       );
-      
+
       // Glow animation
       glowIntensity.value = withRepeat(
         withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
@@ -87,34 +87,34 @@ export const StreakBadge: React.FC<StreakBadgeProps> = ({
       flameScale.value = withTiming(1, { duration: 300 });
       glowIntensity.value = withTiming(0, { duration: 300 });
     }
-    
+
     return () => {
       cancelAnimation(flameScale);
       cancelAnimation(glowIntensity);
     };
   }, [isActive, streakCount]);
-  
+
   // Animated styles
   const animatedContainerStyle = useAnimatedStyle(() => {
     const shadowOpacity = interpolate(glowIntensity.value, [0, 1], [0, 0.6]);
-    
+
     return {
       opacity: badgeOpacity.value,
       transform: [{ scale: badgeScale.value }],
       shadowOpacity: isActive ? shadowOpacity : 0,
     };
   });
-  
+
   const animatedFlameStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: flameScale.value }],
     };
   });
-  
+
   const color = isActive && streakCount > 0 ? activeColor : inactiveColor;
-  
+
   return (
-    <Animated.View 
+    <Animated.View
       style={[
         styles.container,
         size === 'small' && styles.containerSmall,
@@ -134,7 +134,7 @@ export const StreakBadge: React.FC<StreakBadgeProps> = ({
         color={color}
         style={animatedFlameStyle}
       />
-      <Text 
+      <Text
         style={[
           styles.streakText,
           { fontSize, color },
@@ -144,12 +144,7 @@ export const StreakBadge: React.FC<StreakBadgeProps> = ({
         {streakCount}
       </Text>
       {showLabel && (
-        <Text 
-          style={[
-            styles.labelText,
-            { fontSize: fontSize * 0.7, color },
-          ]}
-        >
+        <Text style={[styles.labelText, { fontSize: fontSize * 0.7, color }]}>
           {streakCount === 1 ? 'day' : 'days'}
         </Text>
       )}

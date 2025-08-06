@@ -17,7 +17,7 @@ export function WeightLogSheet({
   onClose,
   onSave,
   currentWeight = 150,
-  visible = true
+  visible = true,
 }: WeightLogSheetProps) {
   const [weight, setWeight] = useState(currentWeight);
   const [date, setDate] = useState(new Date());
@@ -38,7 +38,7 @@ export function WeightLogSheet({
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -46,7 +46,10 @@ export function WeightLogSheet({
     Haptics.selectionAsync();
     setWeight(prev => {
       const increment = weightUnit === 'lbs' ? 0.2 : 0.1;
-      return parseFloat((prev + increment).toFixed(1));
+      // V2: Use explicit rounding to avoid floating-point precision issues
+      const newValue = prev + increment;
+      const rounded = Math.round(newValue * 10) / 10;
+      return rounded;
     });
   };
 
@@ -54,7 +57,10 @@ export function WeightLogSheet({
     Haptics.selectionAsync();
     setWeight(prev => {
       const decrement = weightUnit === 'lbs' ? 0.2 : 0.1;
-      return parseFloat((prev - decrement).toFixed(1));
+      // V2: Use explicit rounding to avoid floating-point precision issues
+      const newValue = prev - decrement;
+      const rounded = Math.round(newValue * 10) / 10;
+      return rounded;
     });
   };
 
@@ -62,11 +68,15 @@ export function WeightLogSheet({
     Haptics.selectionAsync();
     if (weightUnit === 'lbs') {
       // Convert lbs to kg
-      setWeight(parseFloat((weight * 0.453592).toFixed(1)));
+      // V2: Use explicit rounding for conversion
+      const kgValue = weight * 0.453592;
+      setWeight(Math.round(kgValue * 10) / 10);
       setWeightUnit('kg');
     } else {
       // Convert kg to lbs
-      setWeight(parseFloat((weight * 2.20462).toFixed(1)));
+      // V2: Use explicit rounding for conversion
+      const lbsValue = weight * 2.20462;
+      setWeight(Math.round(lbsValue * 10) / 10);
       setWeightUnit('lbs');
     }
   };
@@ -84,8 +94,8 @@ export function WeightLogSheet({
         exit={{ opacity: 0 }}
         className="flex-1 bg-black/50"
       >
-        <TouchableOpacity 
-          activeOpacity={1} 
+        <TouchableOpacity
+          activeOpacity={1}
           onPress={onClose}
           className="flex-1"
         >
@@ -98,7 +108,7 @@ export function WeightLogSheet({
                 transition={{
                   type: 'spring',
                   damping: 30,
-                  stiffness: 300
+                  stiffness: 300,
                 }}
                 className="bg-white dark:bg-gray-800 rounded-t-3xl overflow-hidden"
               >
@@ -128,7 +138,7 @@ export function WeightLogSheet({
                       >
                         <Ionicons name="remove" size={20} color="#6b7280" />
                       </TouchableOpacity>
-                      
+
                       <View className="flex-row items-baseline mx-6">
                         <Text className="text-4xl font-bold text-gray-900 dark:text-white">
                           {weight}
@@ -142,7 +152,7 @@ export function WeightLogSheet({
                           </Text>
                         </TouchableOpacity>
                       </View>
-                      
+
                       <TouchableOpacity
                         onPress={incrementWeight}
                         className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 items-center justify-center"
@@ -150,8 +160,8 @@ export function WeightLogSheet({
                         <Ionicons name="add" size={20} color="#6b7280" />
                       </TouchableOpacity>
                     </View>
-                    
-                    <TouchableOpacity 
+
+                    <TouchableOpacity
                       onPress={() => setDate(new Date())}
                       className="flex-row items-center justify-center"
                     >
@@ -159,7 +169,12 @@ export function WeightLogSheet({
                       <Text className="text-sm text-gray-600 dark:text-gray-400 ml-1">
                         {formatDate(date)}
                       </Text>
-                      <Ionicons name="chevron-forward" size={14} color="#6b7280" className="ml-1" />
+                      <Ionicons
+                        name="chevron-forward"
+                        size={14}
+                        color="#6b7280"
+                        className="ml-1"
+                      />
                     </TouchableOpacity>
                   </View>
 

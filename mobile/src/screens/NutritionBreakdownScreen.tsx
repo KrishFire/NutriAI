@@ -25,7 +25,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { hapticFeedback } from '../utils/haptics';
-import tokens from '../../tokens.json';
+import tokens from '../utils/tokens';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -51,20 +51,23 @@ export default function NutritionBreakdownScreen() {
   const route = useRoute<RouteProp<RouteParams, 'NutritionBreakdown'>>();
   const { food, meal, date } = route.params || {};
 
-  const [expandedSections, setExpandedSections] = useState<string[]>(['macros']);
+  const [expandedSections, setExpandedSections] = useState<string[]>([
+    'macros',
+  ]);
 
   // Calculate nutrition data based on what was passed
-  const nutritionData = food || meal || {
-    calories: 542,
-    protein: 28,
-    carbs: 62,
-    fat: 22,
-    fiber: 8,
-    sugar: 12,
-    sodium: 820,
-    cholesterol: 85,
-    saturatedFat: 7,
-  };
+  const nutritionData = food ||
+    meal || {
+      calories: 542,
+      protein: 28,
+      carbs: 62,
+      fat: 22,
+      fiber: 8,
+      sugar: 12,
+      sodium: 820,
+      cholesterol: 85,
+      saturatedFat: 7,
+    };
 
   const macronutrients = [
     {
@@ -176,23 +179,31 @@ export default function NutritionBreakdownScreen() {
     >
       <View className="flex-row justify-between items-center">
         <View className="flex-1">
-          <Text className={`${isSubItem ? 'text-sm' : 'text-base'} ${
-            isSubItem ? 'text-gray-600' : 'font-medium'
-          }`}>
+          <Text
+            className={`${isSubItem ? 'text-sm' : 'text-base'} ${
+              isSubItem ? 'text-gray-600' : 'font-medium'
+            }`}
+          >
             {item.name}
           </Text>
         </View>
         <View className="flex-row items-center">
-          <Text className={`${isSubItem ? 'text-sm' : 'text-base'} font-medium mr-1`}>
+          <Text
+            className={`${isSubItem ? 'text-sm' : 'text-base'} font-medium mr-1`}
+          >
             {item.amount}
           </Text>
-          <Text className={`${isSubItem ? 'text-xs' : 'text-sm'} text-gray-500`}>
+          <Text
+            className={`${isSubItem ? 'text-xs' : 'text-sm'} text-gray-500`}
+          >
             {item.unit}
           </Text>
           {item.dailyValue !== undefined && (
-            <Text className={`ml-3 ${isSubItem ? 'text-xs' : 'text-sm'} ${
-              item.dailyValue > 100 ? 'text-red-500' : 'text-gray-500'
-            }`}>
+            <Text
+              className={`ml-3 ${isSubItem ? 'text-xs' : 'text-sm'} ${
+                item.dailyValue > 100 ? 'text-red-500' : 'text-gray-500'
+              }`}
+            >
               {item.dailyValue}% DV
             </Text>
           )}
@@ -202,9 +213,9 @@ export default function NutritionBreakdownScreen() {
     </View>
   );
 
-  const renderMacroCard = (macro: typeof macronutrients[0]) => {
+  const renderMacroCard = (macro: (typeof macronutrients)[0]) => {
     const percentage = Math.min(macro.dailyValue, 100);
-    
+
     return (
       <View className="bg-white rounded-2xl p-4 mb-3 shadow-sm">
         <View className="flex-row justify-between items-start mb-3">
@@ -218,16 +229,29 @@ export default function NutritionBreakdownScreen() {
           <View className="items-end">
             <View className="flex-row items-center">
               {macro.trend === 'up' && <TrendingUp size={16} color="#10B981" />}
-              {macro.trend === 'down' && <TrendingDown size={16} color="#EF4444" />}
+              {macro.trend === 'down' && (
+                <TrendingDown size={16} color="#EF4444" />
+              )}
               {macro.trend === 'stable' && <Minus size={16} color="#6B7280" />}
-              <Text className={`ml-1 text-sm ${
-                macro.trend === 'up' ? 'text-green-500' :
-                macro.trend === 'down' ? 'text-red-500' : 'text-gray-500'
-              }`}>
-                {macro.trend === 'up' ? '+12%' : macro.trend === 'down' ? '-8%' : '0%'}
+              <Text
+                className={`ml-1 text-sm ${
+                  macro.trend === 'up'
+                    ? 'text-green-500'
+                    : macro.trend === 'down'
+                      ? 'text-red-500'
+                      : 'text-gray-500'
+                }`}
+              >
+                {macro.trend === 'up'
+                  ? '+12%'
+                  : macro.trend === 'down'
+                    ? '-8%'
+                    : '0%'}
               </Text>
             </View>
-            <Text className="text-sm text-gray-500 mt-1">{macro.dailyValue}% DV</Text>
+            <Text className="text-sm text-gray-500 mt-1">
+              {macro.dailyValue}% DV
+            </Text>
           </View>
         </View>
         <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -319,7 +343,7 @@ export default function NutritionBreakdownScreen() {
               {expandedSections.includes('macros') ? 'Hide' : 'Show'}
             </Text>
           </TouchableOpacity>
-          
+
           {expandedSections.includes('macros') && (
             <Animated.View entering={FadeIn} exiting={FadeOut}>
               {macronutrients.map(renderMacroCard)}
@@ -338,7 +362,7 @@ export default function NutritionBreakdownScreen() {
               {expandedSections.includes('micro') ? 'Hide' : 'Show'}
             </Text>
           </TouchableOpacity>
-          
+
           {expandedSections.includes('micro') && (
             <Animated.View
               entering={FadeIn}
@@ -361,7 +385,7 @@ export default function NutritionBreakdownScreen() {
               {expandedSections.includes('vitamins') ? 'Hide' : 'Show'}
             </Text>
           </TouchableOpacity>
-          
+
           {expandedSections.includes('vitamins') && (
             <Animated.View
               entering={FadeIn}

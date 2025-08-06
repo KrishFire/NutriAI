@@ -18,7 +18,7 @@ interface FeedbackFormProps {
 export const FeedbackForm: React.FC<FeedbackFormProps> = ({
   visible,
   onClose,
-  onSubmit
+  onSubmit,
 }) => {
   const [rating, setRating] = useState<number>(0);
   const [comment, setComment] = useState('');
@@ -39,16 +39,16 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
 
   const handleSubmit = () => {
     if (comment.trim() === '') return;
-    
+
     hapticFeedback.success();
     setIsSubmitting(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       onSubmit({
         rating,
         comment,
-        contactInfo: contactInfo.trim() !== '' ? contactInfo : undefined
+        contactInfo: contactInfo.trim() !== '' ? contactInfo : undefined,
       });
       setIsSubmitting(false);
       // Reset form
@@ -80,7 +80,7 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
         >
           <TouchableOpacity
             activeOpacity={1}
-            onPress={(e) => e.stopPropagation()}
+            onPress={e => e.stopPropagation()}
           >
             {/* Header */}
             <View className="flex-row items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
@@ -93,10 +93,7 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
                   Share Your Feedback
                 </Text>
               </View>
-              <TouchableOpacity
-                className="p-1 rounded-full"
-                onPress={onClose}
-              >
+              <TouchableOpacity className="p-1 rounded-full" onPress={onClose}>
                 <X size={20} className="text-gray-500 dark:text-gray-400" />
               </TouchableOpacity>
             </View>
@@ -115,7 +112,7 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
                       How would you rate your experience with our app?
                     </Text>
                     <View className="flex-row justify-center space-x-2 mb-8">
-                      {[1, 2, 3, 4, 5].map((star) => (
+                      {[1, 2, 3, 4, 5].map(star => (
                         <TouchableOpacity
                           key={star}
                           className={`w-12 h-12 rounded-full items-center justify-center ${
@@ -162,7 +159,7 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
                       onChangeText={setComment}
                       textAlignVertical="top"
                     />
-                    
+
                     <TouchableOpacity
                       className="mb-4"
                       onPress={() => setShowContactField(!showContactField)}

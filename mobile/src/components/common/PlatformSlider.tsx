@@ -26,11 +26,13 @@ const WebSlider: React.FC<PlatformSliderProps> = ({
   style,
 }) => {
   return (
-    <View style={[{ width: '100%', height: 40, justifyContent: 'center' }, style]}>
+    <View
+      style={[{ width: '100%', height: 40, justifyContent: 'center' }, style]}
+    >
       <input
         type="range"
         value={value}
-        onChange={(e) => onValueChange(Number(e.target.value))}
+        onChange={e => onValueChange(Number(e.target.value))}
         min={minimumValue}
         max={maximumValue}
         step={step}
@@ -95,17 +97,14 @@ const WebSlider: React.FC<PlatformSliderProps> = ({
 };
 
 // Cross-platform slider component
-const PlatformSlider: React.FC<PlatformSliderProps> = (props) => {
+const PlatformSlider: React.FC<PlatformSliderProps> = props => {
   if (Platform.OS === 'web') {
     return <WebSlider {...props} />;
   }
 
   // Native platforms (iOS, Android)
   return (
-    <Slider
-      {...props}
-      style={[{ width: '100%', height: 40 }, props.style]}
-    />
+    <Slider {...props} style={[{ width: '100%', height: 40 }, props.style]} />
   );
 };
 

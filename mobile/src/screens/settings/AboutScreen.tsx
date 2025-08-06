@@ -124,15 +124,20 @@ export default function AboutScreen() {
             className="bg-primary-50 dark:bg-primary-900/20 rounded-xl p-4"
           >
             <View className="flex-row items-center mb-3">
-              <Heart size={20} className="text-primary-600 dark:text-primary-400 mr-2" />
+              <Heart
+                size={20}
+                className="text-primary-600 dark:text-primary-400 mr-2"
+              />
               <Text className="text-lg font-semibold text-gray-900 dark:text-white">
                 Our Mission
               </Text>
             </View>
             <Text className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              NutriAI was crafted with care to help people achieve their nutrition and health goals 
-              through AI-powered tracking and personalized insights. We believe everyone deserves 
-              access to intelligent nutrition guidance that adapts to their unique lifestyle.
+              NutriAI was crafted with care to help people achieve their
+              nutrition and health goals through AI-powered tracking and
+              personalized insights. We believe everyone deserves access to
+              intelligent nutrition guidance that adapts to their unique
+              lifestyle.
             </Text>
           </MotiView>
         </View>
@@ -209,7 +214,11 @@ export default function AboutScreen() {
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 Made with
               </Text>
-              <Heart size={14} className="text-red-500 mx-1" fill="currentColor" />
+              <Heart
+                size={14}
+                className="text-red-500 mx-1"
+                fill="currentColor"
+              />
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 by the NutriAI Team
               </Text>

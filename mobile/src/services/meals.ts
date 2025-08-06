@@ -267,9 +267,9 @@ async function updateUserStreak(userId: string): Promise<void> {
  * Generate a UUID compatible with React Native
  */
 const generateUUID = (): string => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 };
@@ -290,10 +290,10 @@ export async function updateExistingMeal(
     if (parts.length < 4) {
       return { success: false, error: 'Invalid meal ID format' };
     }
-    
+
     const date = `${parts[0]}-${parts[1]}-${parts[2]}`;
     const mealType = parts[3] as MealEntry['meal_type'];
-    
+
     // Start a transaction-like operation
     // 1. First, get the meal_group_id for existing entries
     const { data: existingEntries } = await supabase
@@ -304,9 +304,9 @@ export async function updateExistingMeal(
       .lte('logged_at', `${date}T23:59:59`)
       .eq('meal_type', mealType)
       .limit(1);
-    
+
     const existingGroupId = existingEntries?.[0]?.meal_group_id;
-    
+
     // 2. Delete existing meal entries for this date/mealType
     const { error: deleteError } = await supabase
       .from('meal_entries')
@@ -315,16 +315,20 @@ export async function updateExistingMeal(
       .gte('logged_at', `${date}T00:00:00`)
       .lte('logged_at', `${date}T23:59:59`)
       .eq('meal_type', mealType);
-    
+
     if (deleteError) {
-      throw new Error(`Failed to delete existing entries: ${deleteError.message}`);
+      throw new Error(
+        `Failed to delete existing entries: ${deleteError.message}`
+      );
     }
-    
+
     // 3. Create new entries with updated data
     // Use existing group ID if available, otherwise generate new one
     const mealGroupId = existingGroupId || generateUUID();
-    const loggedAt = new Date(`${date}T${new Date().toTimeString().slice(0, 8)}`).toISOString();
-    
+    const loggedAt = new Date(
+      `${date}T${new Date().toTimeString().slice(0, 8)}`
+    ).toISOString();
+
     // Prepare meal entries
     const mealEntries: Partial<MealEntry>[] = analysis.foods.map(food => ({
       user_id: userId,
@@ -343,16 +347,18 @@ export async function updateExistingMeal(
       notes: notes,
       meal_group_id: mealGroupId,
     }));
-    
+
     // Insert new meal entries
     const { error: insertError } = await supabase
       .from('meal_entries')
       .insert(mealEntries);
-    
+
     if (insertError) {
-      throw new Error(`Failed to insert updated entries: ${insertError.message}`);
+      throw new Error(
+        `Failed to insert updated entries: ${insertError.message}`
+      );
     }
-    
+
     // 4. Recalculate and update daily totals
     const { data: allMealsToday } = await supabase
       .from('meal_entries')
@@ -360,39 +366,44 @@ export async function updateExistingMeal(
       .eq('user_id', userId)
       .gte('logged_at', `${date}T00:00:00`)
       .lte('logged_at', `${date}T23:59:59`);
-    
+
     if (allMealsToday && allMealsToday.length > 0) {
-      const dailyTotals = allMealsToday.reduce((acc, meal) => ({
-        total_calories: acc.total_calories + (meal.calories || 0),
-        total_protein: acc.total_protein + (meal.protein || 0),
-        total_carbs: acc.total_carbs + (meal.carbs || 0),
-        total_fat: acc.total_fat + (meal.fat || 0)
-      }), { total_calories: 0, total_protein: 0, total_carbs: 0, total_fat: 0 });
-      
+      const dailyTotals = allMealsToday.reduce(
+        (acc, meal) => ({
+          total_calories: acc.total_calories + (meal.calories || 0),
+          total_protein: acc.total_protein + (meal.protein || 0),
+          total_carbs: acc.total_carbs + (meal.carbs || 0),
+          total_fat: acc.total_fat + (meal.fat || 0),
+        }),
+        { total_calories: 0, total_protein: 0, total_carbs: 0, total_fat: 0 }
+      );
+
       // Update or create daily log
-      const { error: dailyLogError } = await supabase
-        .from('daily_logs')
-        .upsert({
+      const { error: dailyLogError } = await supabase.from('daily_logs').upsert(
+        {
           user_id: userId,
           date: date,
-          ...dailyTotals
-        }, {
-          onConflict: 'user_id,date'
-        });
-      
+          ...dailyTotals,
+        },
+        {
+          onConflict: 'user_id,date',
+        }
+      );
+
       if (dailyLogError) {
         console.error('Error updating daily log:', dailyLogError);
       }
     }
-    
-    console.log(`[updateExistingMeal] Successfully updated meal for ${date} ${mealType}`);
+
+    console.log(
+      `[updateExistingMeal] Successfully updated meal for ${date} ${mealType}`
+    );
     return { success: true };
-    
   } catch (error) {
     console.error('Error updating existing meal:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update meal'
+      error: error instanceof Error ? error.message : 'Failed to update meal',
     };
   }
 }
@@ -821,9 +832,15 @@ export async function getMealDetailsByDateAndType(
         protein: Number(entry.protein) || 0,
         carbs: Number(entry.carbs) || 0,
         fat: Number(entry.fat) || 0,
-        fiber: entry.food_items?.fiber ? Number(entry.food_items.fiber) : undefined,
-        sugar: entry.food_items?.sugar ? Number(entry.food_items.sugar) : undefined,
-        sodium: entry.food_items?.sodium ? Number(entry.food_items.sodium) : undefined,
+        fiber: entry.food_items?.fiber
+          ? Number(entry.food_items.fiber)
+          : undefined,
+        sugar: entry.food_items?.sugar
+          ? Number(entry.food_items.sugar)
+          : undefined,
+        sodium: entry.food_items?.sodium
+          ? Number(entry.food_items.sodium)
+          : undefined,
       },
     }));
 
@@ -868,9 +885,7 @@ export async function getMealDetailsByDateAndType(
     return {
       success: false,
       error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to fetch meal details',
+        error instanceof Error ? error.message : 'Failed to fetch meal details',
     };
   }
 }

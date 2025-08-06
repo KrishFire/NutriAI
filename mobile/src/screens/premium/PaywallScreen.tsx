@@ -21,6 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import { hapticFeedback } from '../../utils/haptics';
 import { Button } from '../../components/ui/Button';
 import { PageTransition } from '../../components/ui/PageTransition';
+import { StandardHeaderWithBack } from '../../components/common';
 import { PremiumFeatureCard } from '../../components/premium/PremiumFeatureCard';
 import { SubscriptionPlanCard } from '../../components/premium/SubscriptionPlanCard';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -32,13 +33,15 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Paywall'>;
 
 export const PaywallScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>(
+    'annual'
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubscribe = async () => {
     await hapticFeedback.impact();
     setIsLoading(true);
-    
+
     // Simulate subscription process
     setTimeout(() => {
       setIsLoading(false);
@@ -61,20 +64,13 @@ export const PaywallScreen: React.FC = () => {
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
         <View className="flex-1">
           {/* Header */}
-          <View className="flex-row items-center px-4 pt-4 pb-2">
-            <Pressable
-              onPress={handleBack}
-              className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
-            >
-              <Ionicons name="arrow-back" size={20} color="#6B7280" />
-            </Pressable>
-            <Text className="text-2xl font-bold text-gray-900 dark:text-white ml-4">
-              Upgrade to Premium
-            </Text>
-          </View>
+          <StandardHeaderWithBack 
+            title="Upgrade to Premium" 
+            onBack={handleBack}
+          />
 
-          <ScrollView 
-            className="flex-1" 
+          <ScrollView
+            className="flex-1"
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 20 }}
           >
@@ -119,7 +115,7 @@ export const PaywallScreen: React.FC = () => {
               >
                 Choose Your Plan
               </Animated.Text>
-              
+
               <View className="space-y-3">
                 <SubscriptionPlanCard
                   title="Monthly"
@@ -132,7 +128,7 @@ export const PaywallScreen: React.FC = () => {
                     setSelectedPlan('monthly');
                   }}
                 />
-                
+
                 <SubscriptionPlanCard
                   title="Annual"
                   price="$49.99"
@@ -157,26 +153,26 @@ export const PaywallScreen: React.FC = () => {
               >
                 Premium Features
               </Animated.Text>
-              
+
               <PremiumFeatureCard
                 title="Advanced Analytics"
                 description="Get detailed insights about your nutrition and habits."
                 icon={<Ionicons name="stats-chart" size={20} color="#320DFF" />}
                 highlighted={true}
               />
-              
+
               <PremiumFeatureCard
                 title="Unlimited History"
                 description="Access your complete nutrition history without limits."
                 icon={<Ionicons name="time" size={20} color="#6B7280" />}
               />
-              
+
               <PremiumFeatureCard
                 title="Cloud Backup"
                 description="Keep your data safe with automatic cloud backups."
                 icon={<Ionicons name="cloud" size={20} color="#6B7280" />}
               />
-              
+
               <PremiumFeatureCard
                 title="Custom Recipes"
                 description="Create and save unlimited custom recipes and meals."
@@ -194,18 +190,17 @@ export const PaywallScreen: React.FC = () => {
               loading={isLoading}
               disabled={isLoading}
             >
-              {isLoading 
-                ? 'Processing...' 
-                : `Subscribe for ${selectedPlan === 'monthly' ? '$4.99/month' : '$49.99/year'}`
-              }
+              {isLoading
+                ? 'Processing...'
+                : `Subscribe for ${selectedPlan === 'monthly' ? '$4.99/month' : '$49.99/year'}`}
             </Button>
-            
+
             <Pressable onPress={handleRestore} className="mt-4">
               <Text className="text-center text-sm text-gray-600 dark:text-gray-400">
                 Restore Purchase
               </Text>
             </Pressable>
-            
+
             <Text className="text-xs text-center text-gray-500 dark:text-gray-500 mt-4">
               Your subscription will automatically renew. Cancel anytime in your
               account settings.
@@ -216,3 +211,5 @@ export const PaywallScreen: React.FC = () => {
     </PageTransition>
   );
 };
+
+export default PaywallScreen;

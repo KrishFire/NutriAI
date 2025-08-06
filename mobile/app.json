@@ -72,8 +72,7 @@
           "requiresDeviceIdle": false,
           "requiredNetworkType": "ANY"
         }
-      ],
-      "expo-barcode-scanner"
+      ]
     ],
     "extra": {
       "eas": {

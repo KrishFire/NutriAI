@@ -6,7 +6,10 @@ interface FacebookLogoProps {
   color?: string;
 }
 
-const FacebookLogo: React.FC<FacebookLogoProps> = ({ size = 24, color = '#1877F2' }) => {
+const FacebookLogo: React.FC<FacebookLogoProps> = ({
+  size = 24,
+  color = '#1877F2',
+}) => {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path

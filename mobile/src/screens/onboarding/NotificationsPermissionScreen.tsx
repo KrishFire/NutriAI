@@ -1,17 +1,11 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Platform,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Bell } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import * as Notifications from 'expo-notifications';
 import { hapticFeedback } from '../../utils/haptics';
-import { useOnboarding } from './OnboardingFlow';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const NotificationsPermissionScreen = () => {
   const { goToNextStep, goToPreviousStep, updateUserData } = useOnboarding();
@@ -99,8 +93,8 @@ const NotificationsPermissionScreen = () => {
               transition={{ type: 'timing', duration: 500 }}
               className="mb-8"
             >
-              <View className="w-24 h-24 rounded-full bg-primary/10 items-center justify-center">
-                <Bell size={40} color="#320DFF" />
+              <View className="w-24 h-24 rounded-full bg-primary items-center justify-center">
+                <Bell size={40} color="#FFFFFF" />
               </View>
             </MotiView>
 
@@ -117,11 +111,9 @@ const NotificationsPermissionScreen = () => {
                   from={{ opacity: 0, translateX: -20 }}
                   animate={{ opacity: 1, translateX: 0 }}
                   transition={{ delay: 300 + index * 100 }}
-                  className="flex-row items-center p-4 bg-primary/5 rounded-xl mb-3"
+                  className="flex-row items-center p-4 bg-purple-50 rounded-xl mb-3"
                 >
-                  <View className="w-10 h-10 rounded-full bg-primary/20 items-center justify-center mr-3">
-                    <View className="w-4 h-4 rounded-full bg-primary" />
-                  </View>
+                  <View className="w-2 h-2 rounded-full bg-primary mr-4" />
                   <View className="flex-1">
                     <Text className="font-medium text-gray-900">
                       {feature.title}
@@ -149,10 +141,10 @@ const NotificationsPermissionScreen = () => {
 
             <TouchableOpacity
               onPress={handleSkip}
-              className="py-4 rounded-full items-center justify-center border border-gray-300"
+              className="py-4 rounded-full items-center justify-center bg-gray-100 border border-gray-200"
               activeOpacity={0.8}
             >
-              <Text className="text-gray-700 font-semibold text-base">
+              <Text className="text-gray-800 font-semibold text-base">
                 Not Now
               </Text>
             </TouchableOpacity>

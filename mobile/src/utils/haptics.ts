@@ -24,7 +24,9 @@ export const hapticFeedback = {
    * Medium tap (20ms) for activations
    * Used for: confirmations, submissions, important actions
    */
-  impact: async (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Medium) => {
+  impact: async (
+    style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Medium
+  ) => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       try {
         await Haptics.impactAsync(style);
@@ -41,7 +43,9 @@ export const hapticFeedback = {
   success: async () => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       try {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success
+        );
       } catch (error) {
         console.warn('Haptic feedback not available:', error);
       }
@@ -69,7 +73,9 @@ export const hapticFeedback = {
   warning: async () => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       try {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Warning
+        );
       } catch (error) {
         console.warn('Haptic feedback not available:', error);
       }

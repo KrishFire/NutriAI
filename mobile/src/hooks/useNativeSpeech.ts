@@ -43,13 +43,13 @@ export function useNativeSpeech(options: UseNativeSpeechOptions = {}) {
     error: whisperRecording.error,
     isAvailable: true, // Whisper is always available
     volume: 0, // Whisper doesn't provide volume feedback
-    
+
     // Actions
     start: whisperRecording.startRecording,
     stop: whisperRecording.stopRecording,
     cancel: whisperRecording.cancelRecording,
     reset: whisperRecording.reset,
-    
+
     // Feature flags
     isNativeSupported: false, // Always using Whisper now
   };

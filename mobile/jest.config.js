@@ -32,9 +32,7 @@ class TddGuardReporter {
         `\n🔴 TDD Guard: ${results.numFailedTests} test(s) failed. Commit will be blocked.`
       );
     } else {
-      console.log(
-        '\n🟢 TDD Guard: All tests passed. You are clear to commit.'
-      );
+      console.log('\n🟢 TDD Guard: All tests passed. You are clear to commit.');
     }
   }
 }
@@ -52,8 +50,15 @@ module.exports = {
 
   // Module mapping for React Native modules
   moduleNameMapper: {
-    '^react-native$': 'react-native-web',
+    // Removed react-native-web mapping to fix StyleSheet runtime error
+    // '^react-native$': 'react-native-web',
     '^react-native-svg$': '<rootDir>/__mocks__/react-native-svg.js',
+    '^react-native-safe-area-context$':
+      '<rootDir>/__mocks__/react-native-safe-area-context.js',
+    '^react-native-reanimated$':
+      '<rootDir>/__mocks__/react-native-reanimated.js',
+    '^moti$': '<rootDir>/__mocks__/moti.js',
+    '^lucide-react-native$': '<rootDir>/__mocks__/lucide-react-native.js',
     '^@/(.*)$': '<rootDir>/src/$1',
   },
 
@@ -67,7 +72,7 @@ module.exports = {
 
   // Transform ignore patterns - ensure MSW and other ES modules are transformed
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@expo|expo|expo-.*|@supabase|msw|@react-navigation|react-native-.*|moti|lucide-react-native)/)',
+    'node_modules/(?!(react-native|@react-native|@expo|expo|expo-.*|@supabase|msw|@react-navigation|react-native-.*|moti|lucide-react-native|react-native-safe-area-context|react-native-reanimated)/)',
   ],
 
   // Coverage configuration

@@ -43,9 +43,9 @@ import { useStreak } from '../hooks/useStreak';
 
 function MyComponent() {
   const { streakData, loading, motivationalMessage, refresh } = useStreak();
-  
+
   if (loading) return <ActivityIndicator />;
-  
+
   return (
     <View>
       <Text>{streakData?.displayText}</Text>
@@ -65,9 +65,9 @@ import { StreakBadge } from '../components/StreakBadge';
 <StreakBadge variant="compact" />
 
 // Detailed badge for profile screens
-<StreakBadge 
-  variant="detailed" 
-  onPress={() => navigation.navigate('StreakDetails')} 
+<StreakBadge
+  variant="detailed"
+  onPress={() => navigation.navigate('StreakDetails')}
 />
 ```
 
@@ -105,22 +105,28 @@ interface StreakDisplayData {
 ### Service Methods
 
 #### `isMilestone(streakCount: number): boolean`
+
 Checks if a given streak count is a milestone day.
 
 #### `getNextMilestone(currentStreak: number): number | null`
+
 Returns the next milestone, or null if past all milestones.
 
 #### `getCelebrationMessage(milestone: number, isPersonalBest: boolean): MilestoneCelebration`
+
 Generates appropriate celebration message for a milestone.
 
 #### `calculateStreakStatus(lastLogDate: string | null, currentStreak: number): StreakStatus`
+
 Determines streak health based on last log date:
+
 - `active`: Logged today
 - `at_risk`: Haven't logged today yet (1 day since last log)
 - `broken`: Missed one or more days
 - `inactive`: No streak or no logs
 
 #### `getStreakDisplayData(streak: UserStreak | null): StreakDisplayData`
+
 Returns comprehensive display data including formatted text, status, and milestone info.
 
 ## Integration with Existing Code
@@ -133,18 +139,19 @@ The StreakService is designed to work seamlessly with the existing `updateUserSt
 
 ## Streak Status Logic
 
-| Last Log | Current Streak | Status | Display |
-|----------|----------------|---------|---------|
-| Today | > 0 | active | "X day streak 🔥" |
-| Yesterday | > 0 | at_risk | "X day streak ⚠️ Log today to continue!" |
-| 2+ days ago | > 0 | broken | "X day streak ❌ Streak ended" |
-| Never/null | 0 | inactive | "Start your streak today!" |
+| Last Log    | Current Streak | Status   | Display                                  |
+| ----------- | -------------- | -------- | ---------------------------------------- |
+| Today       | > 0            | active   | "X day streak 🔥"                        |
+| Yesterday   | > 0            | at_risk  | "X day streak ⚠️ Log today to continue!" |
+| 2+ days ago | > 0            | broken   | "X day streak ❌ Streak ended"           |
+| Never/null  | 0              | inactive | "Start your streak today!"               |
 
 ## Milestones
 
 The service tracks these milestone days:
+
 - **Week 1**: 7 days
-- **Week 2**: 14 days  
+- **Week 2**: 14 days
 - **Week 3**: 21 days (habit formation)
 - **Month 1**: 30 days
 - **50 days**: First major milestone
@@ -172,15 +179,15 @@ import { StreakBadge } from '../components/StreakBadge';
 function HomeScreen() {
   const { streakData, motivationalMessage } = useStreak();
   const { shouldCelebrate, celebration, dismissCelebration } = useStreakCelebration();
-  
+
   return (
     <View>
       {/* Streak badge in header */}
       <StreakBadge variant="compact" />
-      
+
       {/* Motivational message */}
       <Text>{motivationalMessage}</Text>
-      
+
       {/* Milestone celebration modal */}
       <Modal visible={shouldCelebrate} transparent>
         <View style={styles.celebrationModal}>
@@ -207,7 +214,11 @@ const today = new Date().toISOString().split('T')[0];
 expect(StreakService.calculateStreakStatus(today, 5)).toBe('active');
 
 // Test display formatting
-const mockStreak = { current_streak: 7, longest_streak: 10, last_log_date: today };
+const mockStreak = {
+  current_streak: 7,
+  longest_streak: 10,
+  last_log_date: today,
+};
 const displayData = StreakService.getStreakDisplayData(mockStreak);
 expect(displayData.isOnFire).toBe(true);
 expect(displayData.displayText).toContain('🔥');

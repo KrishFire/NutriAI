@@ -32,10 +32,24 @@
     "no-debugger": "error",
     "prefer-const": "error",
     "no-var": "error",
-    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      { "argsIgnorePattern": "^_" }
+    ],
     "@typescript-eslint/no-explicit-any": "warn",
     "react/react-in-jsx-scope": "off",
-    "react/prop-types": "off"
+    "react/prop-types": "off",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["**/tokens.json"],
+            "message": "Import from 'src/utils/tokens' instead of tokens.json directly"
+          }
+        ]
+      }
+    ]
   },
   "ignorePatterns": [
     "node_modules/",

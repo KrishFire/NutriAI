@@ -13,15 +13,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
-import { useOnboarding } from './OnboardingFlow';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const HeightWeightScreen = () => {
-  const { goToNextStep, goToPreviousStep, progress, updateUserData } = useOnboarding();
+  const { goToNextStep, goToPreviousStep, progress, updateUserData } =
+    useOnboarding();
   const [heightFeet, setHeightFeet] = useState('');
   const [heightInches, setHeightInches] = useState('');
   const [heightCm, setHeightCm] = useState('');
   const [weight, setWeight] = useState('');
   const [isMetric, setIsMetric] = useState(false);
+  const [backPressed, setBackPressed] = useState(false);
+  const [continuePressed, setContinuePressed] = useState(false);
+  const [imperialPressed, setImperialPressed] = useState(false);
+  const [metricPressed, setMetricPressed] = useState(false);
 
   const handleContinue = () => {
     if (isMetric) {
@@ -34,7 +39,11 @@ const HeightWeightScreen = () => {
     } else {
       if (heightFeet && heightInches && weight) {
         hapticFeedback.impact();
-        updateUserData('height', { feet: heightFeet, inches: heightInches, cm: '' });
+        updateUserData('height', {
+          feet: heightFeet,
+          inches: heightInches,
+          cm: '',
+        });
         updateUserData('weight', { value: weight, unit: 'lbs' });
         goToNextStep();
       }
@@ -56,13 +65,16 @@ const HeightWeightScreen = () => {
     setWeight('');
   };
 
-  const handleNumericInput = (text: string, setter: (value: string) => void) => {
+  const handleNumericInput = (
+    text: string,
+    setter: (value: string) => void
+  ) => {
     // Only allow numeric input
     const numericValue = text.replace(/[^0-9]/g, '');
     setter(numericValue);
   };
 
-  const canContinue = isMetric 
+  const canContinue = isMetric
     ? heightCm && weight
     : heightFeet && heightInches && weight;
 
@@ -79,13 +91,26 @@ const HeightWeightScreen = () => {
         >
           {/* Header with back button */}
           <View style={styles.header}>
-            <TouchableOpacity
-              onPress={handleBack}
-              style={styles.backButton}
-              activeOpacity={0.7}
+            <MotiView
+              animate={{
+                scale: backPressed ? 0.95 : 1,
+              }}
+              transition={{
+                type: 'spring',
+                damping: 15,
+                stiffness: 400,
+              }}
             >
-              <ArrowLeft size={20} color="#000" />
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleBack}
+                onPressIn={() => setBackPressed(true)}
+                onPressOut={() => setBackPressed(false)}
+                style={styles.backButton}
+                activeOpacity={1}
+              >
+                <ArrowLeft size={20} color="#000" />
+              </TouchableOpacity>
+            </MotiView>
           </View>
 
           {/* Progress bar */}
@@ -111,35 +136,59 @@ const HeightWeightScreen = () => {
           <View style={styles.unitToggleContainer}>
             <TouchableOpacity
               onPress={() => handleUnitToggle(false)}
-              style={[
-                styles.unitToggle,
-                !isMetric && styles.unitToggleActive,
-              ]}
-              activeOpacity={0.7}
+              onPressIn={() => setImperialPressed(true)}
+              onPressOut={() => setImperialPressed(false)}
+              style={[styles.unitToggle, !isMetric && styles.unitToggleActive]}
+              activeOpacity={1}
               testID="unit-toggle-imperial"
             >
-              <Text style={[
-                styles.unitToggleText,
-                !isMetric && styles.unitToggleTextActive,
-              ]}>
-                Imperial
-              </Text>
+              <MotiView
+                animate={{
+                  scale: imperialPressed ? 0.95 : 1,
+                }}
+                transition={{
+                  type: 'spring',
+                  damping: 15,
+                  stiffness: 400,
+                }}
+              >
+                <Text
+                  style={[
+                    styles.unitToggleText,
+                    !isMetric && styles.unitToggleTextActive,
+                  ]}
+                >
+                  Imperial
+                </Text>
+              </MotiView>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleUnitToggle(true)}
-              style={[
-                styles.unitToggle,
-                isMetric && styles.unitToggleActive,
-              ]}
-              activeOpacity={0.7}
+              onPressIn={() => setMetricPressed(true)}
+              onPressOut={() => setMetricPressed(false)}
+              style={[styles.unitToggle, isMetric && styles.unitToggleActive]}
+              activeOpacity={1}
               testID="unit-toggle-metric"
             >
-              <Text style={[
-                styles.unitToggleText,
-                isMetric && styles.unitToggleTextActive,
-              ]}>
-                Metric
-              </Text>
+              <MotiView
+                animate={{
+                  scale: metricPressed ? 0.95 : 1,
+                }}
+                transition={{
+                  type: 'spring',
+                  damping: 15,
+                  stiffness: 400,
+                }}
+              >
+                <Text
+                  style={[
+                    styles.unitToggleText,
+                    isMetric && styles.unitToggleTextActive,
+                  ]}
+                >
+                  Metric
+                </Text>
+              </MotiView>
             </TouchableOpacity>
           </View>
 
@@ -155,7 +204,7 @@ const HeightWeightScreen = () => {
                 <View style={styles.singleInputContainer}>
                   <TextInput
                     value={heightCm}
-                    onChangeText={(text) => handleNumericInput(text, setHeightCm)}
+                    onChangeText={text => handleNumericInput(text, setHeightCm)}
                     placeholder="173"
                     placeholderTextColor="#9CA3AF"
                     keyboardType="number-pad"
@@ -169,7 +218,9 @@ const HeightWeightScreen = () => {
                   <View style={styles.inputWrapper}>
                     <TextInput
                       value={heightFeet}
-                      onChangeText={(text) => handleNumericInput(text, setHeightFeet)}
+                      onChangeText={text =>
+                        handleNumericInput(text, setHeightFeet)
+                      }
                       placeholder="5"
                       placeholderTextColor="#9CA3AF"
                       keyboardType="number-pad"
@@ -181,7 +232,9 @@ const HeightWeightScreen = () => {
                   <View style={styles.inputWrapper}>
                     <TextInput
                       value={heightInches}
-                      onChangeText={(text) => handleNumericInput(text, setHeightInches)}
+                      onChangeText={text =>
+                        handleNumericInput(text, setHeightInches)
+                      }
                       placeholder="8"
                       placeholderTextColor="#9CA3AF"
                       keyboardType="number-pad"
@@ -206,8 +259,8 @@ const HeightWeightScreen = () => {
               <View style={styles.singleInputContainer}>
                 <TextInput
                   value={weight}
-                  onChangeText={(text) => handleNumericInput(text, setWeight)}
-                  placeholder={isMetric ? "68" : "150"}
+                  onChangeText={text => handleNumericInput(text, setWeight)}
+                  placeholder={isMetric ? '68' : '150'}
                   placeholderTextColor="#9CA3AF"
                   keyboardType="number-pad"
                   style={styles.textInput}
@@ -220,18 +273,31 @@ const HeightWeightScreen = () => {
 
           {/* Continue button */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              onPress={handleContinue}
-              style={[
-                styles.continueButton,
-                !canContinue && styles.continueButtonDisabled,
-              ]}
-              activeOpacity={canContinue ? 0.8 : 1}
-              disabled={!canContinue}
-              testID="continue-button"
+            <MotiView
+              animate={{
+                scale: continuePressed ? 0.95 : 1,
+              }}
+              transition={{
+                type: 'spring',
+                damping: 15,
+                stiffness: 400,
+              }}
             >
-              <Text style={styles.continueButtonText}>Continue</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleContinue}
+                onPressIn={() => setContinuePressed(true)}
+                onPressOut={() => setContinuePressed(false)}
+                style={[
+                  styles.continueButton,
+                  !canContinue && styles.continueButtonDisabled,
+                ]}
+                activeOpacity={1}
+                disabled={!canContinue}
+                testID="continue-button"
+              >
+                <Text style={styles.continueButtonText}>Continue</Text>
+              </TouchableOpacity>
+            </MotiView>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

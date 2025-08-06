@@ -1,5 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, Image, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
+  Image,
+  Alert,
+} from 'react-native';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
@@ -13,7 +20,10 @@ interface CameraInputScreenProps {
   onCapture: (data: any) => void;
 }
 
-export function CameraInputScreen({ onBack, onCapture }: CameraInputScreenProps) {
+export function CameraInputScreen({
+  onBack,
+  onCapture,
+}: CameraInputScreenProps) {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isCaptured, setIsCaptured] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -68,7 +78,7 @@ export function CameraInputScreen({ onBack, onCapture }: CameraInputScreenProps)
     if (capturedImage) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onCapture({
-        imageData: capturedImage
+        imageData: capturedImage,
       });
     }
   };
@@ -103,7 +113,7 @@ export function CameraInputScreen({ onBack, onCapture }: CameraInputScreenProps)
       <View className="flex-1 bg-black">
         <SafeAreaView className="flex-1">
           {/* Header */}
-          <View className="px-4 pt-4 pb-4 flex-row items-center">
+          <View className="px-4 pt-6 pb-6 flex-row items-center">
             <TouchableOpacity
               onPress={() => {
                 Haptics.selectionAsync();
@@ -187,20 +197,12 @@ export function CameraInputScreen({ onBack, onCapture }: CameraInputScreenProps)
             ) : (
               <View className="flex-row space-x-4">
                 <View className="flex-1">
-                  <Button
-                    onPress={retakePhoto}
-                    variant="secondary"
-                    fullWidth
-                  >
+                  <Button onPress={retakePhoto} variant="secondary" fullWidth>
                     Retake
                   </Button>
                 </View>
                 <View className="flex-1">
-                  <Button
-                    onPress={handleContinue}
-                    variant="primary"
-                    fullWidth
-                  >
+                  <Button onPress={handleContinue} variant="primary" fullWidth>
                     Continue
                   </Button>
                 </View>

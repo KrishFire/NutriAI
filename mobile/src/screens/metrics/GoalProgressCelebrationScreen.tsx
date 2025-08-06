@@ -22,16 +22,19 @@ export function GoalProgressCelebrationScreen({
   goalWeight,
   startWeight,
   currentWeight,
-  unit = 'lbs'
+  unit = 'lbs',
 }: GoalProgressCelebrationScreenProps) {
   const totalLoss = startWeight - currentWeight;
-  const percentComplete = Math.min(100, Math.round((totalLoss / (startWeight - goalWeight)) * 100));
+  const percentComplete = Math.min(
+    100,
+    Math.round((totalLoss / (startWeight - goalWeight)) * 100)
+  );
   const confettiRef = useRef<LottieView>(null);
 
   useEffect(() => {
     // Trigger success haptic on load
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    
+
     // Play confetti animation
     confettiRef.current?.play();
   }, []);
@@ -113,7 +116,7 @@ export function GoalProgressCelebrationScreen({
                     {startWeight} {unit}
                   </Text>
                 </View>
-                
+
                 <View className="flex-row items-center">
                   <View className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 items-center justify-center mr-2">
                     <Ionicons name="trending-down" size={16} color="#22c55e" />
@@ -127,7 +130,7 @@ export function GoalProgressCelebrationScreen({
                     </Text>
                   </View>
                 </View>
-                
+
                 <View>
                   <Text className="text-xs text-gray-500 dark:text-gray-400">
                     Current Weight
@@ -137,7 +140,7 @@ export function GoalProgressCelebrationScreen({
                   </Text>
                 </View>
               </View>
-              
+
               <View className="mb-2">
                 <View className="flex-row justify-between mb-1">
                   <Text className="text-xs text-gray-500 dark:text-gray-400">
@@ -156,7 +159,7 @@ export function GoalProgressCelebrationScreen({
                   />
                 </View>
               </View>
-              
+
               <Text className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
                 Goal Weight: {goalWeight} {unit}
               </Text>
@@ -177,7 +180,7 @@ export function GoalProgressCelebrationScreen({
                   28-day streak maintained
                 </Text>
               </View>
-              
+
               <View className="flex-row items-center">
                 <View className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 items-center justify-center mr-4">
                   <View className="w-5 h-5 rounded-full bg-primary-600 dark:bg-primary-400" />
@@ -186,7 +189,7 @@ export function GoalProgressCelebrationScreen({
                   Healthy weight loss pace achieved
                 </Text>
               </View>
-              
+
               <View className="flex-row items-center">
                 <View className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 items-center justify-center mr-4">
                   <View className="w-5 h-5 rounded-full bg-primary-600 dark:bg-primary-400" />

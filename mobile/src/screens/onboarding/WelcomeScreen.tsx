@@ -10,21 +10,37 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
-import { useOnboarding } from './OnboardingFlow';
+import { useOnboarding } from '../../contexts/OnboardingContext';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../types/navigation';
 
 const WelcomeScreen = () => {
-  const { goToNextStep } = useOnboarding();
+  const onboardingContext = useOnboarding();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [primaryPressed, setPrimaryPressed] = React.useState(false);
+  const [secondaryPressed, setSecondaryPressed] = React.useState(false);
 
   const handleGetStarted = () => {
     hapticFeedback.impact();
-    goToNextStep();
+    if (onboardingContext) {
+      onboardingContext.goToNextStep();
+    } else {
+      // Fallback navigation if context is not available
+      // Navigate to Onboarding stack which will show OnboardingFlow
+      navigation.navigate('Onboarding' as never);
+    }
   };
 
   const handleLogin = () => {
     hapticFeedback.selection();
-    // TODO: Navigate to login screen
-    // For now, just go to next step
-    goToNextStep();
+    if (onboardingContext) {
+      // Set signin mode in user data before transitioning
+      onboardingContext.updateUserData('authMode', 'signin');
+      // Jump directly to auth step in signin mode
+      onboardingContext.transitionToStep('auth');
+    }
   };
 
   return (
@@ -55,9 +71,7 @@ const WelcomeScreen = () => {
             transition={{ delay: 200, duration: 500 }}
             style={styles.titleContainer}
           >
-            <Text style={styles.title}>
-              Nutrition Tracking{'\n'}Made Easy
-            </Text>
+            <Text style={styles.title}>Nutrition Tracking{'\n'}Made Easy</Text>
           </MotiView>
 
           {/* Subtitle */}
@@ -68,7 +82,8 @@ const WelcomeScreen = () => {
             style={styles.subtitleContainer}
           >
             <Text style={styles.subtitle}>
-              The smartest way to track your nutrition with AI-powered food recognition
+              The smartest way to track your nutrition with AI-powered food
+              recognition
             </Text>
           </MotiView>
 
@@ -101,9 +116,7 @@ const WelcomeScreen = () => {
               <View style={styles.featureBulletOuter}>
                 <View style={styles.featureBulletInner} />
               </View>
-              <Text style={styles.featureText}>
-                Personalized insights
-              </Text>
+              <Text style={styles.featureText}>Personalized insights</Text>
             </View>
           </MotiView>
         </View>
@@ -115,25 +128,49 @@ const WelcomeScreen = () => {
           transition={{ delay: 600, duration: 500 }}
           style={styles.buttonsContainer}
         >
-          <TouchableOpacity
-            onPress={handleGetStarted}
-            style={styles.primaryButton}
-            activeOpacity={0.8}
+          <MotiView
+            animate={{
+              scale: primaryPressed ? 0.95 : 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 15,
+              stiffness: 400,
+            }}
           >
-            <Text style={styles.primaryButtonText}>
-              Get Started
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleGetStarted}
+              onPressIn={() => setPrimaryPressed(true)}
+              onPressOut={() => setPrimaryPressed(false)}
+              style={styles.primaryButton}
+              activeOpacity={1}
+            >
+              <Text style={styles.primaryButtonText}>Get Started</Text>
+            </TouchableOpacity>
+          </MotiView>
 
-          <TouchableOpacity
-            onPress={handleLogin}
-            style={styles.secondaryButton}
-            activeOpacity={0.7}
+          <MotiView
+            animate={{
+              scale: secondaryPressed ? 0.95 : 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 15,
+              stiffness: 400,
+            }}
           >
-            <Text style={styles.secondaryButtonText}>
-              I already have an account
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleLogin}
+              onPressIn={() => setSecondaryPressed(true)}
+              onPressOut={() => setSecondaryPressed(false)}
+              style={styles.secondaryButton}
+              activeOpacity={1}
+            >
+              <Text style={styles.secondaryButtonText}>
+                I already have an account
+              </Text>
+            </TouchableOpacity>
+          </MotiView>
         </MotiView>
       </ScrollView>
     </SafeAreaView>
@@ -149,7 +186,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 24,
-    paddingBottom: 56,
+    paddingBottom: 24,
   },
   mainContent: {
     flex: 1,
@@ -158,7 +195,7 @@ const styles = StyleSheet.create({
   berryContainer: {
     width: 192,
     height: 192,
-    marginBottom: 32,
+    marginBottom: 24,
   },
   berryImage: {
     width: 192,
@@ -177,7 +214,7 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
   },
   subtitleContainer: {
-    marginBottom: 40,
+    marginBottom: 32,
     paddingHorizontal: 17,
   },
   subtitle: {
@@ -194,7 +231,7 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   featureBulletOuter: {
     width: 48,
@@ -220,7 +257,7 @@ const styles = StyleSheet.create({
   },
   buttonsContainer: {
     width: '100%',
-    marginTop: 24,
+    marginTop: 16,
   },
   primaryButton: {
     width: '100%',

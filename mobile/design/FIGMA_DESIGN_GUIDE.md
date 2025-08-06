@@ -5,6 +5,7 @@
 ### 1. Create Design System Page
 
 In your Figma file:
+
 1. Create a new page (right-click in pages panel → "Add page")
 2. Name it "🎨 Design System"
 3. Set canvas background to #F5F5F5 (light gray)
@@ -14,16 +15,19 @@ In your Figma file:
 #### Create Color Styles
 
 **Primary & Brand Colors:**
+
 - `color/interactive/default`: RGB(50, 13, 255) → #320DFF
 - `color/interactive/pressed`: RGB(40, 10, 204) → #280ACC
 - `color/interactive/disabled`: RGB(50, 13, 255) @ 40% opacity
 
 **Semantic Colors:**
+
 - `color/success`: #66BB6A (Green)
-- `color/error`: #F44336 (Red) 
+- `color/error`: #F44336 (Red)
 - `color/warning`: #FFA726 (Amber)
 
 **Neutral Palette (Light Mode):**
+
 - `color/background/primary`: #FFFFFF
 - `color/background/secondary`: #F5F5F5
 - `color/surface/default`: #FFFFFF
@@ -36,6 +40,7 @@ In your Figma file:
 - `color/text/inverse`: #FFFFFF
 
 **Neutral Palette (Dark Mode):**
+
 - `color/background/primary`: #121212
 - `color/background/secondary`: #1E1E1E
 - `color/surface/default`: #1E1E1E
@@ -48,6 +53,7 @@ In your Figma file:
 - `color/text/inverse`: #121212
 
 **Data Visualization Colors:**
+
 - `color/data/calories`: RGB(50, 13, 255) → #320DFF
 - `color/data/carbs`: #FFA726 (Amber)
 - `color/data/protein`: #42A5F5 (Blue)
@@ -58,16 +64,19 @@ In your Figma file:
 Create text styles using Inter font:
 
 **Headings:**
+
 - `typography/heading/xl`: Inter Bold 32px, Line height 40px
 - `typography/heading/l`: Inter Semibold 24px, Line height 32px
 - `typography/heading/m`: Inter Semibold 20px, Line height 28px
 
 **Body:**
+
 - `typography/body/l`: Inter Regular 18px, Line height 28px
 - `typography/body/m`: Inter Regular 16px, Line height 24px
 - `typography/body/s`: Inter Regular 14px, Line height 20px
 
 **Supporting:**
+
 - `typography/caption`: Inter Regular 12px, Line height 16px
 - `typography/button`: Inter Medium 16px, Line height 24px
 - `typography/label`: Inter Medium 14px, Line height 20px
@@ -92,17 +101,20 @@ space-8: 64px
 #### Button Component
 
 Create a button with these specifications:
+
 - Height: 48px (Apple HIG minimum touch target)
 - Horizontal padding: 24px
 - Border radius: 12px
 - Use Auto Layout
 
 **Variants:**
+
 1. Primary (Blue background, white text)
 2. Secondary (White background, blue text, blue border)
 3. Text (No background, blue text)
 
 **States for each variant:**
+
 - Default
 - Pressed (darker shade)
 - Disabled (40% opacity)
@@ -116,6 +128,7 @@ Create a button with these specifications:
 - Background: color/surface/default
 
 **States:**
+
 - Default
 - Focused (blue border)
 - Error (red border)
@@ -132,6 +145,7 @@ Create a button with these specifications:
 ### 6. Data Visualization Components
 
 #### Progress Ring
+
 - Size: 120x120px
 - Stroke width: 12px
 - Background stroke: color/border/subtle
@@ -139,6 +153,7 @@ Create a button with these specifications:
 - Center text: typography/heading/l
 
 #### Mini Progress Bar
+
 - Height: 8px
 - Width: 100%
 - Border radius: 4px
@@ -148,6 +163,7 @@ Create a button with these specifications:
 ### 7. Documentation Frame
 
 Create a frame explaining usage:
+
 - Color usage guidelines
 - Spacing examples
 - Component do's and don'ts
@@ -175,11 +191,13 @@ Create a frame explaining usage:
 ## Next Steps
 
 Once you've created all these elements:
+
 1. Take a screenshot of your Design System page
 2. I'll review it and provide feedback
 3. We'll move on to Phase 2: App Structure & Navigation
 
 Remember to:
+
 - Use consistent naming conventions
 - Apply Auto Layout to all components
 - Test components in both light and dark modes

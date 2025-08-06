@@ -1,0 +1,76 @@
+{
+  "session_id": "9b676a3e-7f0b-46cc-8c67-8c269b362b8c",
+  "transcript_path": "/Users/krishtandon/.claude/projects/-Users-krishtandon-Desktop-NutriAI/9b676a3e-7f0b-46cc-8c67-8c269b362b8c.jsonl",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "TodoWrite",
+  "tool_input": {
+    "todos": [
+      {
+        "content": "Install NativeWind and moti dependencies",
+        "status": "in_progress",
+        "priority": "high",
+        "id": "1"
+      },
+      {
+        "content": "Create tailwind.config.js with color/spacing tokens",
+        "status": "pending",
+        "priority": "high",
+        "id": "2"
+      },
+      {
+        "content": "Generate tokens.json from tailwind config",
+        "status": "pending",
+        "priority": "high",
+        "id": "3"
+      },
+      {
+        "content": "Create utils/haptics.ts with expo-haptics",
+        "status": "pending",
+        "priority": "high",
+        "id": "4"
+      },
+      {
+        "content": "Create Berry mascot assets directory structure",
+        "status": "pending",
+        "priority": "medium",
+        "id": "5"
+      },
+      {
+        "content": "Build core UI components (Button, Card, ProgressRing, etc)",
+        "status": "pending",
+        "priority": "high",
+        "id": "6"
+      },
+      {
+        "content": "Setup navigation (BottomTabs + OnboardingStack)",
+        "status": "pending",
+        "priority": "high",
+        "id": "7"
+      },
+      {
+        "content": "Convert key screens (Home, Welcome, Profile)",
+        "status": "pending",
+        "priority": "high",
+        "id": "8"
+      },
+      {
+        "content": "Create mocked hooks with fake data",
+        "status": "pending",
+        "priority": "medium",
+        "id": "9"
+      },
+      {
+        "content": "Update App.tsx entry point",
+        "status": "pending",
+        "priority": "high",
+        "id": "10"
+      },
+      {
+        "content": "Create barrel exports (index.ts) for each folder",
+        "status": "pending",
+        "priority": "low",
+        "id": "11"
+      }
+    ]
+  }
+}

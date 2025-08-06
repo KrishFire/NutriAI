@@ -6,7 +6,10 @@ interface AppStoreLogoProps {
   color?: string;
 }
 
-const AppStoreLogo: React.FC<AppStoreLogoProps> = ({ size = 24, color = '#007AFF' }) => {
+const AppStoreLogo: React.FC<AppStoreLogoProps> = ({
+  size = 24,
+  color = '#007AFF',
+}) => {
   // If color is provided and not the default, render simple version
   if (color && color !== '#007AFF') {
     return (
@@ -23,7 +26,13 @@ const AppStoreLogo: React.FC<AppStoreLogoProps> = ({ size = 24, color = '#007AFF
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Defs>
-        <LinearGradient id="appStoreGradient" x1="50%" y1="0%" x2="50%" y2="100%">
+        <LinearGradient
+          id="appStoreGradient"
+          x1="50%"
+          y1="0%"
+          x2="50%"
+          y2="100%"
+        >
           <Stop offset="0%" stopColor="#1EA7FD" />
           <Stop offset="100%" stopColor="#0073E6" />
         </LinearGradient>

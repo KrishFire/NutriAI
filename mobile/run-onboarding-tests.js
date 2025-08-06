@@ -8,26 +8,30 @@ console.log('🧪 Running Onboarding Screen Tests...\n');
 // List of onboarding test files
 const testFiles = [
   'src/__tests__/WelcomeScreen.test.tsx',
-  'src/__tests__/OnboardingCarousel.test.tsx', 
+  'src/__tests__/OnboardingCarousel.test.tsx',
   'src/__tests__/GenderSelectionScreen.test.tsx',
   'src/__tests__/ActivityLevelScreen.test.tsx',
-  'src/__tests__/ReferralSourceScreen.test.tsx'
+  'src/__tests__/ReferralSourceScreen.test.tsx',
 ];
 
 // Run jest with minimal config
-const jest = spawn('npx', [
-  'jest',
-  ...testFiles,
-  '--no-coverage',
-  '--testEnvironment=jsdom',
-  '--setupFiles=./src/__tests__/setup.ts',
-  '--verbose'
-], {
-  stdio: 'inherit',
-  cwd: __dirname
-});
+const jest = spawn(
+  'npx',
+  [
+    'jest',
+    ...testFiles,
+    '--no-coverage',
+    '--testEnvironment=jsdom',
+    '--setupFiles=./src/__tests__/setup.ts',
+    '--verbose',
+  ],
+  {
+    stdio: 'inherit',
+    cwd: __dirname,
+  }
+);
 
-jest.on('close', (code) => {
+jest.on('close', code => {
   if (code === 0) {
     console.log('\n✅ All onboarding tests passed!');
   } else {

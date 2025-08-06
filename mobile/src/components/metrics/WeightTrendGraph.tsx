@@ -27,7 +27,7 @@ export function WeightTrendGraph({
   currentWeight,
   goalWeight,
   unit = 'lbs',
-  onExpand
+  onExpand,
 }: WeightTrendGraphProps) {
   const weightChange = currentWeight - startWeight;
   const isPositiveChange = weightChange >= 0;
@@ -54,30 +54,36 @@ export function WeightTrendGraph({
 
       <View className="flex-row items-center justify-between mb-4">
         <View>
-          <Text className="text-xs text-gray-500 dark:text-gray-400">Starting</Text>
+          <Text className="text-xs text-gray-500 dark:text-gray-400">
+            Starting
+          </Text>
           <Text className="font-medium text-gray-900 dark:text-white">
             {startWeight} {unit}
           </Text>
         </View>
-        
+
         <View className="flex-row items-center">
-          <View className={`w-8 h-8 rounded-full ${
-            isPositiveChange 
-              ? 'bg-red-100 dark:bg-red-900/30' 
-              : 'bg-green-100 dark:bg-green-900/30'
-          } items-center justify-center mr-2`}>
-            <Ionicons 
-              name={isPositiveChange ? "trending-up" : "trending-down"} 
-              size={16} 
-              color={isPositiveChange ? "#ef4444" : "#22c55e"} 
+          <View
+            className={`w-8 h-8 rounded-full ${
+              isPositiveChange
+                ? 'bg-red-100 dark:bg-red-900/30'
+                : 'bg-green-100 dark:bg-green-900/30'
+            } items-center justify-center mr-2`}
+          >
+            <Ionicons
+              name={isPositiveChange ? 'trending-up' : 'trending-down'}
+              size={16}
+              color={isPositiveChange ? '#ef4444' : '#22c55e'}
             />
           </View>
           <View>
-            <Text className={`text-xs ${
-              isPositiveChange 
-                ? 'text-red-600 dark:text-red-400' 
-                : 'text-green-600 dark:text-green-400'
-            }`}>
+            <Text
+              className={`text-xs ${
+                isPositiveChange
+                  ? 'text-red-600 dark:text-red-400'
+                  : 'text-green-600 dark:text-green-400'
+              }`}
+            >
               {isPositiveChange ? '+' : ''}
               {weightChange.toFixed(1)} {unit}
             </Text>
@@ -86,10 +92,12 @@ export function WeightTrendGraph({
             </Text>
           </View>
         </View>
-        
+
         {goalWeight && (
           <View>
-            <Text className="text-xs text-gray-500 dark:text-gray-400">Goal</Text>
+            <Text className="text-xs text-gray-500 dark:text-gray-400">
+              Goal
+            </Text>
             <Text className="font-medium text-gray-900 dark:text-white">
               {goalWeight} {unit}
             </Text>
@@ -101,33 +109,35 @@ export function WeightTrendGraph({
         <LineChart
           data={{
             labels: data.map(d => d.date.slice(0, 3)),
-            datasets: [{
-              data: data.map(d => d.weight)
-            }]
+            datasets: [
+              {
+                data: data.map(d => d.weight),
+              },
+            ],
           }}
           width={screenWidth - 80}
           height={120}
           chartConfig={{
-            backgroundColor: "transparent",
-            backgroundGradientFrom: "transparent",
-            backgroundGradientTo: "transparent",
+            backgroundColor: 'transparent',
+            backgroundGradientFrom: 'transparent',
+            backgroundGradientTo: 'transparent',
             decimalPlaces: 1,
             color: (opacity = 1) => `rgba(124, 58, 237, ${opacity})`,
             labelColor: (opacity = 1) => `rgba(156, 163, 175, ${opacity})`,
             style: {
-              borderRadius: 16
+              borderRadius: 16,
             },
             propsForDots: {
-              r: "3",
-              strokeWidth: "0",
-              stroke: "#7c3aed"
-            }
+              r: '3',
+              strokeWidth: '0',
+              stroke: '#7c3aed',
+            },
           }}
           bezier
           style={{
             marginVertical: 8,
             borderRadius: 16,
-            marginLeft: -20
+            marginLeft: -20,
           }}
           withInnerLines={false}
           withOuterLines={false}

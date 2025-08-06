@@ -1,38 +1,32 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Platform,
-} from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
-import { useOnboarding } from './OnboardingFlow';
-import PlatformPicker from '../../components/common/PlatformPicker';
+import { useOnboarding } from '../../contexts/OnboardingContext';
+import CustomDatePicker from '../../components/common/CustomDatePicker';
 
 const BirthDateScreen = () => {
-  const { goToNextStep, goToPreviousStep, progress, updateUserData } = useOnboarding();
-  
-  const [birthDate, setBirthDate] = useState({
-    month: '1',
-    day: '1',
-    year: '2000',
-  });
+  const { goToNextStep, goToPreviousStep, progress, updateUserData } =
+    useOnboarding();
 
-  const handleChange = (field: string, value: string | number) => {
-    hapticFeedback.selection();
-    setBirthDate({
-      ...birthDate,
-      [field]: value.toString(),
-    });
-  };
+  const [selectedDate, setSelectedDate] = useState(new Date(2005, 0, 1));
+  const [backPressed, setBackPressed] = useState(false);
+  const [continuePressed, setContinuePressed] = useState(false);
+
+  const handleDateChange = useCallback((date: Date) => {
+    setSelectedDate(date);
+  }, []);
 
   const handleContinue = () => {
     hapticFeedback.impact();
+    // Convert date to the format expected by onboarding flow
+    const birthDate = {
+      month: (selectedDate.getMonth() + 1).toString(),
+      day: selectedDate.getDate().toString(),
+      year: selectedDate.getFullYear().toString(),
+    };
     updateUserData('birthDate', birthDate);
     goToNextStep();
   };
@@ -42,48 +36,31 @@ const BirthDateScreen = () => {
     goToPreviousStep();
   };
 
-  // Generate options for pickers
-  const months = [
-    { value: '1', label: 'January' },
-    { value: '2', label: 'February' },
-    { value: '3', label: 'March' },
-    { value: '4', label: 'April' },
-    { value: '5', label: 'May' },
-    { value: '6', label: 'June' },
-    { value: '7', label: 'July' },
-    { value: '8', label: 'August' },
-    { value: '9', label: 'September' },
-    { value: '10', label: 'October' },
-    { value: '11', label: 'November' },
-    { value: '12', label: 'December' },
-  ];
-
-  const days = Array.from({ length: 31 }, (_, i) => ({
-    value: (i + 1).toString(),
-    label: (i + 1).toString(),
-  }));
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 100 }, (_, i) => ({
-    value: (currentYear - i).toString(),
-    label: (currentYear - i).toString(),
-  }));
-
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.content}>
         {/* Header with back button */}
         <View style={styles.header}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.backButton}
-            activeOpacity={0.7}
+          <MotiView
+            animate={{
+              scale: backPressed ? 0.95 : 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 15,
+              stiffness: 400,
+            }}
           >
-            <ArrowLeft size={20} color="#000" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleBack}
+              onPressIn={() => setBackPressed(true)}
+              onPressOut={() => setBackPressed(false)}
+              style={styles.backButton}
+              activeOpacity={1}
+            >
+              <ArrowLeft size={20} color="#000" />
+            </TouchableOpacity>
+          </MotiView>
         </View>
 
         {/* Progress bar */}
@@ -105,59 +82,41 @@ const BirthDateScreen = () => {
           </Text>
         </View>
 
-        {/* Date Pickers */}
-        <View style={styles.pickersContainer}>
-          {/* Month Picker */}
-          <View style={styles.pickerWrapper}>
-            <Text style={styles.pickerLabel}>Month</Text>
-            <View style={styles.pickerContainer}>
-              <PlatformPicker
-                selectedValue={birthDate.month}
-                onValueChange={(value) => handleChange('month', value)}
-                items={months}
-                style={styles.picker}
-              />
-            </View>
-          </View>
-
-          {/* Day Picker */}
-          <View style={[styles.pickerWrapper, styles.middlePicker]}>
-            <Text style={styles.pickerLabel}>Day</Text>
-            <View style={styles.pickerContainer}>
-              <PlatformPicker
-                selectedValue={birthDate.day}
-                onValueChange={(value) => handleChange('day', value)}
-                items={days}
-                style={styles.picker}
-              />
-            </View>
-          </View>
-
-          {/* Year Picker */}
-          <View style={styles.pickerWrapper}>
-            <Text style={styles.pickerLabel}>Year</Text>
-            <View style={styles.pickerContainer}>
-              <PlatformPicker
-                selectedValue={birthDate.year}
-                onValueChange={(value) => handleChange('year', value)}
-                items={years}
-                style={styles.picker}
-              />
-            </View>
-          </View>
+        {/* Custom Date Picker */}
+        <View style={styles.pickerContainer}>
+          <CustomDatePicker
+            initialDate={selectedDate}
+            onDateChange={handleDateChange}
+          />
         </View>
+
+        {/* Spacer */}
+        <View style={{ flex: 1 }} />
 
         {/* Continue button */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            onPress={handleContinue}
-            style={styles.continueButton}
-            activeOpacity={0.8}
+          <MotiView
+            animate={{
+              scale: continuePressed ? 0.95 : 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 15,
+              stiffness: 400,
+            }}
           >
-            <Text style={styles.continueButtonText}>Continue</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleContinue}
+              onPressIn={() => setContinuePressed(true)}
+              onPressOut={() => setContinuePressed(false)}
+              style={styles.continueButton}
+              activeOpacity={1}
+            >
+              <Text style={styles.continueButtonText}>Continue</Text>
+            </TouchableOpacity>
+          </MotiView>
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -167,9 +126,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  scrollContent: {
-    flexGrow: 1,
+  content: {
+    flex: 1,
     paddingHorizontal: 24,
+  },
+  pickerContainer: {
+    marginTop: 20,
   },
   header: {
     paddingTop: 24,
@@ -212,36 +174,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     lineHeight: 28,
     fontFamily: 'System',
-  },
-  pickersContainer: {
-    flexDirection: 'row',
-    marginBottom: 40,
-    gap: 12,
-  },
-  pickerWrapper: {
-    flex: 1,
-  },
-  middlePicker: {
-    marginHorizontal: 6,
-  },
-  pickerLabel: {
-    fontSize: 13.6,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 12,
-    fontFamily: 'System',
-  },
-  pickerContainer: {
-    height: 56,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    backgroundColor: '#F9FAFB',
-    overflow: 'hidden',
-    justifyContent: 'center',
-  },
-  picker: {
-    height: 56,
   },
   buttonContainer: {
     paddingTop: 24,

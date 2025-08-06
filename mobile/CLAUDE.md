@@ -11,16 +11,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 When adding libraries that contain native iOS/Android code (e.g., expo-notifications, expo-camera, expo-background-fetch), you MUST:
 
 1. **Install with Expo CLI** (NOT npm or yarn):
+
    ```bash
    cd mobile
    npx expo install <package-name>
    ```
 
 2. **Rebuild the native app** to include new native modules:
+
    ```bash
    # For iOS
    npx expo run:ios
-   
+
    # For Android
    npx expo run:android
    ```
@@ -123,6 +125,7 @@ No testing framework is currently configured. When adding tests:
 ## Current Implementation Status
 
 ### Completed Features
+
 - ✅ Basic project structure
 - ✅ Navigation setup with fixed MealDetails routing
 - ✅ Dependencies installed
@@ -135,12 +138,14 @@ No testing framework is currently configured. When adding tests:
 - ✅ Authentication flow (email/password)
 
 ### Recent Fixes (Phase 1 - Critical Fixes)
+
 - ✅ **MealDetails Navigation**: Moved screen from AddMealStack to RootStackNavigator to fix navigation errors
 - ✅ **User Preferences Table**: Created missing table with proper schema and RLS policies
 - ✅ **AuthContext Enhancement**: Added preferences management to centralized state
 - ✅ **ProfileScreen**: Updated to use preferences from AuthContext instead of direct DB queries
 
 ### Recent Features (Phase 2 - Streak Tracking)
+
 - ✅ **Streak Tracking System**: Complete implementation with StreakContext, database integration, and UI components
 - ✅ **Push Notifications**: expo-notifications setup with permission handling
 - ✅ **Background Tasks**: expo-background-fetch for nutrition reminders
@@ -148,6 +153,7 @@ No testing framework is currently configured. When adding tests:
 - ✅ **Native Module Fix**: Resolved ExpoPushTokenManager error with proper pod installation
 
 ### Pending Features (from development plan)
+
 - ⏳ **Phase 2 - Auth & Monetization**: Google/Apple login, basic premium features, RevenueCat
 - ⏳ **Phase 3 - Core UX Redesign**: Home screen dashboard, History calendar view, Profile completion
 - ⏳ **Phase 4 - Engagement**: Push notifications, onboarding flow, streak celebrations

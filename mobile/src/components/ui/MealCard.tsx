@@ -23,7 +23,7 @@ interface MealCardProps {
 
 export const MealCard: React.FC<MealCardProps> = ({ meal, onPress }) => {
   const { type, time, calories, image, macros, isFavorite } = meal;
-  
+
   const totalMacros = macros.carbs + macros.protein + macros.fat;
   const carbsPercentage = Math.round((macros.carbs / totalMacros) * 100);
   const proteinPercentage = Math.round((macros.protein / totalMacros) * 100);
@@ -53,22 +53,16 @@ export const MealCard: React.FC<MealCardProps> = ({ meal, onPress }) => {
               resizeMode="cover"
             />
           </View>
-          
+
           <View className="flex-1">
             <View className="flex-row justify-between items-start mb-1">
               <View>
-                <Text className="font-medium text-gray-900">
-                  {type}
-                </Text>
-                <Text className="text-xs text-gray-500">
-                  {time}
-                </Text>
+                <Text className="font-medium text-gray-900">{type}</Text>
+                <Text className="text-xs text-gray-500">{time}</Text>
               </View>
-              <Text className="font-medium text-gray-900">
-                {calories} cal
-              </Text>
+              <Text className="font-medium text-gray-900">{calories} cal</Text>
             </View>
-            
+
             {/* Macro Bar */}
             <View className="h-2 flex-row rounded-full overflow-hidden bg-gray-100 mt-2">
               <View
@@ -84,7 +78,7 @@ export const MealCard: React.FC<MealCardProps> = ({ meal, onPress }) => {
                 style={{ width: `${fatPercentage}%` }}
               />
             </View>
-            
+
             <View className="flex-row mt-1">
               <Text className="text-xs text-gray-500 mr-2">
                 C: {macros.carbs}g
@@ -92,9 +86,7 @@ export const MealCard: React.FC<MealCardProps> = ({ meal, onPress }) => {
               <Text className="text-xs text-gray-500 mr-2">
                 P: {macros.protein}g
               </Text>
-              <Text className="text-xs text-gray-500">
-                F: {macros.fat}g
-              </Text>
+              <Text className="text-xs text-gray-500">F: {macros.fat}g</Text>
             </View>
           </View>
         </View>

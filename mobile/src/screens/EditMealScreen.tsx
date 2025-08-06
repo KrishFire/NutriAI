@@ -36,7 +36,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { hapticFeedback } from '../utils/haptics';
-import tokens from '../../tokens.json';
+import tokens from '../utils/tokens';
 
 interface FoodItem {
   id: string;
@@ -72,11 +72,13 @@ export default function EditMealScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RouteParams, 'EditMeal'>>();
   const { meal } = route.params || {};
-  
-  const [selectedMealType, setSelectedMealType] = useState(meal?.type || 'Meal');
+
+  const [selectedMealType, setSelectedMealType] = useState(
+    meal?.type || 'Meal'
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [favoriteItems, setFavoriteItems] = useState<string[]>([]);
-  
+
   // Mock food groups for the detailed breakdown
   const [foodGroups, setFoodGroups] = useState<FoodGroup[]>([
     {
@@ -193,7 +195,10 @@ export default function EditMealScreen() {
             // Update group
             return {
               ...group,
-              [field]: field === 'name' || field === 'quantity' ? value : Number(value),
+              [field]:
+                field === 'name' || field === 'quantity'
+                  ? value
+                  : Number(value),
             };
           } else {
             // Update specific item
@@ -203,7 +208,10 @@ export default function EditMealScreen() {
                 item.id === itemId
                   ? {
                       ...item,
-                      [field]: field === 'name' || field === 'quantity' ? value : Number(value),
+                      [field]:
+                        field === 'name' || field === 'quantity'
+                          ? value
+                          : Number(value),
                     }
                   : item
               ),
@@ -282,36 +290,45 @@ export default function EditMealScreen() {
     hapticFeedback.impact();
     if (!itemId) {
       // Delete entire group
-      setFoodGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
+      setFoodGroups(prevGroups =>
+        prevGroups.filter(group => group.id !== groupId)
+      );
       return;
     }
     // Delete specific item from group
-    setFoodGroups(prevGroups =>
-      prevGroups
-        .map(group => {
-          if (group.id === groupId) {
-            const updatedItems = group.items.filter(item => item.id !== itemId);
-            // If all items are deleted, remove the group
-            if (group.items.length > 0 && updatedItems.length === 0) {
-              return null;
+    setFoodGroups(
+      prevGroups =>
+        prevGroups
+          .map(group => {
+            if (group.id === groupId) {
+              const updatedItems = group.items.filter(
+                item => item.id !== itemId
+              );
+              // If all items are deleted, remove the group
+              if (group.items.length > 0 && updatedItems.length === 0) {
+                return null;
+              }
+              // Recalculate group totals
+              const itemCalories =
+                group.items.find(item => item.id === itemId)?.calories || 0;
+              const itemProtein =
+                group.items.find(item => item.id === itemId)?.protein || 0;
+              const itemCarbs =
+                group.items.find(item => item.id === itemId)?.carbs || 0;
+              const itemFat =
+                group.items.find(item => item.id === itemId)?.fat || 0;
+              return {
+                ...group,
+                items: updatedItems,
+                calories: group.calories - itemCalories,
+                protein: group.protein - itemProtein,
+                carbs: group.carbs - itemCarbs,
+                fat: group.fat - itemFat,
+              };
             }
-            // Recalculate group totals
-            const itemCalories = group.items.find(item => item.id === itemId)?.calories || 0;
-            const itemProtein = group.items.find(item => item.id === itemId)?.protein || 0;
-            const itemCarbs = group.items.find(item => item.id === itemId)?.carbs || 0;
-            const itemFat = group.items.find(item => item.id === itemId)?.fat || 0;
-            return {
-              ...group,
-              items: updatedItems,
-              calories: group.calories - itemCalories,
-              protein: group.protein - itemProtein,
-              carbs: group.carbs - itemCarbs,
-              fat: group.fat - itemFat,
-            };
-          }
-          return group;
-        })
-        .filter(Boolean) as FoodGroup[]
+            return group;
+          })
+          .filter(Boolean) as FoodGroup[]
     );
   };
 
@@ -336,15 +353,18 @@ export default function EditMealScreen() {
     // Simulate saving
     setTimeout(() => {
       setIsLoading(false);
-      navigation.navigate('MealSaved' as never, {
-        meal: {
-          ...meal,
-          type: selectedMealType,
-          time: meal?.time,
-          calories: calculateTotalCalories(),
-          foodGroups,
-        },
-      } as never);
+      navigation.navigate(
+        'MealSaved' as never,
+        {
+          meal: {
+            ...meal,
+            type: selectedMealType,
+            time: meal?.time,
+            calories: calculateTotalCalories(),
+            foodGroups,
+          },
+        } as never
+      );
     }, 800);
   };
 
@@ -391,7 +411,9 @@ export default function EditMealScreen() {
               <TextInput
                 className="flex-1 p-3 bg-gray-50 rounded-xl text-base"
                 value={group.name}
-                onChangeText={(text) => handleUpdateItem(group.id, undefined, 'name', text)}
+                onChangeText={text =>
+                  handleUpdateItem(group.id, undefined, 'name', text)
+                }
                 placeholder="Food name"
               />
               <View className="flex-row ml-2">
@@ -405,7 +427,7 @@ export default function EditMealScreen() {
                   onPress={() => handleEditItem(group.id)}
                   className="p-2 bg-red-100 rounded-full"
                 >
-                  <X size={18} color={tokens.colors.danger} />
+                  <X size={18} color={tokens.colors.error} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -415,7 +437,9 @@ export default function EditMealScreen() {
                 <TextInput
                   className="p-2 bg-gray-50 rounded-lg text-sm"
                   value={String(group.calories)}
-                  onChangeText={(text) => handleUpdateItem(group.id, undefined, 'calories', text)}
+                  onChangeText={text =>
+                    handleUpdateItem(group.id, undefined, 'calories', text)
+                  }
                   keyboardType="numeric"
                 />
               </View>
@@ -424,7 +448,9 @@ export default function EditMealScreen() {
                 <TextInput
                   className="p-2 bg-gray-50 rounded-lg text-sm"
                   value={String(group.protein)}
-                  onChangeText={(text) => handleUpdateItem(group.id, undefined, 'protein', text)}
+                  onChangeText={text =>
+                    handleUpdateItem(group.id, undefined, 'protein', text)
+                  }
                   keyboardType="numeric"
                 />
               </View>
@@ -433,7 +459,9 @@ export default function EditMealScreen() {
                 <TextInput
                   className="p-2 bg-gray-50 rounded-lg text-sm"
                   value={String(group.carbs)}
-                  onChangeText={(text) => handleUpdateItem(group.id, undefined, 'carbs', text)}
+                  onChangeText={text =>
+                    handleUpdateItem(group.id, undefined, 'carbs', text)
+                  }
                   keyboardType="numeric"
                 />
               </View>
@@ -442,7 +470,9 @@ export default function EditMealScreen() {
                 <TextInput
                   className="p-2 bg-gray-50 rounded-lg text-sm"
                   value={String(group.fat)}
-                  onChangeText={(text) => handleUpdateItem(group.id, undefined, 'fat', text)}
+                  onChangeText={text =>
+                    handleUpdateItem(group.id, undefined, 'fat', text)
+                  }
                   keyboardType="numeric"
                 />
               </View>
@@ -458,21 +488,35 @@ export default function EditMealScreen() {
                   <Edit2 size={16} color={tokens.colors.primary.DEFAULT} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleDeleteItem(group.id)}>
-                  <Trash2 size={16} color={tokens.colors.danger} />
+                  <Trash2 size={16} color={tokens.colors.error} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleToggleFavorite(group.id)}>
+                <TouchableOpacity
+                  onPress={() => handleToggleFavorite(group.id)}
+                >
                   <Heart
                     size={16}
-                    color={favoriteItems.includes(group.id) ? tokens.colors.danger : '#E5E7EB'}
-                    fill={favoriteItems.includes(group.id) ? tokens.colors.danger : 'transparent'}
+                    color={
+                      favoriteItems.includes(group.id)
+                        ? tokens.colors.error
+                        : '#E5E7EB'
+                    }
+                    fill={
+                      favoriteItems.includes(group.id)
+                        ? tokens.colors.error
+                        : 'transparent'
+                    }
                   />
                 </TouchableOpacity>
               </View>
             </View>
             <View className="flex-row justify-between mt-2">
-              <Text className="text-base font-medium">{group.calories} cal</Text>
+              <Text className="text-base font-medium">
+                {group.calories} cal
+              </Text>
               <View className="flex-row space-x-3">
-                <Text className="text-xs text-gray-500">P: {group.protein}g</Text>
+                <Text className="text-xs text-gray-500">
+                  P: {group.protein}g
+                </Text>
                 <Text className="text-xs text-gray-500">C: {group.carbs}g</Text>
                 <Text className="text-xs text-gray-500">F: {group.fat}g</Text>
               </View>
@@ -485,7 +529,7 @@ export default function EditMealScreen() {
           <View className="mt-3 pt-3 border-t border-gray-100">
             <Text className="text-xs text-gray-500 mb-2">Ingredients:</Text>
             <View className="space-y-2">
-              {group.items.map((item) =>
+              {group.items.map(item =>
                 item.isEditing ? (
                   // Item editing mode
                   <View
@@ -496,7 +540,7 @@ export default function EditMealScreen() {
                       <TextInput
                         className="flex-1 p-2 bg-white rounded-lg text-sm"
                         value={item.name}
-                        onChangeText={(text) =>
+                        onChangeText={text =>
                           handleUpdateItem(group.id, item.id, 'name', text)
                         }
                         placeholder="Item name"
@@ -512,16 +556,18 @@ export default function EditMealScreen() {
                           onPress={() => handleEditItem(group.id, item.id)}
                           className="p-1.5 bg-red-100 rounded-full"
                         >
-                          <X size={14} color={tokens.colors.danger} />
+                          <X size={14} color={tokens.colors.error} />
                         </TouchableOpacity>
                       </View>
                     </View>
                     <View>
-                      <Text className="text-xs text-gray-500 mb-1">Quantity</Text>
+                      <Text className="text-xs text-gray-500 mb-1">
+                        Quantity
+                      </Text>
                       <TextInput
                         className="p-2 bg-white rounded-lg text-sm"
                         value={item.quantity}
-                        onChangeText={(text) =>
+                        onChangeText={text =>
                           handleUpdateItem(group.id, item.id, 'quantity', text)
                         }
                         placeholder="e.g., 2 slices"
@@ -529,33 +575,44 @@ export default function EditMealScreen() {
                     </View>
                     <View className="flex-row space-x-2">
                       <View className="flex-1">
-                        <Text className="text-xs text-gray-500 mb-1">Calories</Text>
+                        <Text className="text-xs text-gray-500 mb-1">
+                          Calories
+                        </Text>
                         <TextInput
                           className="p-2 bg-white rounded-lg text-sm"
                           value={String(item.calories)}
-                          onChangeText={(text) =>
-                            handleUpdateItem(group.id, item.id, 'calories', text)
+                          onChangeText={text =>
+                            handleUpdateItem(
+                              group.id,
+                              item.id,
+                              'calories',
+                              text
+                            )
                           }
                           keyboardType="numeric"
                         />
                       </View>
                       <View className="flex-1">
-                        <Text className="text-xs text-gray-500 mb-1">Protein</Text>
+                        <Text className="text-xs text-gray-500 mb-1">
+                          Protein
+                        </Text>
                         <TextInput
                           className="p-2 bg-white rounded-lg text-sm"
                           value={String(item.protein)}
-                          onChangeText={(text) =>
+                          onChangeText={text =>
                             handleUpdateItem(group.id, item.id, 'protein', text)
                           }
                           keyboardType="numeric"
                         />
                       </View>
                       <View className="flex-1">
-                        <Text className="text-xs text-gray-500 mb-1">Carbs</Text>
+                        <Text className="text-xs text-gray-500 mb-1">
+                          Carbs
+                        </Text>
                         <TextInput
                           className="p-2 bg-white rounded-lg text-sm"
                           value={String(item.carbs)}
-                          onChangeText={(text) =>
+                          onChangeText={text =>
                             handleUpdateItem(group.id, item.id, 'carbs', text)
                           }
                           keyboardType="numeric"
@@ -566,7 +623,7 @@ export default function EditMealScreen() {
                         <TextInput
                           className="p-2 bg-white rounded-lg text-sm"
                           value={String(item.fat)}
-                          onChangeText={(text) =>
+                          onChangeText={text =>
                             handleUpdateItem(group.id, item.id, 'fat', text)
                           }
                           keyboardType="numeric"
@@ -582,32 +639,57 @@ export default function EditMealScreen() {
                   >
                     <View className="flex-1">
                       <Text className="text-sm font-medium">{item.name}</Text>
-                      <Text className="text-xs text-gray-500">{item.quantity}</Text>
+                      <Text className="text-xs text-gray-500">
+                        {item.quantity}
+                      </Text>
                     </View>
                     <View className="flex-row items-center">
                       <View className="mr-3">
-                        <Text className="text-sm font-medium text-right">{item.calories} cal</Text>
+                        <Text className="text-sm font-medium text-right">
+                          {item.calories} cal
+                        </Text>
                         <View className="flex-row space-x-2">
-                          <Text className="text-xs text-gray-500">P: {item.protein}g</Text>
-                          <Text className="text-xs text-gray-500">C: {item.carbs}g</Text>
-                          <Text className="text-xs text-gray-500">F: {item.fat}g</Text>
+                          <Text className="text-xs text-gray-500">
+                            P: {item.protein}g
+                          </Text>
+                          <Text className="text-xs text-gray-500">
+                            C: {item.carbs}g
+                          </Text>
+                          <Text className="text-xs text-gray-500">
+                            F: {item.fat}g
+                          </Text>
                         </View>
                       </View>
                       <View className="flex-row space-x-1">
-                        <TouchableOpacity onPress={() => handleEditItem(group.id, item.id)}>
-                          <Edit2 size={14} color={tokens.colors.primary.DEFAULT} />
+                        <TouchableOpacity
+                          onPress={() => handleEditItem(group.id, item.id)}
+                        >
+                          <Edit2
+                            size={14}
+                            color={tokens.colors.primary.DEFAULT}
+                          />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => handleDeleteItem(group.id, item.id)}>
-                          <Trash2 size={14} color={tokens.colors.danger} />
+                        <TouchableOpacity
+                          onPress={() => handleDeleteItem(group.id, item.id)}
+                        >
+                          <Trash2 size={14} color={tokens.colors.error} />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => handleToggleFavorite(item.id, group.id)}>
+                        <TouchableOpacity
+                          onPress={() =>
+                            handleToggleFavorite(item.id, group.id)
+                          }
+                        >
                           <Heart
                             size={14}
                             color={
-                              favoriteItems.includes(item.id) ? tokens.colors.danger : '#E5E7EB'
+                              favoriteItems.includes(item.id)
+                                ? tokens.colors.error
+                                : '#E5E7EB'
                             }
                             fill={
-                              favoriteItems.includes(item.id) ? tokens.colors.danger : 'transparent'
+                              favoriteItems.includes(item.id)
+                                ? tokens.colors.error
+                                : 'transparent'
                             }
                           />
                         </TouchableOpacity>
@@ -644,12 +726,15 @@ export default function EditMealScreen() {
           <View style={{ width: 40 }} />
         </View>
 
-        <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          className="flex-1 px-4"
+          showsVerticalScrollIndicator={false}
+        >
           {/* Meal Type Selector */}
           <View className="bg-white rounded-2xl p-4 mb-4 shadow-sm">
             <Text className="text-base font-semibold mb-3">Meal Type</Text>
             <View className="flex-row space-x-2">
-              {mealTypes.map((type) => (
+              {mealTypes.map(type => (
                 <TouchableOpacity
                   key={type}
                   onPress={() => {
@@ -727,7 +812,9 @@ export default function EditMealScreen() {
             className="flex-row items-center justify-center bg-primary/10 rounded-2xl p-4 mb-4"
           >
             <Sparkles size={20} color={tokens.colors.primary.DEFAULT} />
-            <Text className="ml-2 text-primary font-semibold">Refine with AI</Text>
+            <Text className="ml-2 text-primary font-semibold">
+              Refine with AI
+            </Text>
           </TouchableOpacity>
 
           {/* Save button */}
@@ -739,7 +826,9 @@ export default function EditMealScreen() {
             {isLoading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text className="text-white text-center font-semibold text-lg">Save Changes</Text>
+              <Text className="text-white text-center font-semibold text-lg">
+                Save Changes
+              </Text>
             )}
           </TouchableOpacity>
         </ScrollView>

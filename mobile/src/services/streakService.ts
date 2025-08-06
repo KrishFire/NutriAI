@@ -3,9 +3,11 @@ import { supabase } from '../config/supabase';
 /**
  * Milestone definitions for streak celebrations
  */
-export const STREAK_MILESTONES = [7, 14, 21, 30, 50, 100, 150, 200, 365] as const;
+export const STREAK_MILESTONES = [
+  7, 14, 21, 30, 50, 100, 150, 200, 365,
+] as const;
 
-export type StreakMilestone = typeof STREAK_MILESTONES[number];
+export type StreakMilestone = (typeof STREAK_MILESTONES)[number];
 
 /**
  * User streak data structure matching the database schema
@@ -81,54 +83,89 @@ export class StreakService {
   /**
    * Get celebration message for a milestone
    */
-  static getCelebrationMessage(milestone: number, isPersonalBest: boolean): MilestoneCelebration {
+  static getCelebrationMessage(
+    milestone: number,
+    isPersonalBest: boolean
+  ): MilestoneCelebration {
     const baseMessages: Record<number, { message: string; emoji: string }> = {
-      7: { message: "One week strong! You're building a great habit! 🎯", emoji: "🔥" },
-      14: { message: "Two weeks of consistency! You're on fire! 🔥", emoji: "💪" },
-      21: { message: "Three weeks! Experts say it takes 21 days to form a habit! 🏆", emoji: "🌟" },
-      30: { message: "One month milestone! You're a nutrition tracking champion! 🏅", emoji: "🎉" },
-      50: { message: "50 days! Your dedication is inspiring! ⭐", emoji: "🚀" },
-      100: { message: "100 DAYS! You've reached legendary status! 👑", emoji: "💯" },
-      150: { message: "150 days of excellence! You're unstoppable! 💫", emoji: "🏆" },
-      200: { message: "200 days! You're a true wellness warrior! ⚡", emoji: "🎊" },
-      365: { message: "ONE FULL YEAR! You've achieved the ultimate milestone! 🎆", emoji: "👑" }
+      7: {
+        message: "One week strong! You're building a great habit! 🎯",
+        emoji: '🔥',
+      },
+      14: {
+        message: "Two weeks of consistency! You're on fire! 🔥",
+        emoji: '💪',
+      },
+      21: {
+        message:
+          'Three weeks! Experts say it takes 21 days to form a habit! 🏆',
+        emoji: '🌟',
+      },
+      30: {
+        message:
+          "One month milestone! You're a nutrition tracking champion! 🏅",
+        emoji: '🎉',
+      },
+      50: { message: '50 days! Your dedication is inspiring! ⭐', emoji: '🚀' },
+      100: {
+        message: "100 DAYS! You've reached legendary status! 👑",
+        emoji: '💯',
+      },
+      150: {
+        message: "150 days of excellence! You're unstoppable! 💫",
+        emoji: '🏆',
+      },
+      200: {
+        message: "200 days! You're a true wellness warrior! ⚡",
+        emoji: '🎊',
+      },
+      365: {
+        message: "ONE FULL YEAR! You've achieved the ultimate milestone! 🎆",
+        emoji: '👑',
+      },
     };
 
     const defaultMessage = {
       message: `${milestone} day streak! Keep up the amazing work!`,
-      emoji: "🎯"
+      emoji: '🎯',
     };
 
     const { message, emoji } = baseMessages[milestone] || defaultMessage;
 
     // Add personal best suffix if applicable
-    const finalMessage = isPersonalBest && milestone > 7
-      ? `${message} This is your longest streak ever!`
-      : message;
+    const finalMessage =
+      isPersonalBest && milestone > 7
+        ? `${message} This is your longest streak ever!`
+        : message;
 
     return {
       milestone,
       message: finalMessage,
       emoji,
-      isPersonalBest
+      isPersonalBest,
     };
   }
 
   /**
    * Calculate streak health/status based on last log date
    */
-  static calculateStreakStatus(lastLogDate: string | null, currentStreak: number): StreakStatus {
+  static calculateStreakStatus(
+    lastLogDate: string | null,
+    currentStreak: number
+  ): StreakStatus {
     if (!lastLogDate || currentStreak === 0) {
       return 'inactive';
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const lastLog = new Date(lastLogDate);
     lastLog.setHours(0, 0, 0, 0);
-    
-    const daysDiff = Math.floor((today.getTime() - lastLog.getTime()) / (1000 * 60 * 60 * 24));
+
+    const daysDiff = Math.floor(
+      (today.getTime() - lastLog.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
     if (daysDiff === 0) {
       return 'active'; // Logged today
@@ -147,23 +184,26 @@ export class StreakService {
 
     const today = new Date().toISOString().split('T')[0];
     const lastLog = new Date(lastLogDate).toISOString().split('T')[0];
-    
+
     return today === lastLog;
   }
 
   /**
    * Format streak display text
    */
-  static formatStreakDisplay(currentStreak: number, status: StreakStatus): string {
+  static formatStreakDisplay(
+    currentStreak: number,
+    status: StreakStatus
+  ): string {
     if (currentStreak === 0) {
-      return "Start your streak today!";
+      return 'Start your streak today!';
     }
 
     const statusSuffix = {
-      active: " 🔥",
-      at_risk: " ⚠️ Log today to continue!",
-      broken: " ❌ Streak ended",
-      inactive: ""
+      active: ' 🔥',
+      at_risk: ' ⚠️ Log today to continue!',
+      broken: ' ❌ Streak ended',
+      inactive: '',
     };
 
     return `${currentStreak} day streak${statusSuffix[status]}`;
@@ -172,14 +212,17 @@ export class StreakService {
   /**
    * Format short streak display text (for compact UI)
    */
-  static formatShortStreakDisplay(currentStreak: number, status: StreakStatus): string {
-    if (currentStreak === 0) return "No streak";
+  static formatShortStreakDisplay(
+    currentStreak: number,
+    status: StreakStatus
+  ): string {
+    if (currentStreak === 0) return 'No streak';
 
     const emoji = {
-      active: "🔥",
-      at_risk: "⚠️",
-      broken: "❌",
-      inactive: ""
+      active: '🔥',
+      at_risk: '⚠️',
+      broken: '❌',
+      inactive: '',
     };
 
     return `${currentStreak}d ${emoji[status]}`;
@@ -201,26 +244,40 @@ export class StreakService {
         currentStreak: 0,
         longestStreak: 0,
         status: 'inactive',
-        displayText: "Start your streak today!",
-        shortDisplayText: "No streak",
+        displayText: 'Start your streak today!',
+        shortDisplayText: 'No streak',
         daysUntilNextMilestone: 7,
         nextMilestone: 7,
-        isOnFire: false
+        isOnFire: false,
       };
     }
 
-    const status = this.calculateStreakStatus(streak.last_log_date, streak.current_streak);
+    const status = this.calculateStreakStatus(
+      streak.last_log_date,
+      streak.current_streak
+    );
     const displayText = this.formatStreakDisplay(streak.current_streak, status);
-    const shortDisplayText = this.formatShortStreakDisplay(streak.current_streak, status);
+    const shortDisplayText = this.formatShortStreakDisplay(
+      streak.current_streak,
+      status
+    );
     const nextMilestone = this.getNextMilestone(streak.current_streak);
-    const daysUntilNextMilestone = this.getDaysUntilNextMilestone(streak.current_streak);
+    const daysUntilNextMilestone = this.getDaysUntilNextMilestone(
+      streak.current_streak
+    );
     const isOnFire = this.isOnFire(streak.current_streak, status);
 
     // Check if today is a milestone day and user already logged
     let celebrationData: MilestoneCelebration | undefined;
-    if (this.hasLoggedToday(streak.last_log_date) && this.isMilestone(streak.current_streak)) {
+    if (
+      this.hasLoggedToday(streak.last_log_date) &&
+      this.isMilestone(streak.current_streak)
+    ) {
       const isPersonalBest = streak.current_streak >= streak.longest_streak;
-      celebrationData = this.getCelebrationMessage(streak.current_streak, isPersonalBest);
+      celebrationData = this.getCelebrationMessage(
+        streak.current_streak,
+        isPersonalBest
+      );
     }
 
     return {
@@ -232,7 +289,7 @@ export class StreakService {
       daysUntilNextMilestone,
       nextMilestone,
       isOnFire,
-      celebrationData
+      celebrationData,
     };
   }
 
@@ -247,7 +304,8 @@ export class StreakService {
         .eq('user_id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 = no rows found
         console.error('Error fetching user streak:', error);
         return null;
       }
@@ -262,7 +320,9 @@ export class StreakService {
   /**
    * Get streak with display data
    */
-  static async getStreakWithDisplayData(userId: string): Promise<StreakDisplayData> {
+  static async getStreakWithDisplayData(
+    userId: string
+  ): Promise<StreakDisplayData> {
     const streak = await this.getUserStreak(userId);
     return this.getStreakDisplayData(streak);
   }
@@ -275,21 +335,29 @@ export class StreakService {
       return {
         averageStreakLength: 0,
         completionRate: 0,
-        isImproving: false
+        isImproving: false,
       };
     }
 
     // Calculate average streak length (total days / number of streaks)
     // This is a rough estimate assuming each broken streak was at least 1 day
-    const estimatedNumberOfStreaks = Math.max(1, 
-      streak.total_days_logged > 0 ? Math.ceil(streak.total_days_logged / Math.max(1, streak.longest_streak)) : 1
+    const estimatedNumberOfStreaks = Math.max(
+      1,
+      streak.total_days_logged > 0
+        ? Math.ceil(
+            streak.total_days_logged / Math.max(1, streak.longest_streak)
+          )
+        : 1
     );
-    const averageStreakLength = Math.round(streak.total_days_logged / estimatedNumberOfStreaks);
+    const averageStreakLength = Math.round(
+      streak.total_days_logged / estimatedNumberOfStreaks
+    );
 
     // Calculate completion rate (current streak vs longest)
-    const completionRate = streak.longest_streak > 0 
-      ? Math.round((streak.current_streak / streak.longest_streak) * 100)
-      : 0;
+    const completionRate =
+      streak.longest_streak > 0
+        ? Math.round((streak.current_streak / streak.longest_streak) * 100)
+        : 0;
 
     // Check if improving (current streak > average)
     const isImproving = streak.current_streak > averageStreakLength;
@@ -297,7 +365,7 @@ export class StreakService {
     return {
       averageStreakLength,
       completionRate,
-      isImproving
+      isImproving,
     };
   }
 
@@ -308,7 +376,7 @@ export class StreakService {
     const { currentStreak, status, daysUntilNextMilestone } = displayData;
 
     if (status === 'inactive' || currentStreak === 0) {
-      return "Start logging today to begin your wellness journey! 💪";
+      return 'Start logging today to begin your wellness journey! 💪';
     }
 
     if (status === 'broken') {
@@ -331,7 +399,7 @@ export class StreakService {
       return "You're doing amazing! Consistency is the key to success! 🔥";
     }
 
-    return "Great job staying consistent! Every day counts! ⭐";
+    return 'Great job staying consistent! Every day counts! ⭐';
   }
 }
 

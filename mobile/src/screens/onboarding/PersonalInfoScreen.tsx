@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Calendar, User } from 'lucide-react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { hapticFeedback } from '../../utils/haptics';
-import tokens from '../../../tokens.json';
+import tokens from '../../utils/tokens';
 
 export default function PersonalInfoScreen() {
   const navigation = useNavigation();
@@ -50,7 +50,7 @@ export default function PersonalInfoScreen() {
     } else {
       setAge(value);
     }
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors({ ...errors, [field]: undefined });
@@ -76,10 +76,13 @@ export default function PersonalInfoScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          className="flex-1 px-6"
+          showsVerticalScrollIndicator={false}
+        >
           {/* Progress indicator */}
           <View className="flex-row space-x-2 mb-8">
-            {[1, 2, 3, 4, 5].map((step) => (
+            {[1, 2, 3, 4, 5].map(step => (
               <View
                 key={step}
                 className={`h-1 flex-1 rounded-full ${
@@ -90,14 +93,18 @@ export default function PersonalInfoScreen() {
           </View>
 
           <Animated.View entering={FadeIn}>
-            <Text className="text-3xl font-bold mb-2">Tell us about yourself</Text>
+            <Text className="text-3xl font-bold mb-2">
+              Tell us about yourself
+            </Text>
             <Text className="text-gray-600 mb-8">
               This helps us personalize your nutrition experience
             </Text>
 
             {/* Name input */}
             <View className="mb-6">
-              <Text className="text-sm font-medium text-gray-700 mb-2">Your Name</Text>
+              <Text className="text-sm font-medium text-gray-700 mb-2">
+                Your Name
+              </Text>
               <View className="relative">
                 <View className="absolute left-4 top-4 z-10">
                   <User size={20} color="#9CA3AF" />
@@ -108,7 +115,7 @@ export default function PersonalInfoScreen() {
                   }`}
                   placeholder="Enter your name"
                   value={name}
-                  onChangeText={(text) => handleInputChange('name', text)}
+                  onChangeText={text => handleInputChange('name', text)}
                   autoCapitalize="words"
                 />
               </View>
@@ -119,7 +126,9 @@ export default function PersonalInfoScreen() {
 
             {/* Age input */}
             <View className="mb-8">
-              <Text className="text-sm font-medium text-gray-700 mb-2">Your Age</Text>
+              <Text className="text-sm font-medium text-gray-700 mb-2">
+                Your Age
+              </Text>
               <View className="relative">
                 <View className="absolute left-4 top-4 z-10">
                   <Calendar size={20} color="#9CA3AF" />
@@ -130,7 +139,7 @@ export default function PersonalInfoScreen() {
                   }`}
                   placeholder="Enter your age"
                   value={age}
-                  onChangeText={(text) => handleInputChange('age', text)}
+                  onChangeText={text => handleInputChange('age', text)}
                   keyboardType="numeric"
                   maxLength={3}
                 />
@@ -143,8 +152,8 @@ export default function PersonalInfoScreen() {
             {/* Privacy note */}
             <View className="bg-blue-50 rounded-2xl p-4 mb-8">
               <Text className="text-sm text-blue-800">
-                🔒 Your personal information is kept private and secure. We never share your data
-                with third parties.
+                🔒 Your personal information is kept private and secure. We
+                never share your data with third parties.
               </Text>
             </View>
           </Animated.View>
@@ -156,7 +165,9 @@ export default function PersonalInfoScreen() {
             onPress={handleContinue}
             className="bg-primary rounded-2xl py-4 px-6"
           >
-            <Text className="text-white text-center font-semibold text-lg">Continue</Text>
+            <Text className="text-white text-center font-semibold text-lg">
+              Continue
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

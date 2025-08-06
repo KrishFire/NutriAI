@@ -42,14 +42,15 @@ export const TextInput: React.FC<TextInputProps> = ({
           {label}
         </Text>
       )}
-      
+
       <View
         className={`
           bg-white dark:bg-gray-800 
           border rounded-xl
-          ${error 
-            ? 'border-error' 
-            : 'border-gray-300 dark:border-gray-600 focus:border-primary'
+          ${
+            error
+              ? 'border-error'
+              : 'border-gray-300 dark:border-gray-600 focus:border-primary'
           }
           ${!editable ? 'opacity-50' : ''}
         `}
@@ -76,12 +77,8 @@ export const TextInput: React.FC<TextInputProps> = ({
           }}
         />
       </View>
-      
-      {error && (
-        <Text className="text-sm text-error">
-          {error}
-        </Text>
-      )}
+
+      {error && <Text className="text-sm text-error">{error}</Text>}
     </View>
   );
 };

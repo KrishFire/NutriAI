@@ -41,7 +41,7 @@ import {
 } from 'react-native-gesture-handler';
 import { BlurView } from 'expo-blur';
 import { hapticFeedback } from '../utils/haptics';
-import tokens from '../../tokens.json';
+import tokens from '../utils/tokens';
 
 interface FavoriteItem {
   id: string;
@@ -62,7 +62,9 @@ const SWIPE_THRESHOLD = -SCREEN_WIDTH * 0.25;
 export default function FavoritesScreen() {
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'all' | 'meals' | 'foods' | 'ingredients'>('all');
+  const [activeFilter, setActiveFilter] = useState<
+    'all' | 'meals' | 'foods' | 'ingredients'
+  >('all');
   const [showAddWithAI, setShowAddWithAI] = useState(false);
   const [aiInput, setAiInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -185,7 +187,9 @@ export default function FavoritesScreen() {
     }
   }, [notification]);
 
-  const handleFilterChange = (filter: 'all' | 'meals' | 'foods' | 'ingredients') => {
+  const handleFilterChange = (
+    filter: 'all' | 'meals' | 'foods' | 'ingredients'
+  ) => {
     hapticFeedback.selection();
     setActiveFilter(filter);
   };
@@ -196,16 +200,19 @@ export default function FavoritesScreen() {
       toggleItemSelection(item.id);
     } else {
       // Navigate to meal details or add to current meal
-      navigation.navigate('MealDetails' as never, {
-        favoriteItem: item,
-      } as never);
+      navigation.navigate(
+        'MealDetails' as never,
+        {
+          favoriteItem: item,
+        } as never
+      );
     }
   };
 
   const toggleItemSelection = (id: string) => {
     hapticFeedback.selection();
     if (selectedItems.includes(id)) {
-      setSelectedItems(selectedItems.filter((itemId) => itemId !== id));
+      setSelectedItems(selectedItems.filter(itemId => itemId !== id));
     } else {
       setSelectedItems([...selectedItems, id]);
       if (!isMultiSelectMode) {
@@ -264,8 +271,8 @@ export default function FavoritesScreen() {
 
   const handleDeleteFavorite = (id: string) => {
     hapticFeedback.impact();
-    const itemToDelete = favorites.find((item) => item.id === id);
-    setFavorites(favorites.filter((item) => item.id !== id));
+    const itemToDelete = favorites.find(item => item.id === id);
+    setFavorites(favorites.filter(item => item.id !== id));
     setSwipedItemId(null);
     if (itemToDelete) {
       setNotification({
@@ -276,14 +283,14 @@ export default function FavoritesScreen() {
   };
 
   const filteredFavorites = favorites
-    .filter((item) => {
+    .filter(item => {
       // Apply search filter
       if (searchQuery) {
         return item.name.toLowerCase().includes(searchQuery.toLowerCase());
       }
       return true;
     })
-    .filter((item) => {
+    .filter(item => {
       // Apply type filter
       if (activeFilter === 'all') return true;
       if (activeFilter === 'meals') return item.type === 'meal';
@@ -341,7 +348,9 @@ export default function FavoritesScreen() {
               onPress={() => handleSelectFavorite(item)}
               activeOpacity={0.7}
               className={`bg-white rounded-2xl p-4 shadow-sm ${
-                selectedItems.includes(item.id) ? 'border-2 border-primary' : 'border border-gray-100'
+                selectedItems.includes(item.id)
+                  ? 'border-2 border-primary'
+                  : 'border border-gray-100'
               }`}
             >
               <View className="flex-row">
@@ -371,21 +380,35 @@ export default function FavoritesScreen() {
                 <View className="flex-1">
                   <View className="flex-row justify-between">
                     <View>
-                      <Text className="text-base font-semibold">{item.name}</Text>
+                      <Text className="text-base font-semibold">
+                        {item.name}
+                      </Text>
                       <View className="flex-row items-center">
-                        <Text className="text-xs text-gray-500 capitalize">{item.type}</Text>
+                        <Text className="text-xs text-gray-500 capitalize">
+                          {item.type}
+                        </Text>
                         {item.quantity && (
-                          <Text className="text-xs text-gray-500 ml-2">• {item.quantity}</Text>
+                          <Text className="text-xs text-gray-500 ml-2">
+                            • {item.quantity}
+                          </Text>
                         )}
                       </View>
                     </View>
-                    <Text className="text-base font-medium">{item.calories} cal</Text>
+                    <Text className="text-base font-medium">
+                      {item.calories} cal
+                    </Text>
                   </View>
                   <View className="flex-row justify-between mt-2">
                     <View className="flex-row space-x-3">
-                      <Text className="text-xs text-gray-500">P: {item.protein}g</Text>
-                      <Text className="text-xs text-gray-500">C: {item.carbs}g</Text>
-                      <Text className="text-xs text-gray-500">F: {item.fat}g</Text>
+                      <Text className="text-xs text-gray-500">
+                        P: {item.protein}g
+                      </Text>
+                      <Text className="text-xs text-gray-500">
+                        C: {item.carbs}g
+                      </Text>
+                      <Text className="text-xs text-gray-500">
+                        F: {item.fat}g
+                      </Text>
                     </View>
                     {!isMultiSelectMode && (
                       <TouchableOpacity
@@ -445,7 +468,9 @@ export default function FavoritesScreen() {
           </TouchableOpacity>
           <View className="ml-2">
             <Text className="text-xl font-bold">Favorites</Text>
-            <Text className="text-sm text-gray-500">Your saved meals and foods</Text>
+            <Text className="text-sm text-gray-500">
+              Your saved meals and foods
+            </Text>
           </View>
         </View>
         {isMultiSelectMode ? (
@@ -507,9 +532,13 @@ export default function FavoritesScreen() {
               {isProcessing ? (
                 <ActivityIndicator color="#FFF" size="small" />
               ) : (
-                <Text className={`font-medium ${
-                  !aiInput.trim() ? 'text-gray-400' : 'text-white'
-                }`}>Add</Text>
+                <Text
+                  className={`font-medium ${
+                    !aiInput.trim() ? 'text-gray-400' : 'text-white'
+                  }`}
+                >
+                  Add
+                </Text>
               )}
             </TouchableOpacity>
           </View>
@@ -527,7 +556,7 @@ export default function FavoritesScreen() {
             className="w-full pl-10 pr-4 py-3 bg-white rounded-xl text-base shadow-sm"
             placeholder="Search favorites..."
             value={searchQuery}
-            onChangeText={(text) => {
+            onChangeText={text => {
               setSearchQuery(text);
               hapticFeedback.selection();
             }}
@@ -541,7 +570,7 @@ export default function FavoritesScreen() {
           className="mb-4"
         >
           <View className="flex-row space-x-2">
-            {['all', 'meals', 'foods', 'ingredients'].map((filter) => (
+            {['all', 'meals', 'foods', 'ingredients'].map(filter => (
               <TouchableOpacity
                 key={filter}
                 onPress={() => handleFilterChange(filter as any)}
@@ -568,7 +597,7 @@ export default function FavoritesScreen() {
           <Text className="font-semibold mb-2">Quick Add</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row space-x-2">
-              {filteredFavorites.slice(0, 5).map((item) => (
+              {filteredFavorites.slice(0, 5).map(item => (
                 <TouchableOpacity
                   key={item.id}
                   onPress={() => {
@@ -585,7 +614,9 @@ export default function FavoritesScreen() {
                   <Text className="text-xs text-center" numberOfLines={1}>
                     {item.name}
                   </Text>
-                  <Text className="text-xs text-gray-500">{item.calories} cal</Text>
+                  <Text className="text-xs text-gray-500">
+                    {item.calories} cal
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -597,7 +628,7 @@ export default function FavoritesScreen() {
       <FlatList
         data={filteredFavorites}
         renderItem={renderFavoriteItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
@@ -641,7 +672,9 @@ export default function FavoritesScreen() {
           className="absolute bottom-20 left-4 right-4 bg-white rounded-2xl p-4 shadow-lg"
         >
           <View className="flex-row items-center justify-between">
-            <Text className="font-medium">{selectedItems.length} items selected</Text>
+            <Text className="font-medium">
+              {selectedItems.length} items selected
+            </Text>
             <TouchableOpacity
               onPress={handleAddSelectedItems}
               className="bg-primary rounded-xl px-4 py-2"

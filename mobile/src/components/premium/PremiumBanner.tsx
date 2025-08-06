@@ -11,7 +11,7 @@ interface PremiumBannerProps {
 
 export const PremiumBanner: React.FC<PremiumBannerProps> = ({
   onUpgrade,
-  compact = false
+  compact = false,
 }) => {
   if (compact) {
     return (
@@ -37,11 +37,7 @@ export const PremiumBanner: React.FC<PremiumBannerProps> = ({
           <Text className="text-sm text-gray-600 mb-3">
             Unlock AI meal analysis & personalized insights
           </Text>
-          <Button
-            onPress={onUpgrade}
-            variant="primary"
-            size="small"
-          >
+          <Button onPress={onUpgrade} variant="primary" size="small">
             <View className="flex-row items-center">
               <Sparkles size={16} color="white" className="mr-2" />
               <Text className="text-white font-medium">Upgrade Now</Text>

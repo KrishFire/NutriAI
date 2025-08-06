@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { StreakProvider } from './src/contexts/StreakContext';
+import { SubscriptionProvider } from './src/contexts/SubscriptionContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import { initializeNotificationService } from './src/services/notifications';
 
@@ -20,9 +21,11 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
         <AuthProvider>
-          <StreakProvider>
-            <RootNavigator />
-          </StreakProvider>
+          <SubscriptionProvider>
+            <StreakProvider>
+              <RootNavigator />
+            </StreakProvider>
+          </SubscriptionProvider>
         </AuthProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

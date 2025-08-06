@@ -4,7 +4,10 @@ import {
   useEffect,
   useState,
   ReactNode,
+  useMemo,
+  useCallback,
 } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../config/supabase';
 import {
@@ -13,6 +16,8 @@ import {
   signOut,
   resetPassword,
   getCurrentUser,
+  signInWithGoogle,
+  signInWithApple,
   AuthError,
   SignupData,
   LoginData,
@@ -32,18 +37,30 @@ interface AuthContextType {
   preferences: UserPreferences | null;
   loading: boolean;
   preferencesLoading: boolean;
+  isAuthenticated: boolean;
+  hasCompletedOnboarding: boolean;
+  isLoading: boolean;
   signUp: (
     data: SignupData
   ) => Promise<{ user: User | null; error: AuthError | null }>;
   signIn: (
     data: LoginData
   ) => Promise<{ user: User | null; error: AuthError | null }>;
+  signInWithGoogle: () => Promise<{
+    user: User | null;
+    error: AuthError | null;
+  }>;
+  signInWithApple: () => Promise<{
+    user: User | null;
+    error: AuthError | null;
+  }>;
   signOut: () => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   updatePreferences: (
     preferences: UserPreferencesInput
   ) => Promise<{ error: PreferencesError | null }>;
   refreshPreferences: () => Promise<void>;
+  completeOnboarding: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -102,7 +119,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } else {
           setSession(session);
           setUser(session?.user ?? null);
-          
+
           // Load preferences if user is authenticated
           if (session?.user) {
             await loadUserPreferences(session.user.id);
@@ -125,7 +142,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       // Handle preferences based on auth event
       if (session?.user) {
         // Load preferences on sign in
@@ -134,7 +151,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Clear preferences on sign out
         setPreferences(null);
       }
-      
+
       setLoading(false);
     });
 
@@ -158,7 +175,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.error('Error updating preferences:', result.error);
         return { error: result.error };
       }
-      
+
       setPreferences(result.data);
       return { error: null };
     } catch (err) {
@@ -175,30 +192,75 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await loadUserPreferences(user.id);
   };
 
-  const completeOnboarding = async () => {
+  const completeOnboarding = useCallback(async () => {
     if (!user) return;
-    
+
     try {
       await updatePrefs({ has_completed_onboarding: true });
     } catch (error) {
       console.error('Error completing onboarding:', error);
     }
-  };
+  }, [user, updatePrefs]);
 
-  const contextValue: AuthContextType = {
-    user,
-    session,
-    preferences,
-    loading,
-    preferencesLoading,
-    signUp,
-    signIn,
-    signOut,
-    resetPassword,
-    updatePreferences: updatePrefs,
-    refreshPreferences,
-    completeOnboarding,
-  };
+  // Social sign-in methods - using auth service implementations
+  const handleSignInWithGoogle = useCallback(async () => {
+    const result = await signInWithGoogle();
+    if (result.error) {
+      console.log('Google sign-in:', result.error.message);
+    }
+    return result;
+  }, []);
+
+  const handleSignInWithApple = useCallback(async () => {
+    const result = await signInWithApple();
+    if (result.error) {
+      console.log('Apple sign-in:', result.error.message);
+    }
+    return result;
+  }, []);
+
+  const contextValue = useMemo<AuthContextType>(
+    () => ({
+      user,
+      session,
+      preferences,
+      loading,
+      preferencesLoading,
+      isAuthenticated: !!session,
+      hasCompletedOnboarding: preferences?.has_completed_onboarding ?? false,
+      isLoading: loading,
+      signUp,
+      signIn,
+      signInWithGoogle: handleSignInWithGoogle,
+      signInWithApple: handleSignInWithApple,
+      signOut,
+      resetPassword,
+      updatePreferences: updatePrefs,
+      refreshPreferences,
+      completeOnboarding,
+    }),
+    [
+      user,
+      session,
+      preferences,
+      loading,
+      preferencesLoading,
+      updatePrefs,
+      refreshPreferences,
+      completeOnboarding,
+      handleSignInWithGoogle,
+      handleSignInWithApple,
+    ]
+  );
+
+  // Show loading indicator while initializing auth state
+  if (loading && !session && !user) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator size="large" color="#10B981" />
+      </View>
+    );
+  }
 
   return (
     <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>

@@ -9,28 +9,31 @@ import {
   Alert,
   TextInput,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { AuthStackParamList } from '@/types/navigation';
+import { AuthStackParamList, RootStackParamList } from '@/types/navigation';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Button } from '@/components/ui/Button';
 import { hapticFeedback } from '@/utils/haptics';
 import { useAuth } from '@/contexts/AuthContext';
 import { validateEmail } from '@/utils';
+import GoogleLogo from '@/components/logos/GoogleLogo';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
-  AuthStackParamList,
-  'Login'
+  RootStackParamList,
+  'AuthStack'
 >;
 
 export default function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle, signInWithApple } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,21 +41,37 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSocialSignIn = (provider: string) => {
+  const handleSocialSignIn = async (provider: 'google' | 'apple') => {
     hapticFeedback.selection();
-    // Simulate social sign in
+    setError(null);
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      const { user, error: socialError } =
+        provider === 'google'
+          ? await signInWithGoogle()
+          : await signInWithApple();
+
+      if (socialError) {
+        setError(socialError.message);
+        hapticFeedback.error();
+      } else if (user) {
+        hapticFeedback.success();
+        // Navigation will be handled by auth state change
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+      hapticFeedback.error();
+    } finally {
       setIsLoading(false);
-      // onLogin();
-    }, 1000);
+    }
   };
 
   const handleSubmit = async () => {
     setError(null);
 
     // Basic validation
-    if (!email.includes('@') || !email.includes('.')) {
+    if (!validateEmail(email)) {
       setError('Please enter a valid email address');
       hapticFeedback.error();
       return;
@@ -87,150 +106,148 @@ export default function LoginScreen() {
 
   return (
     <PageTransition>
-      <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+      <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1"
+          style={styles.keyboardView}
         >
           <ScrollView
-            contentContainerStyle={{ flexGrow: 1 }}
+            contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View className="flex-1 px-6 pt-4 pb-6">
+            <View style={styles.content}>
               {/* Header */}
-              <View className="flex-row items-center mb-8">
+              <View style={styles.header}>
                 <TouchableOpacity
-                  className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mr-4"
+                  style={styles.backButton}
                   onPress={() => {
                     hapticFeedback.selection();
                     navigation.goBack();
                   }}
                   activeOpacity={0.7}
+                  accessibilityLabel="Go back"
+                  accessibilityRole="button"
+                  accessibilityHint="Navigate to the previous screen"
                 >
-                  <ArrowLeft
-                    size={20}
-                    className="text-gray-700 dark:text-gray-300"
-                  />
+                  <ArrowLeft size={20} color="#111827" />
                 </TouchableOpacity>
-                <Text className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Log In
+              </View>
+
+              {/* Title */}
+              <View style={styles.titleContainer}>
+                <Text style={styles.title}>Welcome back</Text>
+                <Text style={styles.subtitle}>
+                  Log in to continue tracking your nutrition
                 </Text>
               </View>
 
               {/* Social Sign In */}
-              <View className="space-y-4 mb-6">
+              <View style={styles.socialContainer}>
                 <TouchableOpacity
-                  className="w-full h-12 bg-black dark:bg-white rounded-full flex-row items-center justify-center space-x-2"
+                  style={styles.appleButton}
                   onPress={() => handleSocialSignIn('apple')}
                   activeOpacity={0.8}
+                  accessibilityLabel="Continue with Apple"
+                  accessibilityRole="button"
+                  accessibilityHint="Sign in using your Apple account"
                 >
-                  <View className="w-5 h-5 items-center justify-center">
-                    <Text className="text-white dark:text-black text-lg"></Text>
-                  </View>
-                  <Text className="text-white dark:text-black font-medium">
+                  <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
+                  <Text style={styles.appleButtonText}>
                     Continue with Apple
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  className="w-full h-12 border border-gray-300 dark:border-gray-700 rounded-full flex-row items-center justify-center space-x-2 bg-white dark:bg-gray-800"
+                  style={styles.googleButton}
                   onPress={() => handleSocialSignIn('google')}
                   activeOpacity={0.8}
+                  accessibilityLabel="Continue with Google"
+                  accessibilityRole="button"
+                  accessibilityHint="Sign in using your Google account"
                 >
-                  <View className="w-5 h-5 items-center justify-center">
-                    <Text className="text-lg">🌐</Text>
-                  </View>
-                  <Text className="text-gray-800 dark:text-white font-medium">
+                  <GoogleLogo size={20} />
+                  <Text style={styles.googleButtonText}>
                     Continue with Google
                   </Text>
                 </TouchableOpacity>
               </View>
 
               {/* Divider */}
-              <View className="flex-row items-center mb-6">
-                <View className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-                <Text className="px-4 text-sm text-gray-500 dark:text-gray-400">
-                  or
-                </Text>
-                <View className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+              <View style={styles.dividerContainer}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or</Text>
+                <View style={styles.dividerLine} />
               </View>
 
               {/* Email Input */}
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Email
-                </Text>
-                <View className="relative">
-                  <View className="absolute left-3 top-3.5 z-10">
-                    <Mail
-                      size={18}
-                      className="text-gray-500 dark:text-gray-400"
-                    />
-                  </View>
+              <View style={styles.formContainer}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Email</Text>
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
                     placeholder="your@email.com"
                     placeholderTextColor="#9CA3AF"
-                    className="w-full h-12 pl-10 pr-4 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    style={styles.input}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoComplete="email"
                   />
                 </View>
-              </View>
 
-              {/* Password Input */}
-              <View className="mb-6">
-                <View className="flex-row justify-between mb-1">
-                  <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Password
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      hapticFeedback.selection();
-                      navigation.navigate('ForgotPassword');
-                    }}
-                  >
-                    <Text className="text-sm text-primary dark:text-primary-light">
-                      Forgot Password?
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <View className="relative">
-                  <View className="absolute left-3 top-3.5 z-10">
-                    <Lock
-                      size={18}
-                      className="text-gray-500 dark:text-gray-400"
-                    />
+                {/* Password Input */}
+                <View style={styles.inputGroup}>
+                  <View style={styles.passwordHeader}>
+                    <Text style={styles.inputLabel}>Password</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        hapticFeedback.selection();
+                        navigation.navigate('AuthStack', {
+                          screen: 'ForgotPassword',
+                        } as any);
+                      }}
+                      accessibilityLabel="Forgot Password?"
+                      accessibilityRole="link"
+                      accessibilityHint="Navigate to password recovery screen"
+                    >
+                      <Text style={styles.forgotPassword}>
+                        Forgot Password?
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-                  <TextInput
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="Enter your password"
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={!showPassword}
-                    className="w-full h-12 pl-10 pr-10 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                    autoComplete="password"
-                  />
-                  <TouchableOpacity
-                    className="absolute right-3 top-3.5"
-                    onPress={() => setShowPassword(!showPassword)}
-                    activeOpacity={0.7}
-                  >
-                    {showPassword ? (
-                      <EyeOff
-                        size={20}
-                        className="text-gray-500 dark:text-gray-400"
-                      />
-                    ) : (
-                      <Eye
-                        size={20}
-                        className="text-gray-500 dark:text-gray-400"
-                      />
-                    )}
-                  </TouchableOpacity>
+                  <View style={styles.passwordContainer}>
+                    <TextInput
+                      value={password}
+                      onChangeText={setPassword}
+                      placeholder="Enter your password"
+                      placeholderTextColor="#9CA3AF"
+                      secureTextEntry={!showPassword}
+                      style={styles.passwordInput}
+                      autoComplete="password"
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeButton}
+                      onPress={() => setShowPassword(!showPassword)}
+                      activeOpacity={0.7}
+                      accessibilityLabel={
+                        showPassword ? 'Hide password' : 'Show password'
+                      }
+                      accessibilityRole="button"
+                      accessibilityHint={
+                        showPassword
+                          ? 'Hide the password text'
+                          : 'Show the password text'
+                      }
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      {showPassword ? (
+                        <EyeOff size={20} color="#9CA3AF" />
+                      ) : (
+                        <Eye size={20} color="#9CA3AF" />
+                      )}
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
 
@@ -239,43 +256,50 @@ export default function LoginScreen() {
                 <Animated.View
                   entering={FadeIn}
                   exiting={FadeOut}
-                  className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg mb-4"
+                  style={styles.errorContainer}
                 >
-                  <Text className="text-red-600 dark:text-red-400 text-sm">
-                    {error}
-                  </Text>
+                  <Text style={styles.errorText}>{error}</Text>
                 </Animated.View>
               )}
 
               {/* Login Button */}
-              <Button
+              <TouchableOpacity
                 onPress={handleSubmit}
-                variant="primary"
-                size="large"
                 disabled={isLoading}
-                className="mb-6"
+                style={[
+                  styles.submitButton,
+                  isLoading && styles.submitButtonDisabled,
+                ]}
+                activeOpacity={0.8}
+                accessibilityLabel={isLoading ? 'Logging in' : 'Log In'}
+                accessibilityRole="button"
+                accessibilityHint="Submit your login credentials"
+                accessibilityState={{ disabled: isLoading }}
               >
                 {isLoading ? (
                   <ActivityIndicator size="small" color="white" />
                 ) : (
-                  'Log In'
+                  <Text style={styles.submitButtonText}>Log In</Text>
                 )}
-              </Button>
+              </TouchableOpacity>
 
               {/* Sign Up Link */}
-              <View className="items-center">
-                <Text className="text-gray-600 dark:text-gray-400">
-                  Don't have an account?{' '}
-                  <Text
-                    className="text-primary dark:text-primary-light font-medium"
-                    onPress={() => {
-                      hapticFeedback.selection();
-                      navigation.navigate('Signup');
-                    }}
-                  >
-                    Sign Up
-                  </Text>
-                </Text>
+              <View style={styles.toggleContainer}>
+                <Text style={styles.toggleText}>Don't have an account?</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    hapticFeedback.selection();
+                    navigation.navigate('Onboarding', {
+                      screen: 'OnboardingFlow',
+                      params: { initialStep: 'carousel' },
+                    });
+                  }}
+                  accessibilityLabel="Sign Up"
+                  accessibilityRole="link"
+                  accessibilityHint="Navigate to create a new account"
+                >
+                  <Text style={styles.toggleLink}>Sign Up</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </ScrollView>
@@ -312,9 +336,10 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -322,10 +347,11 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: '700',
-    color: '#000000',
+    color: '#111827',
     marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 17,
@@ -362,15 +388,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  googleIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 8,
-  },
   googleButtonText: {
     color: '#111827',
     fontSize: 16,
     fontWeight: '600',
+    marginLeft: 8,
   },
   dividerContainer: {
     flexDirection: 'row',
@@ -395,8 +417,8 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#111827',
+    fontWeight: '600',
+    color: '#374151',
     marginBottom: 8,
   },
   input: {
@@ -408,7 +430,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#111827',
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#E5E7EB',
   },
   passwordHeader: {
     flexDirection: 'row',
@@ -434,12 +456,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#111827',
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#E5E7EB',
   },
   eyeButton: {
     position: 'absolute',
-    right: 20,
-    top: 18,
+    right: 10,
+    top: 8,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   errorContainer: {
     padding: 12,
@@ -485,5 +511,3 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 });
-
-export default LoginScreen;

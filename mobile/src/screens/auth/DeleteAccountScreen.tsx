@@ -81,7 +81,7 @@ export default function DeleteAccountScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
         >
@@ -93,9 +93,12 @@ export default function DeleteAccountScreen() {
                 className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mr-4"
                 activeOpacity={0.7}
               >
-                <ArrowLeft size={20} className="text-gray-700 dark:text-gray-300" />
+                <ArrowLeft
+                  size={20}
+                  className="text-gray-700 dark:text-gray-300"
+                />
               </TouchableOpacity>
-              
+
               <Text className="text-2xl font-bold text-gray-900 dark:text-white">
                 Delete Account
               </Text>
@@ -105,7 +108,10 @@ export default function DeleteAccountScreen() {
             <View className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6">
               <View className="flex-row">
                 <View className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-800/30 items-center justify-center mr-3">
-                  <AlertTriangle size={20} className="text-red-500 dark:text-red-400" />
+                  <AlertTriangle
+                    size={20}
+                    className="text-red-500 dark:text-red-400"
+                  />
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium text-red-600 dark:text-red-400 mb-1">
@@ -126,11 +132,14 @@ export default function DeleteAccountScreen() {
               </Text>
               <View className="relative">
                 <View className="absolute left-3 top-3.5 z-10">
-                  <Lock size={18} className="text-gray-500 dark:text-gray-400" />
+                  <Lock
+                    size={18}
+                    className="text-gray-500 dark:text-gray-400"
+                  />
                 </View>
                 <TextInput
                   value={password}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     setPassword(text);
                     setError(null);
                   }}
@@ -150,7 +159,7 @@ export default function DeleteAccountScreen() {
               </Text>
               <TextInput
                 value={confirmText}
-                onChangeText={(text) => {
+                onChangeText={text => {
                   setConfirmText(text);
                   setError(null);
                 }}
@@ -164,7 +173,7 @@ export default function DeleteAccountScreen() {
 
             {/* Error Message */}
             {error && (
-              <Animated.View 
+              <Animated.View
                 entering={FadeIn}
                 className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg mb-5"
               >

@@ -32,11 +32,9 @@ class TddGuardReporter {
         `\n🔴 TDD Guard: ${results.numFailedTests} test(s) failed. Commit will be blocked.`
       );
     } else {
-      console.log(
-        '\n🟢 TDD Guard: All tests passed. You are clear to commit.'
-      );
+      console.log('\n🟢 TDD Guard: All tests passed. You are clear to commit.');
     }
   }
 }
 
-module.exports = TddGuardReporter; 
+module.exports = TddGuardReporter;

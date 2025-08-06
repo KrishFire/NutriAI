@@ -81,7 +81,7 @@ export function RecipeDetailScreen({
               resizeMode="cover"
             />
           </MotiView>
-          
+
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.6)']}
             style={{
@@ -94,7 +94,7 @@ export function RecipeDetailScreen({
           />
 
           <SafeAreaView className="absolute inset-0">
-            <View className="flex-row justify-between items-start px-4 pt-4">
+            <View className="flex-row justify-between items-start px-4 pt-6">
               <MotiView
                 from={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -108,7 +108,10 @@ export function RecipeDetailScreen({
                   className="w-10 h-10 rounded-full items-center justify-center"
                   style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
                 >
-                  <BlurView intensity={80} style={{ position: 'absolute', inset: 0, borderRadius: 20 }} />
+                  <BlurView
+                    intensity={80}
+                    style={{ position: 'absolute', inset: 0, borderRadius: 20 }}
+                  />
                   <Ionicons name="arrow-back" size={20} color="white" />
                 </TouchableOpacity>
               </MotiView>
@@ -124,7 +127,14 @@ export function RecipeDetailScreen({
                     className="w-10 h-10 rounded-full items-center justify-center"
                     style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
                   >
-                    <BlurView intensity={80} style={{ position: 'absolute', inset: 0, borderRadius: 20 }} />
+                    <BlurView
+                      intensity={80}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: 20,
+                      }}
+                    />
                     <Ionicons
                       name={isFavorite ? 'bookmark' : 'bookmark-outline'}
                       size={20}
@@ -142,7 +152,14 @@ export function RecipeDetailScreen({
                     className="w-10 h-10 rounded-full items-center justify-center"
                     style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
                   >
-                    <BlurView intensity={80} style={{ position: 'absolute', inset: 0, borderRadius: 20 }} />
+                    <BlurView
+                      intensity={80}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: 20,
+                      }}
+                    />
                     <Ionicons name="share-outline" size={20} color="white" />
                   </TouchableOpacity>
                 </MotiView>
@@ -204,7 +221,9 @@ export function RecipeDetailScreen({
               </View>
 
               <View className="flex-row justify-between items-center mb-2">
-                <Text className="text-gray-500 dark:text-gray-400">Calories</Text>
+                <Text className="text-gray-500 dark:text-gray-400">
+                  Calories
+                </Text>
                 <Text className="font-bold text-gray-900 dark:text-white">
                   {calculateNutrition(recipe.calories)}
                 </Text>
@@ -309,20 +328,22 @@ export function RecipeDetailScreen({
                     style={{ overflow: 'hidden' }}
                   >
                     <View className="mt-4 space-y-2">
-                      {recipe.ingredients.map((ingredient: any, index: number) => (
-                        <MotiView
-                          key={ingredient.id}
-                          from={{ translateX: -20, opacity: 0 }}
-                          animate={{ translateX: 0, opacity: 1 }}
-                          transition={{ delay: index * 50 }}
-                          className="flex-row items-center"
-                        >
-                          <View className="w-2 h-2 rounded-full bg-primary-600 dark:bg-primary-500 mr-3" />
-                          <Text className="text-gray-700 dark:text-gray-300">
-                            {ingredient.name}
-                          </Text>
-                        </MotiView>
-                      ))}
+                      {recipe.ingredients.map(
+                        (ingredient: any, index: number) => (
+                          <MotiView
+                            key={ingredient.id}
+                            from={{ translateX: -20, opacity: 0 }}
+                            animate={{ translateX: 0, opacity: 1 }}
+                            transition={{ delay: index * 50 }}
+                            className="flex-row items-center"
+                          >
+                            <View className="w-2 h-2 rounded-full bg-primary-600 dark:bg-primary-500 mr-3" />
+                            <Text className="text-gray-700 dark:text-gray-300">
+                              {ingredient.name}
+                            </Text>
+                          </MotiView>
+                        )
+                      )}
                     </View>
                   </MotiView>
                 )}
@@ -342,7 +363,9 @@ export function RecipeDetailScreen({
               className="flex-1 h-12 flex-row items-center justify-center border border-gray-300 dark:border-gray-700 rounded-lg"
             >
               <Ionicons name="create-outline" size={18} color="#6b7280" />
-              <Text className="ml-2 text-gray-700 dark:text-gray-300">Edit</Text>
+              <Text className="ml-2 text-gray-700 dark:text-gray-300">
+                Edit
+              </Text>
             </TouchableOpacity>
 
             <View className="flex-1">

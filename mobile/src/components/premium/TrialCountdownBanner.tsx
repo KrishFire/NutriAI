@@ -1,11 +1,5 @@
 import React, { useRef } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  Modal,
-  Dimensions,
-} from 'react-native';
+import { View, Text, Pressable, Modal, Dimensions } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -69,7 +63,7 @@ export const TrialCountdownBanner: React.FC<TrialCountdownBannerProps> = ({
         className="flex-1 bg-black/50 justify-end"
       >
         <Pressable className="flex-1" onPress={handleClose} />
-        
+
         <Animated.View
           entering={SlideInDown.springify().damping(18)}
           exiting={SlideOutDown.springify()}
@@ -91,7 +85,7 @@ export const TrialCountdownBanner: React.FC<TrialCountdownBannerProps> = ({
                     {isLastDay ? 'Trial Ends Today' : `${daysLeft} Days Left`}
                   </Text>
                 </View>
-                
+
                 <Pressable
                   onPress={handleClose}
                   className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 items-center justify-center"
@@ -104,25 +98,26 @@ export const TrialCountdownBanner: React.FC<TrialCountdownBannerProps> = ({
               <View
                 className={`
                   p-4 rounded-xl mb-4 border
-                  ${isLastDay 
-                    ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900/30' 
-                    : 'bg-primary/5 dark:bg-primaryDark/10 border-primary/10 dark:border-primaryDark/20'
+                  ${
+                    isLastDay
+                      ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900/30'
+                      : 'bg-primary/5 dark:bg-primaryDark/10 border-primary/10 dark:border-primaryDark/20'
                   }
                 `}
               >
                 <Text
                   className={`
                     text-sm
-                    ${isLastDay 
-                      ? 'text-red-600 dark:text-red-400' 
-                      : 'text-primary dark:text-primaryDark'
+                    ${
+                      isLastDay
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-primary dark:text-primaryDark'
                     }
                   `}
                 >
-                  {isLastDay 
-                    ? 'Your free trial ends today. Subscribe now to keep all premium features and avoid losing access.' 
-                    : `Your free trial will end in ${daysLeft} days. Upgrade now to continue enjoying all premium features.`
-                  }
+                  {isLastDay
+                    ? 'Your free trial ends today. Subscribe now to keep all premium features and avoid losing access.'
+                    : `Your free trial will end in ${daysLeft} days. Upgrade now to continue enjoying all premium features.`}
                 </Text>
               </View>
 
@@ -148,19 +143,11 @@ export const TrialCountdownBanner: React.FC<TrialCountdownBannerProps> = ({
 
               {/* Actions */}
               <View className="space-y-3">
-                <Button
-                  variant="primary"
-                  fullWidth
-                  onPress={handleUpgrade}
-                >
+                <Button variant="primary" fullWidth onPress={handleUpgrade}>
                   {isLastDay ? 'Subscribe Now' : 'Upgrade to Premium'}
                 </Button>
-                
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  onPress={handleClose}
-                >
+
+                <Button variant="secondary" fullWidth onPress={handleClose}>
                   {isLastDay ? 'Remind Me Later' : 'Maybe Later'}
                 </Button>
               </View>

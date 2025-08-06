@@ -1,10 +1,5 @@
 import React, { useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Check } from 'lucide-react-native';
@@ -20,19 +15,19 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MotiView } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
-import { useAuth } from '../../hooks/useAuth';
-import tokens from '../../../tokens.json';
+import { useAuth } from '../../contexts/AuthContext';
+import tokens from '../../utils/tokens';
 
 export default function OnboardingCompleteScreen() {
   const navigation = useNavigation();
   const { completeOnboarding } = useAuth();
-  
+
   const scale = useSharedValue(0);
   const berryScale = useSharedValue(0);
 
   useEffect(() => {
     hapticFeedback.success();
-    
+
     // Animate in
     scale.value = withSpring(1, { damping: 15 });
     berryScale.value = withDelay(200, withSpring(1, { damping: 12 }));
@@ -78,9 +73,13 @@ export default function OnboardingCompleteScreen() {
           position: 'absolute',
           width: 10,
           height: 10,
-          backgroundColor: ['#320DFF', '#4F46E5', '#818CF8', '#66BB6A', '#FFA726'][
-            Math.floor(Math.random() * 5)
-          ],
+          backgroundColor: [
+            '#320DFF',
+            '#4F46E5',
+            '#818CF8',
+            '#66BB6A',
+            '#FFA726',
+          ][Math.floor(Math.random() * 5)],
           borderRadius: 5,
           top: '20%',
           left: `${20 + Math.random() * 60}%`,
@@ -101,11 +100,8 @@ export default function OnboardingCompleteScreen() {
 
         {/* Progress indicator - Complete */}
         <View className="flex-row space-x-2 mb-12 absolute top-12 left-6 right-6">
-          {[1, 2, 3, 4, 5].map((step) => (
-            <View
-              key={step}
-              className="h-1 flex-1 rounded-full bg-primary"
-            />
+          {[1, 2, 3, 4, 5].map(step => (
+            <View key={step} className="h-1 flex-1 rounded-full bg-primary" />
           ))}
         </View>
 
@@ -144,7 +140,8 @@ export default function OnboardingCompleteScreen() {
           transition={{ delay: 500 }}
         >
           <Text className="text-gray-600 text-center mb-12 text-lg">
-            Your personalized nutrition journey starts now. Let's make healthy eating simple and fun!
+            Your personalized nutrition journey starts now. Let's make healthy
+            eating simple and fun!
           </Text>
         </MotiView>
 
@@ -155,19 +152,27 @@ export default function OnboardingCompleteScreen() {
           transition={{ delay: 600 }}
           className="w-full bg-gray-50 rounded-2xl p-6 mb-12"
         >
-          <Text className="text-sm font-medium text-gray-700 mb-3">With NutriAI you can:</Text>
+          <Text className="text-sm font-medium text-gray-700 mb-3">
+            With NutriAI you can:
+          </Text>
           <View className="space-y-2">
             <View className="flex-row items-center">
               <View className="w-1.5 h-1.5 rounded-full bg-primary mr-2" />
-              <Text className="text-sm text-gray-600">Track meals with AI-powered recognition</Text>
+              <Text className="text-sm text-gray-600">
+                Track meals with AI-powered recognition
+              </Text>
             </View>
             <View className="flex-row items-center">
               <View className="w-1.5 h-1.5 rounded-full bg-primary mr-2" />
-              <Text className="text-sm text-gray-600">Monitor your nutrition goals daily</Text>
+              <Text className="text-sm text-gray-600">
+                Monitor your nutrition goals daily
+              </Text>
             </View>
             <View className="flex-row items-center">
               <View className="w-1.5 h-1.5 rounded-full bg-primary mr-2" />
-              <Text className="text-sm text-gray-600">Get personalized insights and tips</Text>
+              <Text className="text-sm text-gray-600">
+                Get personalized insights and tips
+              </Text>
             </View>
           </View>
         </MotiView>

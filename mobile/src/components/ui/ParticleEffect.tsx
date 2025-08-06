@@ -61,9 +61,12 @@ export const ParticleEffect: React.FC<ParticleEffectProps> = ({
     setParticles(newParticles);
 
     // Auto-stop after duration
-    const timer = setTimeout(() => {
-      setIsActive(false);
-    }, duration * 1000 + 1000);
+    const timer = setTimeout(
+      () => {
+        setIsActive(false);
+      },
+      duration * 1000 + 1000
+    );
 
     return () => clearTimeout(timer);
   }, [isActive, particleCount, colors, duration]);

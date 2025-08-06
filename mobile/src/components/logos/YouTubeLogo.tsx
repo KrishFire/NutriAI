@@ -6,7 +6,10 @@ interface YouTubeLogoProps {
   color?: string;
 }
 
-const YouTubeLogo: React.FC<YouTubeLogoProps> = ({ size = 24, color = '#FF0000' }) => {
+const YouTubeLogo: React.FC<YouTubeLogoProps> = ({
+  size = 24,
+  color = '#FF0000',
+}) => {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path

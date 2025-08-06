@@ -2,14 +2,14 @@ import React from 'react';
 import { Image, View } from 'react-native';
 import { MotiView } from 'moti';
 
-export type BerryVariant = 
-  | 'happy' 
-  | 'excited' 
-  | 'thinking' 
-  | 'sad' 
-  | 'waving' 
-  | 'sleeping' 
-  | 'eating' 
+export type BerryVariant =
+  | 'happy'
+  | 'excited'
+  | 'thinking'
+  | 'sad'
+  | 'waving'
+  | 'sleeping'
+  | 'eating'
   | 'trophy'
   | 'magnify'
   | 'wave'
@@ -88,7 +88,7 @@ export const Berry: React.FC<BerryProps> = ({
       case 'excited':
         return {
           from: { scale: 1, rotate: '0deg' },
-          animate: { 
+          animate: {
             scale: [1, 1.1, 1],
             rotate: ['0deg', '5deg', '-5deg', '0deg'],
           },
@@ -170,11 +170,7 @@ export const Berry: React.FC<BerryProps> = ({
   };
 
   if (animate) {
-    return (
-      <MotiView {...getAnimation()}>
-        {renderBerry()}
-      </MotiView>
-    );
+    return <MotiView {...getAnimation()}>{renderBerry()}</MotiView>;
   }
 
   return renderBerry();

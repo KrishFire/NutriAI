@@ -44,7 +44,7 @@ export const KineticTypography: React.FC<KineticTypographyProps> = ({
             duration,
             delay: index * 50,
             easing: Easing.out(Easing.cubic),
-            loop: repeat === true ? -1 : repeat as number,
+            loop: repeat === true ? -1 : (repeat as number),
           },
         };
 
@@ -57,7 +57,7 @@ export const KineticTypography: React.FC<KineticTypographyProps> = ({
             duration,
             delay: index * 30,
             easing: Easing.inOut(Easing.sin),
-            loop: repeat === true ? -1 : repeat as number,
+            loop: repeat === true ? -1 : (repeat as number),
           },
         };
 
@@ -70,7 +70,7 @@ export const KineticTypography: React.FC<KineticTypographyProps> = ({
             duration,
             delay: index * 20,
             easing: Easing.inOut(Easing.cubic),
-            loop: repeat === true ? -1 : repeat as number,
+            loop: repeat === true ? -1 : (repeat as number),
           },
         };
 
@@ -90,17 +90,25 @@ export const KineticTypography: React.FC<KineticTypographyProps> = ({
   };
 
   if (!isAnimating && effect === 'stagger') {
-    return <Text className={className} style={style}>{text}</Text>;
+    return (
+      <Text className={className} style={style}>
+        {text}
+      </Text>
+    );
   }
 
   return (
     <View className="flex-row flex-wrap">
       {characters.map((char, index) => {
         const animProps = getAnimationProps(index);
-        
+
         // Handle spaces
         if (char === ' ') {
-          return <Text key={`${index}-space`} style={style}> </Text>;
+          return (
+            <Text key={`${index}-space`} style={style}>
+              {' '}
+            </Text>
+          );
         }
 
         return (

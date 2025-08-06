@@ -235,7 +235,9 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
     try {
       // Prevent concurrent stop operations
       if (isStoppingRef.current) {
-        console.warn('[useVoiceRecording] Stop already in progress, ignoring...');
+        console.warn(
+          '[useVoiceRecording] Stop already in progress, ignoring...'
+        );
         return;
       }
 
@@ -305,7 +307,9 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
     try {
       // Prevent concurrent stop/cancel operations
       if (isStoppingRef.current) {
-        console.warn('[useVoiceRecording] Stop/cancel already in progress, ignoring...');
+        console.warn(
+          '[useVoiceRecording] Stop/cancel already in progress, ignoring...'
+        );
         return;
       }
 

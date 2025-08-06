@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { MotiView } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
-import { useOnboarding } from './OnboardingFlow';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -27,7 +27,7 @@ interface TutorialStep {
 
 const TutorialOverlay = () => {
   const { goToNextStep } = useOnboarding();
-  
+
   const [currentStep, setCurrentStep] = useState(0);
 
   const tutorialSteps: TutorialStep[] = [
@@ -154,12 +154,12 @@ const TutorialOverlay = () => {
         <View className="bg-white rounded-xl p-4 shadow-lg">
           <Text className="font-bold text-lg mb-2">{step.title}</Text>
           <Text className="text-gray-600 mb-4">{step.description}</Text>
-          
+
           <View className="flex-row justify-between items-center">
             <TouchableOpacity onPress={handleSkip}>
               <Text className="text-gray-500">Skip</Text>
             </TouchableOpacity>
-            
+
             <View className="flex-row items-center">
               {/* Step indicators */}
               <View className="flex-row mr-4">
@@ -172,7 +172,7 @@ const TutorialOverlay = () => {
                   />
                 ))}
               </View>
-              
+
               <TouchableOpacity
                 onPress={handleNext}
                 className="bg-primary px-4 py-2 rounded-full"

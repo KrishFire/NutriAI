@@ -35,11 +35,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => {
-    const translateX = interpolate(
-      shimmerAnimation.value,
-      [0, 1],
-      [-200, 200]
-    );
+    const translateX = interpolate(shimmerAnimation.value, [0, 1], [-200, 200]);
     return {
       transform: [{ translateX }],
     };

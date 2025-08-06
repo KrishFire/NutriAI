@@ -12,7 +12,9 @@ interface CalorieProgressNotifierProps {
  * Component that checks calorie progress and allows sending a notification
  * if the user hasn't logged 75% of their daily calories
  */
-export default function CalorieProgressNotifier({ onPress }: CalorieProgressNotifierProps) {
+export default function CalorieProgressNotifier({
+  onPress,
+}: CalorieProgressNotifierProps) {
   const { user } = useAuth();
   const { checkCalorieProgress, sendProgressNotification } = useNotifications();
   const [progress, setProgress] = useState<{
@@ -45,7 +47,7 @@ export default function CalorieProgressNotifier({ onPress }: CalorieProgressNoti
     if (!progress?.shouldNotify) return;
 
     const result = await sendProgressNotification();
-    
+
     if (result.success) {
       Alert.alert(
         'Reminder Sent',
@@ -53,11 +55,9 @@ export default function CalorieProgressNotifier({ onPress }: CalorieProgressNoti
         [{ text: 'OK' }]
       );
     } else {
-      Alert.alert(
-        'Error',
-        result.error || 'Failed to send notification',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', result.error || 'Failed to send notification', [
+        { text: 'OK' },
+      ]);
     }
   };
 

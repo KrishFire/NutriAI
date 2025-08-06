@@ -18,7 +18,7 @@ interface UseNotificationsReturn {
   error: string | null;
   permissionStatus: string | null;
   isDailyReminderActive: boolean;
-  
+
   // Actions
   requestPermissions: () => Promise<NotificationResult>;
   enableDailyReminder: () => Promise<NotificationResult>;
@@ -64,165 +64,179 @@ export function useNotifications(): UseNotificationsReturn {
   }, []);
 
   // Request notification permissions
-  const requestPermissions = useCallback(async (): Promise<NotificationResult> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await requestNotificationPermissions();
-      
-      if (!result.success) {
-        setError(result.error || 'Failed to request permissions');
-      } else {
-        setPermissionStatus(result.data?.status || 'granted');
+  const requestPermissions =
+    useCallback(async (): Promise<NotificationResult> => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await requestNotificationPermissions();
+
+        if (!result.success) {
+          setError(result.error || 'Failed to request permissions');
+        } else {
+          setPermissionStatus(result.data?.status || 'granted');
+        }
+
+        return result;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown error';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setIsLoading(false);
       }
-      
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    }, []);
 
   // Enable daily reminder
-  const enableDailyReminder = useCallback(async (): Promise<NotificationResult> => {
-    if (!user) {
-      return { success: false, error: 'User not authenticated' };
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await scheduleDailyReminder(user.id);
-      
-      if (!result.success) {
-        setError(result.error || 'Failed to schedule reminder');
-      } else {
-        setIsDailyReminderActive(true);
+  const enableDailyReminder =
+    useCallback(async (): Promise<NotificationResult> => {
+      if (!user) {
+        return { success: false, error: 'User not authenticated' };
       }
-      
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user]);
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await scheduleDailyReminder(user.id);
+
+        if (!result.success) {
+          setError(result.error || 'Failed to schedule reminder');
+        } else {
+          setIsDailyReminderActive(true);
+        }
+
+        return result;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown error';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setIsLoading(false);
+      }
+    }, [user]);
 
   // Disable daily reminder
-  const disableDailyReminder = useCallback(async (): Promise<NotificationResult> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await cancelAllNotifications();
-      
-      if (!result.success) {
-        setError(result.error || 'Failed to cancel notifications');
-      } else {
-        setIsDailyReminderActive(false);
+  const disableDailyReminder =
+    useCallback(async (): Promise<NotificationResult> => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await cancelAllNotifications();
+
+        if (!result.success) {
+          setError(result.error || 'Failed to cancel notifications');
+        } else {
+          setIsDailyReminderActive(false);
+        }
+
+        return result;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown error';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setIsLoading(false);
       }
-      
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    }, []);
 
   // Check calorie progress
   const checkCalorieProgress = useCallback(async () => {
     if (!user) {
       throw new Error('User not authenticated');
     }
-    
+
     return await checkDailyCalorieProgress(user.id);
   }, [user]);
 
   // Send progress notification
-  const sendProgressNotification = useCallback(async (): Promise<NotificationResult> => {
-    if (!user) {
-      return { success: false, error: 'User not authenticated' };
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await sendCalorieProgressNotification(user.id);
-      
-      if (!result.success) {
-        setError(result.error || 'Failed to send notification');
+  const sendProgressNotification =
+    useCallback(async (): Promise<NotificationResult> => {
+      if (!user) {
+        return { success: false, error: 'User not authenticated' };
       }
-      
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user]);
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await sendCalorieProgressNotification(user.id);
+
+        if (!result.success) {
+          setError(result.error || 'Failed to send notification');
+        }
+
+        return result;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown error';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setIsLoading(false);
+      }
+    }, [user]);
 
   // Toggle notifications based on user preference
-  const toggleNotifications = useCallback(async (enabled: boolean): Promise<NotificationResult> => {
-    if (!user) {
-      return { success: false, error: 'User not authenticated' };
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await updateNotificationSettings(user.id, enabled);
-      
-      if (!result.success) {
-        setError(result.error || 'Failed to update notification settings');
-      } else {
-        setIsDailyReminderActive(enabled);
+  const toggleNotifications = useCallback(
+    async (enabled: boolean): Promise<NotificationResult> => {
+      if (!user) {
+        return { success: false, error: 'User not authenticated' };
       }
-      
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user]);
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await updateNotificationSettings(user.id, enabled);
+
+        if (!result.success) {
+          setError(result.error || 'Failed to update notification settings');
+        } else {
+          setIsDailyReminderActive(enabled);
+        }
+
+        return result;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown error';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [user]
+  );
 
   // Send test notification (for debugging)
-  const testNotification = useCallback(async (): Promise<NotificationResult> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await sendTestNotification();
-      
-      if (!result.success) {
-        setError(result.error || 'Failed to send test notification');
+  const testNotification =
+    useCallback(async (): Promise<NotificationResult> => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await sendTestNotification();
+
+        if (!result.success) {
+          setError(result.error || 'Failed to send test notification');
+        }
+
+        return result;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown error';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setIsLoading(false);
       }
-      
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    }, []);
 
   return {
     // State
@@ -230,7 +244,7 @@ export function useNotifications(): UseNotificationsReturn {
     error,
     permissionStatus,
     isDailyReminderActive,
-    
+
     // Actions
     requestPermissions,
     enableDailyReminder,

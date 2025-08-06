@@ -1,12 +1,5 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useRef } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Animated, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
@@ -29,9 +22,12 @@ import {
 import { MotiView } from 'moti';
 import { TAB_BAR_HEIGHT } from '../utils/tokens';
 import { hapticFeedback } from '../utils/haptics';
-import { Avatar } from '../components/ui/Avatar';
 import { Berry } from '../components/ui/Berry';
 import { Card } from '../components/ui/Card';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { StandardHeader, ScrollAwareHeader } from '../components/common';
+import { colors } from '../constants/theme';
+import { useHeaderHeight } from '../hooks/useHeaderHeight';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -40,20 +36,24 @@ type ProfileScreenNavigationProp = NativeStackNavigationProp<
 
 export default function ProfileScreen() {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  
+  const { headerHeight } = useHeaderHeight();
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const { isPremium } = useSubscription();
+
   // Mock user data - TODO: Replace with real auth context
   const userData = {
     name: 'Alex Johnson',
     email: 'alex.johnson@example.com',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
   };
-  
+
   // Mock streak data - TODO: Replace with real streak context
   const streakData = {
     current: 7,
     max: 21,
   };
-  
+
   const menuItems = [
     {
       id: 'account',
@@ -113,7 +113,7 @@ export default function ProfileScreen() {
           title: 'Subscription',
           icon: Star,
           screen: 'Subscription' as keyof RootStackParamList,
-          badge: 'PRO',
+          badge: isPremium ? 'PRO' : undefined,
         },
         {
           id: 'settings',
@@ -142,13 +142,13 @@ export default function ProfileScreen() {
     // TODO: Navigate to actual screens when they exist
     console.log(`Navigate to ${screen}`);
   };
-  
+
   const handleUpgrade = () => {
     hapticFeedback.selection();
     // TODO: Navigate to upgrade screen
     console.log('Navigate to upgrade');
   };
-  
+
   const handleLogout = () => {
     hapticFeedback.selection();
     Alert.alert('Log Out', 'Are you sure you want to log out?', [
@@ -166,43 +166,67 @@ export default function ProfileScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <ScrollView
+      <ScrollAwareHeader scrollY={scrollY}>
+        <StandardHeader 
+          title="Profile" 
+          subtitle="Manage your account" 
+        />
+      </ScrollAwareHeader>
+      
+      <Animated.ScrollView
+        className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: TAB_BAR_HEIGHT + 20 }}
+        contentContainerStyle={{
+          paddingTop: headerHeight + 20,
+          paddingBottom: TAB_BAR_HEIGHT + 20,
+        }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
       >
-        {/* Header */}
-        <View className="px-4 pt-12 pb-4">
-          <Text className="text-2xl font-bold text-gray-900">Profile</Text>
-        </View>
-        
-        {/* Profile Info */}
-        <View className="px-4 py-4">
-          <View className="flex-row items-center mb-6">
-            <Avatar src={userData.avatar} size="large" />
-            <View className="ml-4 flex-1">
-              <Text className="text-xl font-semibold text-gray-900">
-                {userData.name}
-              </Text>
-              <Text className="text-gray-600">{userData.email}</Text>
+        <View className="px-4">
+          {/* Profile Info */}
+          <View className="py-4">
+            <View className="flex-row items-center justify-between mb-6">
+              <View className="flex-1">
+                <Text className="text-xl font-semibold text-gray-900">
+                  {userData.name}
+                </Text>
+                <Text className="text-sm text-gray-600 mt-1">{userData.email}</Text>
+              </View>
+              {!isPremium ? (
+                <TouchableOpacity
+                  className="px-3 py-1.5 bg-primary/10 rounded-full flex-row items-center"
+                  activeOpacity={0.7}
+                  onPress={handleUpgrade}
+                >
+                  <Star size={12} color={colors.primary} />
+                  <Text className="text-xs font-medium text-primary ml-1">
+                    Upgrade
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <View className="px-3 py-1.5 bg-primary/10 rounded-full">
+                  <Text className="text-xs font-medium text-primary">
+                    PRO
+                  </Text>
+                </View>
+              )}
             </View>
-            <TouchableOpacity
-              className="px-3 py-1 bg-primary/10 rounded-full flex-row items-center"
-              activeOpacity={0.7}
-              onPress={handleUpgrade}
-            >
-              <Star size={12} color="#320DFF" />
-              <Text className="text-xs font-medium text-primary ml-1">
-                Upgrade
-              </Text>
-            </TouchableOpacity>
           </View>
           
           {/* Streak indicators */}
-          <Card className="p-4 mb-6">
-            <View className="flex-row items-center justify-between">
+          <Card className="p-4 mb-6 bg-white border border-gray-100">
+            <View className="flex-row items-center justify-between mb-3">
               <View className="flex-row items-center">
-                <Berry variant="happy" size="tiny" className="mr-2" />
-                <Text className="font-medium text-gray-900">Your Streaks</Text>
+                <Image
+                  source={require('../../assets/berry/berry_streak.png')}
+                  className="w-6 h-6 mr-2"
+                  resizeMode="contain"
+                />
+                <Text className="text-sm font-medium text-gray-900">Your Streaks</Text>
               </View>
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -211,41 +235,41 @@ export default function ProfileScreen() {
                 <Text className="text-xs text-primary">View Details</Text>
               </TouchableOpacity>
             </View>
-            
-            <View className="flex-row mt-3 space-x-4">
+
+            <View className="flex-row gap-4">
               <View className="flex-1 bg-primary/5 rounded-lg p-3">
                 <View className="flex-row items-center mb-1">
-                  <Zap size={14} color="#320DFF" />
-                  <Text className="text-xs text-gray-600 ml-1">
+                  <Zap size={14} color={colors.primary} />
+                  <Text className="text-xs text-gray-600 ml-1.5">
                     Current Streak
                   </Text>
                 </View>
-                <View className="flex-row items-baseline">
+                <View className="flex-row items-baseline mt-1">
                   <Text className="text-2xl font-bold text-gray-900">
                     {streakData.current}
                   </Text>
-                  <Text className="ml-1 text-gray-600 text-sm">days</Text>
+                  <Text className="ml-1 text-sm text-gray-600">days</Text>
                 </View>
               </View>
-              
+
               <View className="flex-1 bg-primary/5 rounded-lg p-3">
                 <View className="flex-row items-center mb-1">
-                  <Trophy size={14} color="#320DFF" />
-                  <Text className="text-xs text-gray-600 ml-1">Max Streak</Text>
+                  <Trophy size={14} color={colors.primary} />
+                  <Text className="text-xs text-gray-600 ml-1.5">Max Streak</Text>
                 </View>
-                <View className="flex-row items-baseline">
+                <View className="flex-row items-baseline mt-1">
                   <Text className="text-2xl font-bold text-gray-900">
                     {streakData.max}
                   </Text>
-                  <Text className="ml-1 text-gray-600 text-sm">days</Text>
+                  <Text className="ml-1 text-sm text-gray-600">days</Text>
                 </View>
               </View>
             </View>
           </Card>
-          
+
           {/* Menu Sections */}
           <View className="space-y-6">
-            {menuItems.map((section) => (
+            {menuItems.map(section => (
               <View key={section.id}>
                 <Text className="text-sm font-medium text-gray-500 mb-2">
                   {section.title}
@@ -300,7 +324,7 @@ export default function ProfileScreen() {
               </View>
             ))}
           </View>
-          
+
           {/* Log Out Button */}
           <TouchableOpacity
             className="flex-row items-center justify-center w-full mt-8 p-4 rounded-xl border border-red-100"
@@ -311,8 +335,7 @@ export default function ProfileScreen() {
             <Text className="font-medium text-red-600 ml-2">Log Out</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
-

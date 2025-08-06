@@ -33,46 +33,50 @@ export const DailyStreakCard: React.FC<DailyStreakCardProps> = ({
   style,
 }) => {
   const scale = useSharedValue(1);
-  
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
-  
+
   const handlePressIn = () => {
     scale.value = withSpring(0.95);
   };
-  
+
   const handlePressOut = () => {
     scale.value = withSpring(1);
   };
-  
+
   const getStreakMessage = () => {
     if (currentStreak === 0) {
-      return "Start your streak today! 💪";
+      return 'Start your streak today! 💪';
     } else if (currentStreak === longestStreak && currentStreak > 0) {
       return "You're on your longest streak! 🔥";
     } else if (isActive) {
       return "Keep it going! You've got this! 🎯";
     } else {
-      return "Log today to continue your streak! ⏰";
+      return 'Log today to continue your streak! ⏰';
     }
   };
-  
+
   const getTimeUntilMidnight = () => {
     const now = new Date();
     const midnight = new Date();
     midnight.setHours(24, 0, 0, 0);
-    const hoursLeft = Math.floor((midnight.getTime() - now.getTime()) / (1000 * 60 * 60));
-    const minutesLeft = Math.floor(((midnight.getTime() - now.getTime()) % (1000 * 60 * 60)) / (1000 * 60));
-    
+    const hoursLeft = Math.floor(
+      (midnight.getTime() - now.getTime()) / (1000 * 60 * 60)
+    );
+    const minutesLeft = Math.floor(
+      ((midnight.getTime() - now.getTime()) % (1000 * 60 * 60)) / (1000 * 60)
+    );
+
     if (!isActive && currentStreak > 0) {
       return `${hoursLeft}h ${minutesLeft}m to save your streak`;
     }
     return null;
   };
-  
+
   const timeWarning = getTimeUntilMidnight();
-  
+
   return (
     <TouchableOpacity
       activeOpacity={0.9}
@@ -98,7 +102,7 @@ export const DailyStreakCard: React.FC<DailyStreakCardProps> = ({
             </View>
           )}
         </View>
-        
+
         {/* Stats Section */}
         <View style={styles.statsRow}>
           <View style={styles.stat}>
@@ -111,31 +115,30 @@ export const DailyStreakCard: React.FC<DailyStreakCardProps> = ({
             <Text style={styles.statLabel}>Longest</Text>
           </View>
         </View>
-        
+
         {/* Message Section */}
         <Text style={styles.message}>{getStreakMessage()}</Text>
-        
+
         {/* Progress Indicator */}
         {currentStreak > 0 && (
           <View style={styles.progressSection}>
             <View style={styles.progressBar}>
-              <View 
+              <View
                 style={[
                   styles.progressFill,
-                  { 
+                  {
                     width: `${Math.min((currentStreak / 30) * 100, 100)}%`,
                     backgroundColor: isActive ? '#4ADE80' : '#FFA500',
-                  }
-                ]} 
+                  },
+                ]}
               />
             </View>
             <Text style={styles.progressText}>
-              {currentStreak < 30 
+              {currentStreak < 30
                 ? `${30 - currentStreak} days to 30-day milestone`
                 : currentStreak < 100
-                ? `${100 - currentStreak} days to 100-day milestone`
-                : 'Legendary streak! 🏆'
-              }
+                  ? `${100 - currentStreak} days to 100-day milestone`
+                  : 'Legendary streak! 🏆'}
             </Text>
           </View>
         )}

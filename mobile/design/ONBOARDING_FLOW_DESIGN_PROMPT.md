@@ -7,6 +7,7 @@ Design a world-class onboarding experience for NutriAI that converts first-time 
 ## Design Principles for Onboarding
 
 ### Core Philosophy
+
 - **Progressive Disclosure**: Don't overwhelm users upfront
 - **Value-First**: Show benefits before asking for information
 - **Personalization**: Make users feel the app is tailored for them
@@ -15,6 +16,7 @@ Design a world-class onboarding experience for NutriAI that converts first-time 
 - **Trust Building**: Professional design that handles data respectfully
 
 ### Visual Consistency
+
 - **Primary Color**: RGB(50, 13, 255) / #320DFF for CTAs and accents
 - **Typography**: Inter font throughout
 - **Spacing**: 4px grid system
@@ -26,6 +28,7 @@ Design a world-class onboarding experience for NutriAI that converts first-time 
 ### 0. App Launch Experience
 
 #### Splash Screen (0-2 seconds)
+
 ```
 Design Requirements:
 - Background: Gradient using primary blue (#320DFF) to lighter shade
@@ -39,21 +42,22 @@ Design Requirements:
 ### 1. Welcome & Value Proposition
 
 #### Welcome Screen (First Launch Only)
+
 ```
 Layout:
 - Hero Illustration: 60% of screen height
   - Show diverse people enjoying meals
   - Include AI visualization elements
   - Bright, optimistic color palette
-  
+
 - Content:
   - Headline: "Welcome to NutriAI"
   - Subheadline: "Track nutrition effortlessly with AI"
-  
+
 - Actions:
   - Primary CTA: "Get Started" (full width, primary button)
   - Secondary: "I already have an account" (text button)
-  
+
 - Design Notes:
   - Status bar: Light content
   - Background: White (#FFFFFF)
@@ -61,6 +65,7 @@ Layout:
 ```
 
 #### Value Proposition Carousel (3 Screens)
+
 ```
 Screen 1: AI-Powered Recognition
 - Illustration: Phone camera recognizing food
@@ -90,6 +95,7 @@ Common Elements:
 ### 2. Authentication Screens
 
 #### Create Account Screen
+
 ```
 Header:
 - Back button: Top left
@@ -102,13 +108,13 @@ Social Authentication Section:
   - Black background, white Apple logo + text
   - Full width, height: 48px
   - "Continue with Apple"
-  
+
 - Google Sign In button:
   - White background, Google logo + text
   - Full width, height: 48px
   - 1px border (#E0E0E0)
   - "Continue with Google"
-  
+
 - Divider: "or" with horizontal lines
 
 Email Authentication:
@@ -117,13 +123,13 @@ Email Authentication:
   - Placeholder: "your@email.com"
   - Keyboard: Email type
   - Validation: Real-time
-  
+
 - Password input field:
   - Label: "Password"
   - Placeholder: "Create a password"
   - Show/hide toggle
   - Strength indicator below
-  
+
 - Password requirements:
   - Small text below field
   - "At least 8 characters"
@@ -143,6 +149,7 @@ States to Design:
 ```
 
 #### Sign In Screen
+
 ```
 Header:
 - Back button: Top left
@@ -172,6 +179,7 @@ Additional States:
 ```
 
 #### Forgot Password Flow
+
 ```
 Screen 1: Email Entry
 - Title: "Reset Password"
@@ -197,6 +205,7 @@ Screen 3: Create New Password
 ### 3. Profile Setup (Post-Authentication)
 
 #### Personal Information Screen
+
 ```
 Header:
 - Progress bar: 20% filled
@@ -207,22 +216,22 @@ Header:
 Form Fields:
 - First Name (required)
   - Placeholder: "First name"
-  
+
 - Last Name (optional)
   - Placeholder: "Last name (optional)"
-  
+
 - Birthday (required)
   - Date picker modal
   - Helps calculate calorie needs
-  
+
 - Biological Sex (required)
   - Segmented control: Male / Female
   - Info icon explaining why needed
-  
+
 - Height (required)
   - Two inputs: Feet + Inches (or CM)
   - Toggle for metric/imperial
-  
+
 - Current Weight (required)
   - Number pad input
   - lbs/kg toggle
@@ -235,6 +244,7 @@ Design Elements:
 ```
 
 #### Activity Level Screen
+
 ```
 Header:
 - Progress bar: 40% filled
@@ -245,19 +255,19 @@ Options (Radio List):
 - Sedentary
   - "Little to no exercise"
   - Icon: Person sitting
-  
+
 - Lightly Active
   - "Exercise 1-3 days/week"
   - Icon: Person walking
-  
+
 - Moderately Active
   - "Exercise 3-5 days/week"
   - Icon: Person jogging
-  
+
 - Very Active
   - "Exercise 6-7 days/week"
   - Icon: Person running
-  
+
 - Extra Active
   - "Physical job or athlete"
   - Icon: Person with weights
@@ -267,6 +277,7 @@ Info: Small text about changing later
 ```
 
 #### Goals Screen
+
 ```
 Header:
 - Progress bar: 60% filled
@@ -277,11 +288,11 @@ Goal Cards (Select One):
 - Lose Weight
   - Icon: Downward trend
   - Description: "Create a calorie deficit"
-  
+
 - Maintain Weight
   - Icon: Balance scale
   - Description: "Stay at current weight"
-  
+
 - Gain Muscle
   - Icon: Flexed arm
   - Description: "Build lean mass"
@@ -296,6 +307,7 @@ CTA: "Set My Goal"
 ```
 
 #### Dietary Preferences Screen
+
 ```
 Header:
 - Progress bar: 80% filled
@@ -325,6 +337,7 @@ Note: "You can update these anytime"
 ```
 
 #### Macro Targets Screen
+
 ```
 Header:
 - Progress bar: 90% filled
@@ -355,6 +368,7 @@ CTA: "Finalize My Plan"
 ### 4. Permissions & Setup
 
 #### Notifications Permission
+
 ```
 Custom UI (Before System Prompt):
 - Illustration: Bell with sparkles
@@ -363,7 +377,7 @@ Custom UI (Before System Prompt):
   - ✓ Meal reminders at your preferred times
   - ✓ Celebrate streaks and achievements
   - ✓ Weekly progress summaries
-  
+
 - CTA: "Enable Notifications"
 - Secondary: "Maybe Later"
 
@@ -373,6 +387,7 @@ System Permission:
 ```
 
 #### Camera & Photos Permission
+
 ```
 When First Needed (Not in Onboarding):
 - Custom explanation screen
@@ -383,6 +398,7 @@ When First Needed (Not in Onboarding):
 ### 5. Onboarding Complete
 
 #### Success Screen
+
 ```
 Elements:
 - Celebration animation (confetti)
@@ -400,6 +416,7 @@ Leads to: Home screen with tooltip tour
 ### 6. First-Use Tutorial
 
 #### Interactive Tooltips (On Home Screen)
+
 ```
 Step 1: Quick Log Button
 - Spotlight effect on button
@@ -426,6 +443,7 @@ Design:
 ## Edge Cases & Error States
 
 ### Network Errors
+
 ```
 Design Pattern:
 - Inline error below form
@@ -435,6 +453,7 @@ Design Pattern:
 ```
 
 ### Social Auth Failures
+
 ```
 Apple Sign In Issues:
 - "Apple Sign In unavailable"
@@ -447,6 +466,7 @@ Google Sign In Issues:
 ```
 
 ### Validation Errors
+
 ```
 Email Issues:
 - "Email already exists" → Link to sign in
@@ -460,6 +480,7 @@ Password Issues:
 ```
 
 ### Account Recovery
+
 ```
 Existing Account Detection:
 - "Looks like you have an account"
@@ -470,6 +491,7 @@ Existing Account Detection:
 ## Micro-interactions & Animations
 
 ### Button States
+
 ```
 Default → Hover: Subtle scale (1.02)
 Tap: Scale down (0.98) + darken
@@ -479,6 +501,7 @@ Disabled: 40% opacity
 ```
 
 ### Screen Transitions
+
 ```
 Forward: Slide in from right (300ms)
 Backward: Slide out to right (300ms)
@@ -487,6 +510,7 @@ All use ease-in-out curves
 ```
 
 ### Input Field Interactions
+
 ```
 Focus: Border color change + label float
 Typing: Real-time validation
@@ -495,6 +519,7 @@ Error: Shake animation + red border
 ```
 
 ### Progress Indicators
+
 ```
 Bar Fill: Animated width increase
 Step Dots: Fade + scale on change
@@ -504,12 +529,14 @@ Circular Progress: Smooth rotation
 ## Copy Guidelines
 
 ### Voice & Tone
+
 - **Friendly**: Like a knowledgeable friend
 - **Encouraging**: Positive reinforcement
 - **Clear**: No jargon or complex terms
 - **Action-Oriented**: Clear next steps
 
 ### Examples
+
 Instead of: "Enter your biological information"
 Use: "Let's get to know you"
 
@@ -522,12 +549,14 @@ Use: "When should we remind you to log meals?"
 ## Platform Considerations
 
 ### iOS Specific
+
 - Apple Sign In: Black button style
 - Face ID: Proper iconography
 - Keyboard: Done button behavior
 - Safe areas: Respect notch/dynamic island
 
 ### Android Specific
+
 - Google Sign In: Material Design specs
 - Back button: System navigation
 - Keyboard: Different heights
@@ -536,18 +565,21 @@ Use: "When should we remind you to log meals?"
 ## Accessibility Requirements
 
 ### Visual
+
 - Color contrast: WCAG AA minimum
 - Text sizing: Support dynamic type
 - Icons: Always paired with labels
 - Focus indicators: Visible
 
 ### Motor
+
 - Touch targets: 44x44px minimum
 - Tap spacing: Adequate padding
 - Swipe alternatives: Buttons available
 - Form navigation: Logical tab order
 
 ### Cognitive
+
 - Clear progression: Always show progress
 - Error recovery: Helpful messages
 - Skip options: For experienced users
@@ -556,6 +588,7 @@ Use: "When should we remind you to log meals?"
 ## Success Metrics to Consider
 
 The onboarding should optimize for:
+
 1. **Completion Rate**: >80% finish onboarding
 2. **Time to Value**: <3 minutes to first meal log
 3. **Field Accuracy**: Minimal corrections needed
@@ -565,6 +598,7 @@ The onboarding should optimize for:
 ## Technical Handoff Notes
 
 ### Assets Needed
+
 - App icon (multiple sizes)
 - Onboarding illustrations (SVG preferred)
 - Lottie animations for celebrations
@@ -572,13 +606,16 @@ The onboarding should optimize for:
 - Progress indicator components
 
 ### State Management
+
 - Save progress between sessions
 - Handle app backgrounding
 - Sync across devices
 - Graceful offline handling
 
 ### Analytics Events
+
 Track each screen view and action:
+
 - Onboarding started
 - Account created (method)
 - Each screen completed

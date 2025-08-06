@@ -5,7 +5,7 @@ This directory should contain PNG images for the Berry mascot character in diffe
 ## Required Berry Variants:
 
 1. **berry-happy.png** - Default happy expression
-2. **berry-excited.png** - Celebration/success state  
+2. **berry-excited.png** - Celebration/success state
 3. **berry-thinking.png** - Processing/loading state
 4. **berry-sad.png** - Error/empty state
 5. **berry-waving.png** - Welcome/greeting state

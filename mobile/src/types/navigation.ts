@@ -6,9 +6,9 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 // Root stack for auth and main app
 export type RootStackParamList = {
   Onboarding: NavigatorScreenParams<OnboardingStackParamList> | undefined;
-  AuthStack: NavigatorScreenParams<AuthStackParamList> | undefined;
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
   AppTabs: NavigatorScreenParams<AppTabParamList> | undefined;
+  App: undefined;
   AddMealFlow: {
     screen: 'Camera' | 'ManualEntry' | 'BarcodeScanner';
     params?: AddMealStackParamList[keyof AddMealStackParamList];
@@ -27,6 +27,7 @@ export type RootStackParamList = {
   MetricsStack: NavigatorScreenParams<MetricsStackParamList> | undefined;
   FoodInputStack: NavigatorScreenParams<FoodInputStackParamList> | undefined;
   Paywall: undefined;
+  PaywallModal: undefined;
   SubscriptionSuccess: undefined;
   ManageSubscription: undefined;
   EditMeal: {
@@ -138,6 +139,7 @@ export type MainTabParamList = {
 
 // Onboarding flow
 export type OnboardingStackParamList = {
+  OnboardingFlow: { initialStep?: string } | undefined;
   Welcome: undefined;
   GoalSelection: undefined;
   PersonalInfo: undefined;

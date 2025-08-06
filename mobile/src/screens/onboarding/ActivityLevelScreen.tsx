@@ -7,22 +7,26 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Sofa,
   Footprints,
   Bike,
   Zap,
   Flame,
-  LucideIcon
+  LucideIcon,
 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
-import { useOnboarding } from './OnboardingFlow';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const ActivityLevelScreen = () => {
-  const { goToNextStep, goToPreviousStep, progress, updateUserData } = useOnboarding();
+  const { goToNextStep, goToPreviousStep, progress, updateUserData } =
+    useOnboarding();
   const [selectedLevel, setSelectedLevel] = useState('');
+  const [backPressed, setBackPressed] = useState(false);
+  const [continuePressed, setContinuePressed] = useState(false);
+  const [pressedOption, setPressedOption] = useState<string | null>(null);
 
   const handleSelect = (level: string) => {
     hapticFeedback.selection();
@@ -82,19 +86,32 @@ const ActivityLevelScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Header with back button */}
         <View style={styles.header}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.backButton}
-            activeOpacity={0.7}
+          <MotiView
+            animate={{
+              scale: backPressed ? 0.95 : 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 15,
+              stiffness: 400,
+            }}
           >
-            <ArrowLeft size={20} color="#000" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleBack}
+              onPressIn={() => setBackPressed(true)}
+              onPressOut={() => setBackPressed(false)}
+              style={styles.backButton}
+              activeOpacity={1}
+            >
+              <ArrowLeft size={20} color="#000" />
+            </TouchableOpacity>
+          </MotiView>
         </View>
 
         {/* Progress bar */}
@@ -125,66 +142,100 @@ const ActivityLevelScreen = () => {
               animate={{ opacity: 1, translateY: 0 }}
               transition={{ delay: index * 100 }}
             >
-              <TouchableOpacity
-                onPress={() => handleSelect(level.value)}
-                activeOpacity={0.7}
-                style={[
-                  styles.optionButton,
-                  selectedLevel === level.value && styles.optionButtonSelected,
-                ]}
-                testID={`activity-option-${level.value}`}
+              <MotiView
+                animate={{
+                  scale: pressedOption === level.value ? 0.95 : 1,
+                }}
+                transition={{
+                  type: 'spring',
+                  damping: 15,
+                  stiffness: 400,
+                }}
               >
-                <View style={styles.optionContent}>
-                  {/* Icon */}
-                  <View style={[
-                    styles.iconContainer,
-                    selectedLevel === level.value && styles.iconContainerSelected,
-                  ]}>
-                    <level.icon 
-                      size={24} 
-                      color={selectedLevel === level.value ? '#320DFF' : '#6B7280'} 
-                    />
-                  </View>
-                  
-                  {/* Text content */}
-                  <View style={styles.textContent}>
-                    <Text
+                <TouchableOpacity
+                  onPress={() => handleSelect(level.value)}
+                  onPressIn={() => setPressedOption(level.value)}
+                  onPressOut={() => setPressedOption(null)}
+                  activeOpacity={1}
+                  style={[
+                    styles.optionButton,
+                    selectedLevel === level.value &&
+                      styles.optionButtonSelected,
+                  ]}
+                  testID={`activity-option-${level.value}`}
+                >
+                  <View style={styles.optionContent}>
+                    {/* Icon */}
+                    <View
                       style={[
-                        styles.optionTitle,
-                        selectedLevel === level.value && styles.optionTitleSelected,
+                        styles.iconContainer,
+                        selectedLevel === level.value &&
+                          styles.iconContainerSelected,
                       ]}
                     >
-                      {level.title}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.optionDescription,
-                        selectedLevel === level.value && styles.optionDescriptionSelected,
-                      ]}
-                    >
-                      {level.description}
-                    </Text>
+                      <level.icon
+                        size={24}
+                        color={
+                          selectedLevel === level.value ? '#320DFF' : '#6B7280'
+                        }
+                      />
+                    </View>
+
+                    {/* Text content */}
+                    <View style={styles.textContent}>
+                      <Text
+                        style={[
+                          styles.optionTitle,
+                          selectedLevel === level.value &&
+                            styles.optionTitleSelected,
+                        ]}
+                      >
+                        {level.title}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.optionDescription,
+                          selectedLevel === level.value &&
+                            styles.optionDescriptionSelected,
+                        ]}
+                      >
+                        {level.description}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </MotiView>
             </MotiView>
           ))}
         </View>
 
         {/* Continue button */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            onPress={handleContinue}
-            style={[
-              styles.continueButton,
-              !selectedLevel && styles.continueButtonDisabled,
-            ]}
-            activeOpacity={selectedLevel ? 0.8 : 1}
-            disabled={!selectedLevel}
-            testID="continue-button"
+          <MotiView
+            animate={{
+              scale: continuePressed ? 0.95 : 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 15,
+              stiffness: 400,
+            }}
           >
-            <Text style={styles.continueButtonText}>Continue</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleContinue}
+              onPressIn={() => setContinuePressed(true)}
+              onPressOut={() => setContinuePressed(false)}
+              style={[
+                styles.continueButton,
+                !selectedLevel && styles.continueButtonDisabled,
+              ]}
+              activeOpacity={1}
+              disabled={!selectedLevel}
+              testID="continue-button"
+            >
+              <Text style={styles.continueButtonText}>Continue</Text>
+            </TouchableOpacity>
+          </MotiView>
         </View>
       </ScrollView>
     </SafeAreaView>

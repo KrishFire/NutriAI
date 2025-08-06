@@ -1,10 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  SafeAreaView,
-  Dimensions,
-} from 'react-native';
+import { View, Text, SafeAreaView, Dimensions } from 'react-native';
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -29,7 +24,10 @@ import type { RootStackParamList } from '../../types/navigation';
 
 const { width, height } = Dimensions.get('window');
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'SubscriptionSuccess'>;
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'SubscriptionSuccess'
+>;
 
 // Confetti Particle Component
 const ConfettiParticle = ({ delay = 0 }) => {
@@ -45,7 +43,7 @@ const ConfettiParticle = ({ delay = 0 }) => {
         withSpring(height * 1.2, { damping: 8, stiffness: 40 })
       )
     );
-    
+
     translateX.value = withDelay(
       delay,
       withRepeat(
@@ -58,10 +56,7 @@ const ConfettiParticle = ({ delay = 0 }) => {
       )
     );
 
-    opacity.value = withDelay(
-      delay + 1500,
-      withSpring(0, { damping: 15 })
-    );
+    opacity.value = withDelay(delay + 1500, withSpring(0, { damping: 15 }));
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -73,7 +68,14 @@ const ConfettiParticle = ({ delay = 0 }) => {
     opacity: opacity.value,
   }));
 
-  const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA726', '#7E57C2', '#66BB6A'];
+  const colors = [
+    '#FF6B6B',
+    '#4ECDC4',
+    '#45B7D1',
+    '#FFA726',
+    '#7E57C2',
+    '#66BB6A',
+  ];
   const color = colors[Math.floor(Math.random() * colors.length)];
 
   return (
@@ -104,7 +106,7 @@ export const SubscriptionSuccessScreen: React.FC = () => {
 
   const handleContinue = async () => {
     await hapticFeedback.impact();
-    
+
     // Reset navigation stack to go back to main app
     navigation.dispatch(
       CommonActions.reset({
@@ -128,9 +130,11 @@ export const SubscriptionSuccessScreen: React.FC = () => {
         <View className="flex-1 p-6">
           {/* Confetti Effect */}
           <View className="absolute inset-0" pointerEvents="none">
-            {Array(15).fill(0).map((_, i) => (
-              <ConfettiParticle key={i} delay={i * 100} />
-            ))}
+            {Array(15)
+              .fill(0)
+              .map((_, i) => (
+                <ConfettiParticle key={i} delay={i * 100} />
+              ))}
           </View>
 
           <View className="flex-1 items-center justify-center">

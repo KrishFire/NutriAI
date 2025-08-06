@@ -83,14 +83,31 @@ const MILESTONE_CONFIG: Record<number, MilestoneConfig> = {
     message: 'Century streak! You are unstoppable!',
     particleCount: 80,
     duration: 5000,
-    colors: ['#FF6B6B', '#4ADE80', '#3B82F6', '#FFA500', '#FFD700', '#A855F7', '#EC4899'],
+    colors: [
+      '#FF6B6B',
+      '#4ADE80',
+      '#3B82F6',
+      '#FFA500',
+      '#FFD700',
+      '#A855F7',
+      '#EC4899',
+    ],
   },
   365: {
     emoji: '👑',
     message: 'One year warrior! Legendary achievement!',
     particleCount: 120,
     duration: 8000,
-    colors: ['#FF6B6B', '#4ADE80', '#3B82F6', '#FFA500', '#FFD700', '#A855F7', '#EC4899', '#14B8A6'],
+    colors: [
+      '#FF6B6B',
+      '#4ADE80',
+      '#3B82F6',
+      '#FFA500',
+      '#FFD700',
+      '#A855F7',
+      '#EC4899',
+      '#14B8A6',
+    ],
   },
 };
 
@@ -118,36 +135,40 @@ const ConfettiParticle: React.FC<{
     translateX.value = withTiming(0, { duration: delay }, () => {
       opacity.value = withTiming(1, { duration: 200 });
       scale.value = withSpring(1);
-      
+
       // Horizontal movement with air resistance
-      translateX.value = withTiming(
-        velocityX * airResistance,
-        { duration, easing: Easing.out(Easing.exp) }
-      );
-      
+      translateX.value = withTiming(velocityX * airResistance, {
+        duration,
+        easing: Easing.out(Easing.exp),
+      });
+
       // Vertical movement with gravity
-      translateY.value = withTiming(
-        SCREEN_HEIGHT * 1.5,
-        { duration, easing: Easing.in(Easing.quad) }
-      );
-      
+      translateY.value = withTiming(SCREEN_HEIGHT * 1.5, {
+        duration,
+        easing: Easing.in(Easing.quad),
+      });
+
       // Rotation
       rotate.value = withRepeat(
         withTiming(360, { duration: duration / 2, easing: Easing.linear }),
         -1,
         false
       );
-      
+
       // Fade out at the end
-      opacity.value = withTiming(0, { 
-        duration: duration * 0.3, 
-        easing: Easing.in(Easing.quad) 
-      }, () => {
-        translateY.value = 0;
-        translateX.value = 0;
-        rotate.value = 0;
-        scale.value = 0;
-      });
+      opacity.value = withTiming(
+        0,
+        {
+          duration: duration * 0.3,
+          easing: Easing.in(Easing.quad),
+        },
+        () => {
+          translateY.value = 0;
+          translateX.value = 0;
+          rotate.value = 0;
+          scale.value = 0;
+        }
+      );
     });
   }, []);
 
@@ -198,7 +219,7 @@ const Confetti: React.FC<{ config: MilestoneConfig }> = ({ config }) => {
 
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-      {particles.map((particle) => (
+      {particles.map(particle => (
         <ConfettiParticle
           key={particle.id}
           delay={particle.delay}
@@ -286,9 +307,11 @@ export const StreakCelebration: React.FC<StreakCelebrationProps> = ({
       //   require('../../assets/sounds/celebration.mp3'),
       //   { shouldPlay: true, volume: 0.5 }
       // );
-      
+
       // soundRef.current = sound;
-      console.log('Sound playback disabled - celebration.mp3 asset not yet added');
+      console.log(
+        'Sound playback disabled - celebration.mp3 asset not yet added'
+      );
     } catch (error) {
       console.log('Error playing celebration sound:', error);
     }
@@ -320,32 +343,26 @@ export const StreakCelebration: React.FC<StreakCelebrationProps> = ({
     >
       <Pressable style={styles.backdrop} onPress={onDismiss}>
         <BlurView intensity={20} style={StyleSheet.absoluteFillObject} />
-        
+
         <Confetti config={milestone} />
-        
-        <Animated.View 
+
+        <Animated.View
           style={[styles.modalContainer, modalAnimatedStyle, glowAnimatedStyle]}
         >
-          <Pressable onPress={(e) => e.stopPropagation()}>
+          <Pressable onPress={e => e.stopPropagation()}>
             <Animated.Text style={[styles.emoji, emojiAnimatedStyle]}>
               {milestone.emoji}
             </Animated.Text>
-            
-            <Text style={styles.title}>
-              {streakCount}-Day Streak!
-            </Text>
-            
-            <Text style={styles.message}>
-              {milestone.message}
-            </Text>
-            
+
+            <Text style={styles.title}>{streakCount}-Day Streak!</Text>
+
+            <Text style={styles.message}>{milestone.message}</Text>
+
             {isPersonalBest && (
-              <Text style={styles.personalBest}>
-                🎉 New Personal Best! 🎉
-              </Text>
+              <Text style={styles.personalBest}>🎉 New Personal Best! 🎉</Text>
             )}
-            
-            <Pressable 
+
+            <Pressable
               style={({ pressed }) => [
                 styles.button,
                 pressed && styles.buttonPressed,

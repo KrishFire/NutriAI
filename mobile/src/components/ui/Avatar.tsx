@@ -52,7 +52,7 @@ export const Avatar: React.FC<AvatarProps> = ({
       '#14B8A6', // teal
       '#6366F1', // indigo
     ];
-    
+
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
   };
@@ -63,11 +63,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         className={`rounded-full overflow-hidden ${className}`}
         style={{ width, height }}
       >
-        <Image
-          source={source}
-          style={{ width, height }}
-          resizeMode="cover"
-        />
+        <Image source={source} style={{ width, height }} resizeMode="cover" />
       </View>
     );
   }
@@ -82,10 +78,7 @@ export const Avatar: React.FC<AvatarProps> = ({
           backgroundColor: getBackgroundColor(name),
         }}
       >
-        <Text
-          className="font-semibold text-white"
-          style={{ fontSize }}
-        >
+        <Text className="font-semibold text-white" style={{ fontSize }}>
           {getInitials(name)}
         </Text>
       </View>

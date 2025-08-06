@@ -3,6 +3,7 @@
 ## Button Component Specs
 
 ### Primary Button
+
 ```
 Container:
 - Height: 48px
@@ -22,6 +23,7 @@ States:
 ```
 
 ### Secondary Button
+
 ```
 Container:
 - Height: 48px
@@ -233,6 +235,7 @@ Label (optional):
 ## Spacing Guidelines
 
 Use these consistently throughout:
+
 - Component spacing: 16px
 - Section spacing: 24px
 - Screen edge padding: 16px
@@ -249,6 +252,7 @@ Use these consistently throughout:
 ## Touch Targets
 
 Following Apple HIG:
+
 - Minimum: 44x44px
 - Recommended: 48x48px
 - Spacing between targets: 8px minimum

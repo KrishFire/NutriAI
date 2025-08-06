@@ -56,7 +56,8 @@ export const GlassMorphism: React.FC<GlassMorphismProps> = ({
         <View
           className={`${border ? 'border border-white/20' : ''}`}
           style={{
-            backgroundColor: color + Math.round(opacityMap[intensity] * 255).toString(16),
+            backgroundColor:
+              color + Math.round(opacityMap[intensity] * 255).toString(16),
           }}
         >
           {children}

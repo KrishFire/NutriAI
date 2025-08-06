@@ -1,7 +1,11 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RecipeStackParamList } from '@/types/navigation';
-import { RecipeListScreen, RecipeDetailScreen, CreateRecipeScreen } from '@/screens/recipe';
+import {
+  RecipeListScreen,
+  RecipeDetailScreen,
+  CreateRecipeScreen,
+} from '@/screens/recipe';
 
 const Stack = createNativeStackNavigator<RecipeStackParamList>();
 
@@ -21,13 +25,13 @@ export function RecipeNavigator() {
             onCreateRecipe={() => {
               // Navigate to CreateRecipe
             }}
-            onSelectRecipe={(recipe) => {
+            onSelectRecipe={recipe => {
               // Navigate to RecipeDetail with recipe
             }}
           />
         )}
       </Stack.Screen>
-      
+
       <Stack.Screen name="RecipeDetail">
         {({ route }) => (
           <RecipeDetailScreen
@@ -35,36 +39,36 @@ export function RecipeNavigator() {
             onBack={() => {
               // Handle navigation back
             }}
-            onEdit={(recipe) => {
+            onEdit={recipe => {
               // Navigate to EditRecipe
             }}
-            onAddToLog={(recipe) => {
+            onAddToLog={recipe => {
               // Handle adding to meal log
             }}
           />
         )}
       </Stack.Screen>
-      
+
       <Stack.Screen name="CreateRecipe">
         {() => (
           <CreateRecipeScreen
             onBack={() => {
               // Handle navigation back
             }}
-            onSave={(recipe) => {
+            onSave={recipe => {
               // Handle save and navigate back
             }}
           />
         )}
       </Stack.Screen>
-      
+
       <Stack.Screen name="EditRecipe">
         {({ route }) => (
           <CreateRecipeScreen
             onBack={() => {
               // Handle navigation back
             }}
-            onSave={(recipe) => {
+            onSave={recipe => {
               // Handle update and navigate back
             }}
           />

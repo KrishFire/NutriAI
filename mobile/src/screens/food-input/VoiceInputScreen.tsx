@@ -1,9 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { PageTransition } from '@/components/ui/PageTransition';
+import { StandardHeaderWithBack } from '@/components/common';
 import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
@@ -18,7 +25,9 @@ export function VoiceInputScreen({ onBack, onCapture }: VoiceInputScreenProps) {
   const [recordingComplete, setRecordingComplete] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [recordingTime, setRecordingTime] = useState(0);
-  const [waveformValues, setWaveformValues] = useState<number[]>(Array(30).fill(5));
+  const [waveformValues, setWaveformValues] = useState<number[]>(
+    Array(30).fill(5)
+  );
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const waveformIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -27,7 +36,8 @@ export function VoiceInputScreen({ onBack, onCapture }: VoiceInputScreenProps) {
     return () => {
       // Cleanup timers
       if (timerRef.current) clearInterval(timerRef.current);
-      if (waveformIntervalRef.current) clearInterval(waveformIntervalRef.current);
+      if (waveformIntervalRef.current)
+        clearInterval(waveformIntervalRef.current);
     };
   }, []);
 
@@ -43,12 +53,12 @@ export function VoiceInputScreen({ onBack, onCapture }: VoiceInputScreenProps) {
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
-      
+
       setRecording(recording);
       setIsRecording(true);
       setRecordingTime(0);
       setTranscript('');
-      
+
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
       // Start timer
@@ -58,14 +68,16 @@ export function VoiceInputScreen({ onBack, onCapture }: VoiceInputScreenProps) {
 
       // Start waveform animation
       waveformIntervalRef.current = setInterval(() => {
-        setWaveformValues(prev => 
+        setWaveformValues(prev =>
           prev.map(() => Math.floor(Math.random() * 30) + 5)
         );
       }, 100);
 
       // Simulate speech recognition after 2 seconds
       setTimeout(() => {
-        setTranscript('I had a chicken salad with avocado, tomatoes, and olive oil dressing');
+        setTranscript(
+          'I had a chicken salad with avocado, tomatoes, and olive oil dressing'
+        );
       }, 2000);
     } catch (err) {
       Alert.alert('Failed to start recording', err as string);
@@ -78,16 +90,16 @@ export function VoiceInputScreen({ onBack, onCapture }: VoiceInputScreenProps) {
 
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
+
       await recording.stopAndUnloadAsync();
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
       });
-      
+
       setRecording(null);
       setIsRecording(false);
       setRecordingComplete(true);
-      
+
       // Stop timers
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -97,7 +109,7 @@ export function VoiceInputScreen({ onBack, onCapture }: VoiceInputScreenProps) {
         clearInterval(waveformIntervalRef.current);
         waveformIntervalRef.current = null;
       }
-      
+
       // Reset waveform
       setWaveformValues(Array(30).fill(5));
     } catch (err) {
@@ -131,20 +143,10 @@ export function VoiceInputScreen({ onBack, onCapture }: VoiceInputScreenProps) {
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
         <View className="flex-1">
           {/* Header */}
-          <View className="px-4 pt-4 pb-4 flex-row items-center">
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.selectionAsync();
-                onBack();
-              }}
-              className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mr-4"
-            >
-              <Ionicons name="arrow-back" size={20} color="#6b7280" />
-            </TouchableOpacity>
-            <Text className="text-xl font-bold text-gray-900 dark:text-white">
-              Voice Input
-            </Text>
-          </View>
+          <StandardHeaderWithBack 
+            title="Voice Input" 
+            onBack={onBack}
+          />
 
           {/* Content */}
           <View className="flex-1 items-center justify-center p-6">
@@ -156,8 +158,12 @@ export function VoiceInputScreen({ onBack, onCapture }: VoiceInputScreenProps) {
               <MotiView
                 animate={{
                   scale: isRecording ? [1, 1.05, 1] : 1,
-                  backgroundColor: isRecording 
-                    ? ['rgba(124, 58, 237, 0.1)', 'rgba(124, 58, 237, 0.2)', 'rgba(124, 58, 237, 0.1)']
+                  backgroundColor: isRecording
+                    ? [
+                        'rgba(124, 58, 237, 0.1)',
+                        'rgba(124, 58, 237, 0.2)',
+                        'rgba(124, 58, 237, 0.1)',
+                      ]
                     : 'rgba(124, 58, 237, 0.1)',
                 }}
                 transition={{
@@ -168,7 +174,7 @@ export function VoiceInputScreen({ onBack, onCapture }: VoiceInputScreenProps) {
                 className="w-40 h-40 rounded-full items-center justify-center mb-8"
               >
                 <Ionicons
-                  name={isRecording ? "stop-circle" : "mic"}
+                  name={isRecording ? 'stop-circle' : 'mic'}
                   size={60}
                   color="#7c3aed"
                 />
@@ -225,7 +231,9 @@ export function VoiceInputScreen({ onBack, onCapture }: VoiceInputScreenProps) {
                 transition={{ duration: 300 }}
                 className="w-full bg-gray-50 dark:bg-gray-800 p-4 rounded-xl mb-8"
               >
-                <Text className="text-gray-900 dark:text-white">{transcript}</Text>
+                <Text className="text-gray-900 dark:text-white">
+                  {transcript}
+                </Text>
               </MotiView>
             )}
 
@@ -238,20 +246,12 @@ export function VoiceInputScreen({ onBack, onCapture }: VoiceInputScreenProps) {
                 className="w-full flex-row space-x-4"
               >
                 <View className="flex-1">
-                  <Button
-                    onPress={handleRetry}
-                    variant="secondary"
-                    fullWidth
-                  >
+                  <Button onPress={handleRetry} variant="secondary" fullWidth>
                     Retry
                   </Button>
                 </View>
                 <View className="flex-1">
-                  <Button
-                    onPress={handleContinue}
-                    variant="primary"
-                    fullWidth
-                  >
+                  <Button onPress={handleContinue} variant="primary" fullWidth>
                     Continue
                   </Button>
                 </View>

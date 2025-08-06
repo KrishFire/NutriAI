@@ -13,11 +13,21 @@ import { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CommonActions } from '@react-navigation/native';
-import { Button, LoadingSpinner, MealCorrectionModal } from '../components';
+import { Button, LoadingSpinner } from '../components';
+import { 
+  MealCorrectionModal, 
+  FoodItemCard, 
+  MealTypeSelector, 
+  NutritionSummary 
+} from '../components/meals';
 import { useAuth } from '../contexts/AuthContext';
 import { RootStackParamList } from '../types/navigation';
 import { MealAnalysis, FoodItem, NutritionData } from '../services/openai';
-import { saveMealAnalysis, getMealDetailsByDateAndType, updateExistingMeal } from '../services/meals';
+import {
+  saveMealAnalysis,
+  getMealDetailsByDateAndType,
+  updateExistingMeal,
+} from '../services/meals';
 import {
   MealAnalysis as SharedMealAnalysis,
   ChatMessage,
@@ -33,8 +43,15 @@ export default function MealDetailsScreen({
   route,
 }: MealDetailsScreenProps) {
   const { user } = useAuth();
-  const { imageUri, analysisData, uploadedImageUrl, mealId, mealGroupId, newFoodItems, isAddingToExisting } =
-    route.params;
+  const {
+    imageUri,
+    analysisData,
+    uploadedImageUrl,
+    mealId,
+    mealGroupId,
+    newFoodItems,
+    isAddingToExisting,
+  } = route.params;
 
   const [editedAnalysis, setEditedAnalysis] = useState<MealAnalysis>(
     analysisData || {
@@ -51,12 +68,17 @@ export default function MealDetailsScreen({
   const [isExistingMeal, setIsExistingMeal] = useState(false);
   const [existingMealType, setExistingMealType] = useState<string | null>(null);
   const [canRefineWithAI, setCanRefineWithAI] = useState(false);
-  const [realMealGroupId, setRealMealGroupId] = useState<string | null>(mealGroupId || null);
+  const [realMealGroupId, setRealMealGroupId] = useState<string | null>(
+    mealGroupId || null
+  );
 
   // Set canRefineWithAI based on whether we have a real meal group ID
   useEffect(() => {
     if (realMealGroupId) {
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(realMealGroupId);
+      const isUUID =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          realMealGroupId
+        );
       setCanRefineWithAI(isUUID);
     }
   }, [realMealGroupId]);
@@ -65,30 +87,37 @@ export default function MealDetailsScreen({
   useEffect(() => {
     async function loadMealData() {
       if (!mealId || analysisData || !user) return;
-      
+
       // Check if this is a real meal_group_id (UUID format) or synthetic ID
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(mealId);
+      const isUUID =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          mealId
+        );
       setCanRefineWithAI(isUUID);
-      
+
       if (!isUUID) {
         // Parse synthetic mealId format: "2025-07-13-lunch"
         const parts = mealId.split('-');
         if (parts.length < 4) return;
-        
+
         const date = `${parts[0]}-${parts[1]}-${parts[2]}`;
         const mealType = parts[3];
-        
+
         setLoading(true);
         setError(null);
-        
+
         try {
-          const result = await getMealDetailsByDateAndType(user.id, date, mealType);
-          
+          const result = await getMealDetailsByDateAndType(
+            user.id,
+            date,
+            mealType
+          );
+
           if (result.success && result.data) {
             setEditedAnalysis(result.data);
             setIsExistingMeal(true);
             setExistingMealType(mealType);
-            
+
             // If we got a real meal_group_id, update our state
             if (result.mealGroupId) {
               setRealMealGroupId(result.mealGroupId);
@@ -108,7 +137,7 @@ export default function MealDetailsScreen({
         setCanRefineWithAI(true);
       }
     }
-    
+
     loadMealData();
   }, [mealId, analysisData, user]);
 
@@ -151,7 +180,10 @@ export default function MealDetailsScreen({
       setEditedAnalysis(updatedAnalysis);
 
       // Clear navigation param to prevent re-adding on re-render
-      navigation.setParams({ newFoodItems: undefined, isAddingToExisting: undefined });
+      navigation.setParams({
+        newFoodItems: undefined,
+        isAddingToExisting: undefined,
+      });
 
       // If adding to existing meal, save automatically
       if (isAddingToExisting && mealId && user) {
@@ -181,11 +213,11 @@ export default function MealDetailsScreen({
                             routes: [
                               { name: 'Home' },
                               { name: 'History' },
-                              { name: 'Profile' }
-                            ]
-                          }
-                        }
-                      ]
+                              { name: 'Profile' },
+                            ],
+                          },
+                        },
+                      ],
                     })
                   );
                 },
@@ -333,7 +365,7 @@ export default function MealDetailsScreen({
           uploadedImageUrl,
           editedAnalysis.notes
         );
-        
+
         if (result.success) {
           Alert.alert('Success!', 'Meal updated successfully!', [
             {
@@ -351,11 +383,11 @@ export default function MealDetailsScreen({
                           routes: [
                             { name: 'Home' },
                             { name: 'History' },
-                            { name: 'Profile' }
-                          ]
-                        }
-                      }
-                    ]
+                            { name: 'Profile' },
+                          ],
+                        },
+                      },
+                    ],
                   })
                 );
               },
@@ -427,11 +459,11 @@ export default function MealDetailsScreen({
                         routes: [
                           { name: 'Home' },
                           { name: 'History' },
-                          { name: 'Profile' }
-                        ]
-                      }
-                    }
-                  ]
+                          { name: 'Profile' },
+                        ],
+                      },
+                    },
+                  ],
                 })
               );
             },
@@ -509,7 +541,9 @@ export default function MealDetailsScreen({
           <Text style={styles.errorText}>{error}</Text>
           <Button
             title="Go Back"
-            onPress={() => navigation.navigate('AppTabs', { screen: 'History' })}
+            onPress={() =>
+              navigation.navigate('AppTabs', { screen: 'History' })
+            }
             variant="primary"
             size="medium"
           />
@@ -607,7 +641,7 @@ export default function MealDetailsScreen({
             />
           )}
           <Button
-            title={isExistingMeal ? "Update Meal" : "Save Meal"}
+            title={isExistingMeal ? 'Update Meal' : 'Save Meal'}
             onPress={saveMeal}
             variant="primary"
             loading={saving}
@@ -626,7 +660,10 @@ export default function MealDetailsScreen({
             foods: editedAnalysis.foods.map(food => ({
               name: food.name,
               quantity: parseFloat(food.quantity) || 1,
-              unit: (typeof food.quantity === 'string' ? food.quantity.replace(/[0-9.]/g, '').trim() : '') || 'serving',
+              unit:
+                (typeof food.quantity === 'string'
+                  ? food.quantity.replace(/[0-9.]/g, '').trim()
+                  : '') || 'serving',
               calories: food.nutrition.calories,
               protein: food.nutrition.protein,
               carbs: food.nutrition.carbs,
@@ -721,261 +758,6 @@ export default function MealDetailsScreen({
   );
 }
 
-interface FoodItemCardProps {
-  food: FoodItem;
-  onUpdate: (food: FoodItem) => void;
-  onRemove: () => void;
-}
-
-function FoodItemCard({ food, onUpdate, onRemove }: FoodItemCardProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedFood, setEditedFood] = useState(food);
-
-  const handleSave = () => {
-    onUpdate(editedFood);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setEditedFood(food);
-    setIsEditing(false);
-  };
-
-  if (isEditing) {
-    return (
-      <View style={styles.foodCard}>
-        <View style={styles.editHeader}>
-          <Text style={styles.editTitle}>Edit Food Item</Text>
-          <TouchableOpacity onPress={onRemove} style={styles.removeButton}>
-            <Text style={styles.removeButtonText}>🗑️</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.editForm}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Food Name</Text>
-            <TextInput
-              style={styles.textInput}
-              value={editedFood.name}
-              onChangeText={text =>
-                setEditedFood({ ...editedFood, name: text })
-              }
-              placeholder="Enter food name"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Quantity</Text>
-            <TextInput
-              style={styles.textInput}
-              value={editedFood.quantity}
-              onChangeText={text =>
-                setEditedFood({ ...editedFood, quantity: text })
-              }
-              placeholder="e.g., 1 cup, 150g"
-            />
-          </View>
-
-          <View style={styles.nutritionInputs}>
-            <View style={styles.nutritionRow}>
-              <View style={styles.nutritionInput}>
-                <Text style={styles.inputLabel}>Calories</Text>
-                <TextInput
-                  style={styles.numberInput}
-                  value={editedFood.nutrition.calories.toString()}
-                  onChangeText={text =>
-                    setEditedFood({
-                      ...editedFood,
-                      nutrition: {
-                        ...editedFood.nutrition,
-                        calories: parseInt(text) || 0,
-                      },
-                    })
-                  }
-                  keyboardType="numeric"
-                />
-              </View>
-              <View style={styles.nutritionInput}>
-                <Text style={styles.inputLabel}>Protein (g)</Text>
-                <TextInput
-                  style={styles.numberInput}
-                  value={editedFood.nutrition.protein.toString()}
-                  onChangeText={text =>
-                    setEditedFood({
-                      ...editedFood,
-                      nutrition: {
-                        ...editedFood.nutrition,
-                        protein: parseFloat(text) || 0,
-                      },
-                    })
-                  }
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-
-            <View style={styles.nutritionRow}>
-              <View style={styles.nutritionInput}>
-                <Text style={styles.inputLabel}>Carbs (g)</Text>
-                <TextInput
-                  style={styles.numberInput}
-                  value={editedFood.nutrition.carbs.toString()}
-                  onChangeText={text =>
-                    setEditedFood({
-                      ...editedFood,
-                      nutrition: {
-                        ...editedFood.nutrition,
-                        carbs: parseFloat(text) || 0,
-                      },
-                    })
-                  }
-                  keyboardType="numeric"
-                />
-              </View>
-              <View style={styles.nutritionInput}>
-                <Text style={styles.inputLabel}>Fat (g)</Text>
-                <TextInput
-                  style={styles.numberInput}
-                  value={editedFood.nutrition.fat.toString()}
-                  onChangeText={text =>
-                    setEditedFood({
-                      ...editedFood,
-                      nutrition: {
-                        ...editedFood.nutrition,
-                        fat: parseFloat(text) || 0,
-                      },
-                    })
-                  }
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.editActions}>
-            <Button
-              title="Cancel"
-              onPress={handleCancel}
-              variant="outline"
-              size="small"
-              style={styles.editButton}
-            />
-            <Button
-              title="Save"
-              onPress={handleSave}
-              variant="primary"
-              size="small"
-              style={styles.editButton}
-            />
-          </View>
-        </View>
-      </View>
-    );
-  }
-
-  return (
-    <TouchableOpacity
-      style={styles.foodCard}
-      onPress={() => setIsEditing(true)}
-    >
-      <View style={styles.foodHeader}>
-        <View style={styles.foodInfo}>
-          <Text style={styles.foodName}>{food.name}</Text>
-          <Text style={styles.foodQuantity}>{food.quantity}</Text>
-        </View>
-      </View>
-
-      <View style={styles.nutritionGrid}>
-        <View style={styles.nutritionItem}>
-          <Text style={styles.nutritionValue}>{food.nutrition.calories}</Text>
-          <Text style={styles.nutritionLabel}>cal</Text>
-        </View>
-        <View style={styles.nutritionItem}>
-          <Text style={styles.nutritionValue}>{food.nutrition.protein}g</Text>
-          <Text style={styles.nutritionLabel}>protein</Text>
-        </View>
-        <View style={styles.nutritionItem}>
-          <Text style={styles.nutritionValue}>{food.nutrition.carbs}g</Text>
-          <Text style={styles.nutritionLabel}>carbs</Text>
-        </View>
-        <View style={styles.nutritionItem}>
-          <Text style={styles.nutritionValue}>{food.nutrition.fat}g</Text>
-          <Text style={styles.nutritionLabel}>fat</Text>
-        </View>
-      </View>
-
-      <Text style={styles.editHint}>Tap to edit</Text>
-    </TouchableOpacity>
-  );
-}
-
-interface NutritionSummaryProps {
-  nutrition: NutritionData;
-}
-
-function NutritionSummary({ nutrition }: NutritionSummaryProps) {
-  // Ensure nutrition object exists and has valid values
-  const safeNutrition = {
-    calories: Number(nutrition?.calories) || 0,
-    protein: Number(nutrition?.protein) || 0,
-    carbs: Number(nutrition?.carbs) || 0,
-    fat: Number(nutrition?.fat) || 0,
-    fiber: Number(nutrition?.fiber) || 0,
-    sugar: Number(nutrition?.sugar) || 0,
-    sodium: Number(nutrition?.sodium) || 0,
-  };
-
-  return (
-    <View style={styles.nutritionSummary}>
-      <View style={styles.macroRow}>
-        <View style={styles.macroItem}>
-          <Text style={styles.macroValue}>{safeNutrition.calories}</Text>
-          <Text style={styles.macroLabel}>Calories</Text>
-        </View>
-        <View style={styles.macroItem}>
-          <Text style={styles.macroValue}>{safeNutrition.protein}g</Text>
-          <Text style={styles.macroLabel}>Protein</Text>
-        </View>
-        <View style={styles.macroItem}>
-          <Text style={styles.macroValue}>{safeNutrition.carbs}g</Text>
-          <Text style={styles.macroLabel}>Carbs</Text>
-        </View>
-        <View style={styles.macroItem}>
-          <Text style={styles.macroValue}>{safeNutrition.fat}g</Text>
-          <Text style={styles.macroLabel}>Fat</Text>
-        </View>
-      </View>
-
-      {(safeNutrition.fiber > 0 ||
-        safeNutrition.sugar > 0 ||
-        safeNutrition.sodium > 0) && (
-        <View style={styles.microRow}>
-          {safeNutrition.fiber > 0 && (
-            <View style={styles.microItem}>
-              <Text style={styles.microValue}>
-                {safeNutrition.fiber}g fiber
-              </Text>
-            </View>
-          )}
-          {safeNutrition.sugar > 0 && (
-            <View style={styles.microItem}>
-              <Text style={styles.microValue}>
-                {safeNutrition.sugar}g sugar
-              </Text>
-            </View>
-          )}
-          {safeNutrition.sodium > 0 && (
-            <View style={styles.microItem}>
-              <Text style={styles.microValue}>
-                {safeNutrition.sodium}mg sodium
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -1105,7 +887,7 @@ const styles = StyleSheet.create({
   },
   methodOptions: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 24,
   },
   methodOption: {
     flexDirection: 'row',

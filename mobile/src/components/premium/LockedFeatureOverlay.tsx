@@ -105,26 +105,18 @@ export const LockedFeatureOverlay: React.FC<LockedFeatureOverlayProps> = ({
                 <Text className="text-xl font-bold text-gray-900 dark:text-white text-center mb-2">
                   Premium Feature
                 </Text>
-                
+
                 <Text className="text-gray-600 dark:text-gray-400 text-center mb-6">
                   {featureName} is available exclusively to Premium subscribers.
                   Upgrade now to unlock this and all other premium features.
                 </Text>
 
                 <View className="space-y-3">
-                  <Button
-                    variant="primary"
-                    fullWidth
-                    onPress={handleUpgrade}
-                  >
+                  <Button variant="primary" fullWidth onPress={handleUpgrade}>
                     Upgrade to Premium
                   </Button>
-                  
-                  <Button
-                    variant="secondary"
-                    fullWidth
-                    onPress={handleClose}
-                  >
+
+                  <Button variant="secondary" fullWidth onPress={handleClose}>
                     Maybe Later
                   </Button>
                 </View>

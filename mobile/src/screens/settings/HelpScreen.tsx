@@ -32,27 +32,32 @@ const faqs: FAQ[] = [
   {
     id: '1',
     question: 'How does the app calculate my calorie goal?',
-    answer: 'We use your age, gender, height, weight, activity level, and goals to calculate your Basal Metabolic Rate (BMR) and Total Daily Energy Expenditure (TDEE). This gives us a personalized calorie target to help you reach your goals.',
+    answer:
+      'We use your age, gender, height, weight, activity level, and goals to calculate your Basal Metabolic Rate (BMR) and Total Daily Energy Expenditure (TDEE). This gives us a personalized calorie target to help you reach your goals.',
   },
   {
     id: '2',
     question: 'How accurate is the AI food recognition?',
-    answer: "Our AI food recognition is designed to be as accurate as possible, but it's still in beta. It works best with clearly visible, common foods. You can always adjust the results if needed. The technology improves over time as more people use it.",
+    answer:
+      "Our AI food recognition is designed to be as accurate as possible, but it's still in beta. It works best with clearly visible, common foods. You can always adjust the results if needed. The technology improves over time as more people use it.",
   },
   {
     id: '3',
     question: 'How do I reset my password?',
-    answer: "To reset your password, go to the Profile screen, tap on 'Account', then 'Change Password'. If you're logged out, use the 'Forgot Password' option on the login screen to receive a password reset link via email.",
+    answer:
+      "To reset your password, go to the Profile screen, tap on 'Account', then 'Change Password'. If you're logged out, use the 'Forgot Password' option on the login screen to receive a password reset link via email.",
   },
   {
     id: '4',
     question: 'Can I sync with my fitness tracker?',
-    answer: 'Yes! Go to Profile > Health Data to connect with Apple Health, Google Fit, or other fitness trackers. This allows the app to factor in your activity and exercise when calculating your daily calorie needs.',
+    answer:
+      'Yes! Go to Profile > Health Data to connect with Apple Health, Google Fit, or other fitness trackers. This allows the app to factor in your activity and exercise when calculating your daily calorie needs.',
   },
   {
     id: '5',
     question: 'How do I cancel my subscription?',
-    answer: "You can manage your subscription through your App Store (iOS) or Google Play (Android) account settings. Go to your device's subscription management section to cancel. Your Premium features will remain active until the end of your billing period.",
+    answer:
+      "You can manage your subscription through your App Store (iOS) or Google Play (Android) account settings. Go to your device's subscription management section to cancel. Your Premium features will remain active until the end of your billing period.",
   },
 ];
 
@@ -70,7 +75,10 @@ export default function HelpScreen() {
 
   const handleSendMessage = async () => {
     if (!messageSubject.trim() || !messageBody.trim()) {
-      Alert.alert('Missing Information', 'Please fill in both subject and message fields.');
+      Alert.alert(
+        'Missing Information',
+        'Please fill in both subject and message fields.'
+      );
       return;
     }
 
@@ -115,10 +123,13 @@ export default function HelpScreen() {
                 animate={{ rotate: isExpanded ? '180deg' : '0deg' }}
                 transition={{ type: 'timing', duration: 300 }}
               >
-                <ChevronDown size={20} className="text-gray-500 dark:text-gray-400" />
+                <ChevronDown
+                  size={20}
+                  className="text-gray-500 dark:text-gray-400"
+                />
               </MotiView>
             </View>
-            
+
             <AnimatePresence>
               {isExpanded && (
                 <MotiView
@@ -179,14 +190,18 @@ export default function HelpScreen() {
           >
             <View className="flex-row items-start">
               <View className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/50 items-center justify-center mr-3 flex-shrink-0">
-                <HelpCircle size={20} className="text-primary-600 dark:text-primary-400" />
+                <HelpCircle
+                  size={20}
+                  className="text-primary-600 dark:text-primary-400"
+                />
               </View>
               <View className="flex-1">
                 <Text className="font-medium text-gray-900 dark:text-white mb-1">
                   Need help?
                 </Text>
                 <Text className="text-sm text-gray-700 dark:text-gray-300">
-                  Check our FAQs below or send us a message. We'll get back to you within 1-2 business days.
+                  Check our FAQs below or send us a message. We'll get back to
+                  you within 1-2 business days.
                 </Text>
               </View>
             </View>
@@ -207,7 +222,7 @@ export default function HelpScreen() {
             <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Contact Support
             </Text>
-            
+
             <MotiView
               from={{ opacity: 0, translateY: 20 }}
               animate={{ opacity: 1, translateY: 0 }}
@@ -227,7 +242,7 @@ export default function HelpScreen() {
                   editable={!isSending}
                 />
               </View>
-              
+
               <View className="mb-4">
                 <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Message
@@ -245,7 +260,7 @@ export default function HelpScreen() {
                   editable={!isSending}
                 />
               </View>
-              
+
               <TouchableOpacity
                 className={`py-3 rounded-lg flex-row items-center justify-center ${
                   isSending || !messageSubject.trim() || !messageBody.trim()
@@ -253,7 +268,9 @@ export default function HelpScreen() {
                     : 'bg-primary-600 dark:bg-primary-500'
                 }`}
                 onPress={handleSendMessage}
-                disabled={isSending || !messageSubject.trim() || !messageBody.trim()}
+                disabled={
+                  isSending || !messageSubject.trim() || !messageBody.trim()
+                }
               >
                 <MessageCircle size={18} className="text-white mr-2" />
                 <Text className="text-white font-medium">
@@ -271,7 +288,11 @@ export default function HelpScreen() {
               transition={{ type: 'timing', duration: 500, delay: 500 }}
               className="flex-row items-center"
             >
-              <Heart size={14} className="text-red-500 mr-1" fill="currentColor" />
+              <Heart
+                size={14}
+                className="text-red-500 mr-1"
+                fill="currentColor"
+              />
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 Made with love
               </Text>

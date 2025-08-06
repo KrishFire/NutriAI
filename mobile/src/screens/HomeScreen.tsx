@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Text,
   View,
@@ -7,7 +7,9 @@ import {
   RefreshControl,
   ActivityIndicator,
   Image,
+  Animated,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -29,13 +31,14 @@ import {
 } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { TAB_BAR_HEIGHT, fontSize, colors } from '../utils/tokens';
+import { TAB_BAR_HEIGHT, fontSize } from '../utils/tokens';
 import { hapticFeedback } from '../utils/haptics';
 import { useLeadingDebounce } from '../hooks/useLeadingDebounce';
 import { useDailyProgress } from '../hooks/useDailyProgress';
 import { useSubscription } from '../contexts/SubscriptionContext';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useHeaderHeight } from '../hooks/useHeaderHeight';
 import { SPACING } from '../constants';
+import { colors } from '../constants/theme';
 
 // Import ALL UI components from the exact design
 import {
@@ -47,7 +50,8 @@ import {
 } from '../components/ui';
 import { PremiumBanner } from '../components/premium';
 import { FeedbackForm } from '../components/feedback';
-import { AnimationErrorBoundary } from '../components/common';
+import { AnimationErrorBoundary, HomeHeader } from '../components/common';
+import ScrollAwareHeader from '../components/common/ScrollAwareHeader';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   StackNavigationProp<HomeStackParamList, 'HomeScreen'>,
@@ -60,7 +64,8 @@ type HomeScreenNavigationProp = CompositeNavigationProp<
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { data, loading, error, refreshing, refresh } = useDailyProgress();
-  const insets = useSafeAreaInsets();
+  const { headerHeight } = useHeaderHeight();
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   // TODO: Connect to actual data source once backend is ready
   const { canAccessPremiumFeatures, plan } = useSubscription();
@@ -71,12 +76,8 @@ export default function HomeScreen() {
   const [showThankYou, setShowThankYou] = useState(false);
   const [showPremiumBanner, setShowPremiumBanner] = useState(false);
 
-  // Macro colors from tokens
-  const macroColors = {
-    carbs: colors.macro.carbs,
-    protein: colors.macro.protein,
-    fat: colors.macro.fat,
-  };
+  // Macro colors from theme
+  const macroColors = colors.macro;
 
   // Determine if we should show premium banner
   useEffect(() => {
@@ -215,8 +216,23 @@ export default function HomeScreen() {
   return (
     <AnimationErrorBoundary>
       <View className="flex-1 bg-white">
-        <ScrollView
+        <ScrollAwareHeader scrollY={scrollY}>
+          <HomeHeader
+            userName={displayData.userName}
+            greeting={getGreeting()}
+            streak={displayData.streak || 7}
+            notificationCount={3}
+            onStreakPress={handleStreakClick}
+            onNotificationPress={handleNotificationsClick}
+          />
+        </ScrollAwareHeader>
+        
+        <Animated.ScrollView
           className="flex-1"
+          contentContainerStyle={{
+            paddingTop: headerHeight + 20, // Dynamic header height + spacing
+            paddingBottom: TAB_BAR_HEIGHT + 20,
+          }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -225,111 +241,23 @@ export default function HomeScreen() {
               tintColor="#320DFF"
             />
           }
-          contentContainerStyle={{
-            paddingBottom: TAB_BAR_HEIGHT + insets.bottom + 20,
-          }}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
         >
-          {/* Main content container with consistent spacing */}
-          <View
-            style={{
-              paddingTop: insets.top + SPACING.lg,
-              paddingHorizontal: SPACING.md,
-              gap: SPACING.xxxl,
-            }}
-          >
-            {/* Header */}
-            <MotiView
-              className="flex-row justify-between items-center"
-              from={{ opacity: 0, translateY: -20 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ duration: 400, type: 'timing' }}
-            >
-              <View>
-                <MotiView
-                  from={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 200, duration: 300 }}
-                >
-                  <Text
-                    className="text-gray-600"
-                    style={{ fontSize: fontSize.body }}
-                  >
-                    {getGreeting()},
-                  </Text>
-                </MotiView>
-                <MotiView
-                  from={{ opacity: 0, translateX: -20 }}
-                  animate={{ opacity: 1, translateX: 0 }}
-                  transition={{ delay: 300, type: 'spring', damping: 20 }}
-                >
-                  <Text
-                    className="font-bold"
-                    style={{ fontSize: fontSize.header }}
-                  >
-                    {displayData.userName}
-                  </Text>
-                </MotiView>
-              </View>
-              <View className="flex-row items-center" style={{ gap: 16 }}>
-                <TouchableOpacity
-                  className="rounded-full flex-row items-center"
-                  style={{ 
-                    backgroundColor: '#F3F0FF', // Light purple background like premium banner
-                    paddingHorizontal: 8, 
-                    paddingVertical: 4, 
-                    minWidth: 51 
-                  }}
-                  onPress={handleStreakClick}
-                >
-                  <Image
-                    source={require('../../assets/berry/berry_streak.png')}
-                    style={{ width: 24, height: 24 }}
-                  />
-                  <Text
-                    className="font-medium"
-                    style={{ 
-                      fontSize: 14, 
-                      marginLeft: 4,
-                      color: '#320DFF' // Dark purple color for number
-                    }}
-                  >
-                    {displayData.streak || 7}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className="bg-gray-100 rounded-full relative"
-                  style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}
-                  onPress={handleNotificationsClick}
-                >
-                  <Bell size={20} color="#6B7280" />
-                  <View 
-                    className="absolute bg-red-500 rounded-full items-center justify-center"
-                    style={{ 
-                      width: 20, 
-                      height: 20, 
-                      top: 0, 
-                      right: 0,
-                    }}
-                  >
-                    <Text
-                      className="text-white font-bold"
-                      style={{ fontSize: 10.2 }}
-                    >
-                      3
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </MotiView>
+          <View className="px-4">
 
-            {/* Premium Banner - Only shown occasionally */}
-            {showPremiumBanner && (
-              <MotiView
-                from={{ opacity: 0, translateY: 20 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ delay: 500, duration: 400 }}
-              >
-                <TouchableOpacity
+          {/* Premium Banner - Only shown occasionally */}
+          {showPremiumBanner && (
+            <MotiView
+              from={{ opacity: 0, translateY: 20 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ delay: 500, duration: 400 }}
+              className="mb-6"
+            >
+              <TouchableOpacity
                   onPress={handleUpgrade}
                   style={{
                     backgroundColor: '#F3F0FF',
@@ -344,7 +272,7 @@ export default function HomeScreen() {
                       width: 40,
                       height: 40,
                       borderRadius: 20,
-                      backgroundColor: '#320DFF',
+                      backgroundColor: colors.primary,
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
@@ -370,7 +298,7 @@ export default function HomeScreen() {
                     </Text>
                     <TouchableOpacity
                       style={{
-                        backgroundColor: '#320DFF',
+                        backgroundColor: colors.primary,
                         paddingHorizontal: 25,
                         paddingVertical: 19,
                         borderRadius: 999,
@@ -397,16 +325,17 @@ export default function HomeScreen() {
                       </Text>
                     </TouchableOpacity>
                   </View>
-                </TouchableOpacity>
-              </MotiView>
-            )}
+              </TouchableOpacity>
+            </MotiView>
+          )}
 
-            {/* Daily Progress - No card container */}
-            <MotiView
-              from={{ opacity: 0, translateY: 30 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ delay: 600, duration: 500, type: 'timing' }}
-            >
+          {/* Daily Progress - No card container */}
+          <MotiView
+            from={{ opacity: 0, translateY: 30 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 600, duration: 500, type: 'timing' }}
+            className="mb-6"
+          >
               <View style={{ paddingVertical: 24 }}>
                 <View className="flex-row justify-between w-full mb-9">
                   <Text
@@ -430,7 +359,7 @@ export default function HomeScreen() {
                   <View className="w-48 h-48 relative mb-16">
                     <ProgressRing
                       percentage={displayData.calories.percentage}
-                      color="#320DFF"
+                      color={colors.primary}
                       size={192}
                       strokeWidth={12}
                       animate={animateCalories}
@@ -455,7 +384,7 @@ export default function HomeScreen() {
                       <ParticleEffect
                         type="sparkle"
                         intensity="medium"
-                        colors={['#320DFF', '#4F46E5', '#818CF8']}
+                        colors={[colors.primary, '#4F46E5', '#818CF8']}
                         duration={2}
                       />
                     )}
@@ -515,15 +444,16 @@ export default function HomeScreen() {
                     )}
                   </View>
                 </View>
-              </View>
-            </MotiView>
+            </View>
+          </MotiView>
 
-            {/* Today's Meals */}
-            <MotiView
-              from={{ opacity: 0, translateY: 30 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ delay: 1100, duration: 500, type: 'timing' }}
-            >
+          {/* Today's Meals */}
+          <MotiView
+            from={{ opacity: 0, translateY: 30 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 1100, duration: 500, type: 'timing' }}
+            className="mb-6"
+          >
               <MotiView
                 from={{ opacity: 0, translateX: -20 }}
                 animate={{ opacity: 1, translateX: 0 }}
@@ -572,15 +502,16 @@ export default function HomeScreen() {
                     </MotiView>
                   ))}
                 </AnimatePresence>
-              )}
-            </MotiView>
+            )}
+          </MotiView>
 
-            {/* Quick Actions */}
-            <MotiView
-              from={{ opacity: 0, translateY: 30 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ delay: 1400, duration: 500, type: 'timing' }}
-            >
+          {/* Quick Actions */}
+          <MotiView
+            from={{ opacity: 0, translateY: 30 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 1400, duration: 500, type: 'timing' }}
+            className="mb-6"
+          >
               <View style={{ paddingTop: 24, paddingBottom: 12 }}>
                 <View className="flex-row" style={{ gap: 8 }}>
                   {[
@@ -612,7 +543,7 @@ export default function HomeScreen() {
                           marginBottom: 8,
                         }}
                       >
-                        <action.icon size={18} color="#320DFF" />
+                        <action.icon size={18} color={colors.primary} />
                       </View>
                       <Text
                         className="text-gray-700"
@@ -622,18 +553,18 @@ export default function HomeScreen() {
                       </Text>
                     </TouchableOpacity>
                   ))}
-                </View>
               </View>
-            </MotiView>
+            </View>
+          </MotiView>
 
-            {/* Feedback button - centered at bottom */}
-            <MotiView
-              className="items-center"
-              from={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1900, duration: 400 }}
-              style={{ paddingTop: 0, paddingBottom: 16 }}
-            >
+          {/* Feedback button - centered at bottom */}
+          <MotiView
+            className="items-center"
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1900, duration: 400 }}
+            style={{ paddingTop: 0, paddingBottom: 16 }}
+          >
               <TouchableOpacity
                 onPress={handleOpenFeedback}
                 className="flex-row items-center justify-center"
@@ -649,7 +580,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </MotiView>
           </View>
-        </ScrollView>
+        </Animated.ScrollView>
 
         {/* Feedback Form */}
         <FeedbackForm

@@ -1,20 +1,9 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-  ArrowLeft,
-  Heart,
-  Plus,
-  Minus,
-} from 'lucide-react-native';
+import { ArrowLeft, Heart, Plus, Minus } from 'lucide-react-native';
 import Animated, {
   FadeIn,
   useAnimatedStyle,
@@ -22,7 +11,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { hapticFeedback } from '../utils/haptics';
-import tokens from '../../tokens.json';
+import tokens from '../utils/tokens';
 
 type RouteParams = {
   FoodDetails: {
@@ -47,8 +36,24 @@ export default function FoodDetailsScreen() {
   const [selectedMealType, setSelectedMealType] = useState(mealType);
   const [selectedPortion, setSelectedPortion] = useState('serving');
   const [quantity, setQuantity] = useState(1);
+  const [isAddingToLog, setIsAddingToLog] = useState(false);
 
   const scale = useSharedValue(1);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    if (isAddingToLog) {
+      timeoutId = setTimeout(() => setIsAddingToLog(false), 500);
+    }
+    
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [isAddingToLog]);
 
   const nutritionItems = [
     {
@@ -111,19 +116,37 @@ export default function FoodDetailsScreen() {
     });
   };
 
-  const handleAddToLog = () => {
+  const handleAddToLog = async () => {
+    // Prevent multiple simultaneous submissions
+    if (isAddingToLog) return;
+
+    setIsAddingToLog(true);
     hapticFeedback.success();
-    navigation.navigate('MealSaved' as never, {
-      meal: {
-        ...food,
-        type: selectedMealType,
-        quantity,
-        portion: selectedPortion,
-        calories: Math.round(
-          food.calories * quantity * (portionOptions.find(o => o.id === selectedPortion)?.multiplier || 1)
-        ),
-      },
-    } as never);
+
+    try {
+      // Small delay to ensure state updates are processed
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      navigation.navigate(
+        'MealSaved' as never,
+        {
+          meal: {
+            ...food,
+            type: selectedMealType,
+            quantity,
+            portion: selectedPortion,
+            calories: Math.round(
+              food.calories *
+                quantity *
+                (portionOptions.find(o => o.id === selectedPortion)
+                  ?.multiplier || 1)
+            ),
+          },
+        } as never
+      );
+    } finally {
+      // Reset handled by useEffect above
+    }
   };
 
   const handleQuantityChange = (delta: number) => {
@@ -148,16 +171,26 @@ export default function FoodDetailsScreen() {
             navigation.goBack();
           }}
           className="p-2"
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+          accessibilityHint="Return to previous screen"
         >
           <ArrowLeft size={24} color="#000" />
         </TouchableOpacity>
         <Text className="text-xl font-bold">Food Details</Text>
-        <TouchableOpacity onPress={handleToggleFavorite} className="p-2">
+        <TouchableOpacity 
+          onPress={handleToggleFavorite} 
+          className="p-2"
+          accessibilityLabel={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          accessibilityRole="button"
+          accessibilityHint={isFavorite ? "Tap to remove this food from your favorites" : "Tap to add this food to your favorites"}
+          accessibilityState={{ selected: isFavorite }}
+        >
           <Animated.View style={animatedHeartStyle}>
             <Heart
               size={24}
-              color={isFavorite ? tokens.colors.danger : '#9CA3AF'}
-              fill={isFavorite ? tokens.colors.danger : 'transparent'}
+              color={isFavorite ? tokens.colors.error : '#9CA3AF'}
+              fill={isFavorite ? tokens.colors.error : 'transparent'}
             />
           </Animated.View>
         </TouchableOpacity>
@@ -179,14 +212,26 @@ export default function FoodDetailsScreen() {
               </View>
             )}
             <View className="flex-1">
-              <Text className="text-lg font-bold">{food?.name || 'Food Item'}</Text>
-              {food?.brand && <Text className="text-gray-500">{food.brand}</Text>}
+              <Text className="text-lg font-bold">
+                {food?.name || 'Food Item'}
+              </Text>
+              {food?.brand && (
+                <Text className="text-gray-500">{food.brand}</Text>
+              )}
               <View className="flex-row justify-between items-end mt-2">
-                <Text className="text-2xl font-bold">{food?.calories || 0} cal</Text>
+                <Text className="text-2xl font-bold">
+                  {food?.calories || 0} cal
+                </Text>
                 <View className="flex-row space-x-3">
-                  <Text className="text-sm text-gray-500">P: {food?.protein || 0}g</Text>
-                  <Text className="text-sm text-gray-500">C: {food?.carbs || 0}g</Text>
-                  <Text className="text-sm text-gray-500">F: {food?.fat || 0}g</Text>
+                  <Text className="text-sm text-gray-500">
+                    P: {food?.protein || 0}g
+                  </Text>
+                  <Text className="text-sm text-gray-500">
+                    C: {food?.carbs || 0}g
+                  </Text>
+                  <Text className="text-sm text-gray-500">
+                    F: {food?.fat || 0}g
+                  </Text>
                 </View>
               </View>
             </View>
@@ -197,7 +242,7 @@ export default function FoodDetailsScreen() {
         <View className="px-4 mt-6">
           <Text className="text-base font-semibold mb-3">Add to meal</Text>
           <View className="flex-row space-x-2">
-            {mealTypes.map((type) => (
+            {mealTypes.map(type => (
               <TouchableOpacity
                 key={type}
                 onPress={() => {
@@ -207,6 +252,10 @@ export default function FoodDetailsScreen() {
                 className={`flex-1 py-3 rounded-xl ${
                   selectedMealType === type ? 'bg-primary' : 'bg-white'
                 }`}
+                accessibilityLabel={`${type} meal`}
+                accessibilityRole="button"
+                accessibilityHint={`Select to add food to ${type}`}
+                accessibilityState={{ selected: selectedMealType === type }}
               >
                 <Text
                   className={`text-center text-sm font-medium ${
@@ -225,20 +274,26 @@ export default function FoodDetailsScreen() {
           <Text className="text-base font-semibold mb-3">Portion size</Text>
           <View className="bg-white rounded-2xl p-4 shadow-sm">
             <View className="flex-row mb-4">
-              {portionOptions.map((option) => (
+              {portionOptions.map(option => (
                 <TouchableOpacity
                   key={option.id}
                   onPress={() => {
                     hapticFeedback.selection();
                     setSelectedPortion(option.id);
                   }}
+                  accessibilityLabel={`${option.name} portion size`}
+                  accessibilityRole="button"
+                  accessibilityHint={`Select ${option.name} as portion size`}
+                  accessibilityState={{ selected: selectedPortion === option.id }}
                   className={`flex-1 py-2 rounded-lg ${
                     selectedPortion === option.id ? 'bg-primary/10' : ''
                   }`}
                 >
                   <Text
                     className={`text-center text-sm font-medium ${
-                      selectedPortion === option.id ? 'text-primary' : 'text-gray-700'
+                      selectedPortion === option.id
+                        ? 'text-primary'
+                        : 'text-gray-700'
                     }`}
                   >
                     {option.name}
@@ -269,7 +324,10 @@ export default function FoodDetailsScreen() {
             <View className="mt-4 pt-4 border-t border-gray-100">
               <Text className="text-center text-2xl font-bold">
                 {Math.round(
-                  food?.calories * quantity * (portionOptions.find(o => o.id === selectedPortion)?.multiplier || 1)
+                  food?.calories *
+                    quantity *
+                    (portionOptions.find(o => o.id === selectedPortion)
+                      ?.multiplier || 1)
                 )}{' '}
                 calories
               </Text>
@@ -287,28 +345,34 @@ export default function FoodDetailsScreen() {
                 Serving Size: {quantity} {selectedPortion}
               </Text>
             </View>
-            
+
             <View className="border-b-4 border-black pb-1 mb-1">
               <Text className="text-sm font-bold">Amount Per Serving</Text>
               <View className="flex-row justify-between">
                 <Text className="text-2xl font-black">Calories</Text>
                 <Text className="text-2xl font-black">
                   {Math.round(
-                    food?.calories * quantity * (portionOptions.find(o => o.id === selectedPortion)?.multiplier || 1)
+                    food?.calories *
+                      quantity *
+                      (portionOptions.find(o => o.id === selectedPortion)
+                        ?.multiplier || 1)
                   )}
                 </Text>
               </View>
             </View>
 
             <View className="border-b border-black pb-1 mb-1">
-              <Text className="text-xs text-right font-bold">% Daily Value*</Text>
+              <Text className="text-xs text-right font-bold">
+                % Daily Value*
+              </Text>
             </View>
 
             {nutritionItems.map((item, index) => (
               <View key={index}>
                 <View className="flex-row justify-between py-1 border-b border-gray-300">
                   <Text className="font-semibold">
-                    {item.name} {item.amount}{item.unit}
+                    {item.name} {item.amount}
+                    {item.unit}
                   </Text>
                   {item.dailyValue !== undefined && (
                     <Text className="font-semibold">{item.dailyValue}%</Text>
@@ -320,10 +384,13 @@ export default function FoodDetailsScreen() {
                     className="flex-row justify-between py-1 pl-4 border-b border-gray-300"
                   >
                     <Text>
-                      {subItem.name} {subItem.amount}{subItem.unit}
+                      {subItem.name} {subItem.amount}
+                      {subItem.unit}
                     </Text>
                     {subItem.dailyValue !== undefined && (
-                      <Text className="font-semibold">{subItem.dailyValue}%</Text>
+                      <Text className="font-semibold">
+                        {subItem.dailyValue}%
+                      </Text>
                     )}
                   </View>
                 ))}

@@ -1,228 +1,474 @@
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useRef,
+  useCallback,
+} from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
-  Platform,
+  StyleSheet,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Activity, Zap, Rocket } from 'lucide-react-native';
-import PlatformSlider from '../../components/common/PlatformSlider';
-import { MotiView } from 'moti';
+import { ArrowLeft } from 'lucide-react-native';
+import DecimalSlider from '../../components/common/DecimalSlider';
+import { MotiView, MotiText, useAnimationState } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
-import { useOnboarding } from './OnboardingFlow';
+import { useOnboarding } from '../../contexts/OnboardingContext';
+import Svg, { Path, G } from 'react-native-svg';
+import {
+  FontAwesome5,
+  MaterialCommunityIcons,
+  Ionicons,
+} from '@expo/vector-icons';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const LBS_TO_KG = 0.453592;
+// V2: No need for precision factor - DecimalSlider auto-calculates it
+
+// Using professional icon libraries for better visuals
+const SnailIcon = ({ size = 48, color = '#320DFF' }) => (
+  <MaterialCommunityIcons
+    name="turtle"
+    size={size}
+    color={color}
+    accessibilityLabel="Gradual pace icon"
+  />
+);
+
+const RabbitIcon = ({ size = 48, color = '#320DFF' }) => (
+  <MaterialCommunityIcons
+    name="rabbit"
+    size={size}
+    color={color}
+    accessibilityLabel="Moderate pace icon"
+  />
+);
+
+// Lightning bolt for ambitious pace
+const BoltIcon = ({ size = 48, color = '#320DFF' }) => (
+  <Ionicons
+    name="flash"
+    size={size}
+    color={color}
+    accessibilityLabel="Ambitious pace icon"
+  />
+);
+
+// Pace level configuration with cleaner labels
+const PACE_LEVELS = [
+  {
+    name: 'gradual',
+    label: 'Gradual',
+    threshold: 0.7, // These thresholds are used for comparison only, not passed to native code
+    Icon: SnailIcon,
+    description: 'Slower pace, but easier to maintain long-term',
+  },
+  {
+    name: 'moderate',
+    label: 'Moderate',
+    threshold: 2.2,
+    Icon: RabbitIcon,
+    description: 'Balanced approach for most people',
+  },
+  {
+    name: 'ambitious',
+    label: 'Ambitious',
+    threshold: 3.1,
+    Icon: BoltIcon,
+    description: 'Faster results, but requires more discipline',
+  },
+];
 
 const WeightSpeedScreen = () => {
-  const { goToNextStep, goToPreviousStep, progress, updateUserData, userData } = useOnboarding();
-  
-  const goal = userData.goal || 'lose';
+  const { goToNextStep, goToPreviousStep, progress, updateUserData, userData } =
+    useOnboarding();
+
+  const goal = userData?.goal || 'lose';
+  // Now we can use decimal values directly with the DecimalSlider wrapper
   const [selectedSpeed, setSelectedSpeed] = useState(1.0);
-  const [isMetric, setIsMetric] = useState(false);
 
+  const weight = userData?.weight || userData?.currentWeight || { unit: 'lbs' };
+  const isMetric = weight.unit === 'kg';
+  const unit = isMetric ? 'kg' : 'lbs';
+
+  // Animation states for buttons
+  const backButtonAnimation = useAnimationState({
+    from: { scale: 1 },
+    pressed: { scale: 0.95 },
+  });
+
+  const continueButtonAnimation = useAnimationState({
+    from: { scale: 1 },
+    pressed: { scale: 0.95 },
+  });
+
+  // Track sliding state for number animation
+  const [isSliding, setIsSliding] = useState(false);
+
+  // Calculate current pace level based on selected speed
+  const currentPace = useMemo(() => {
+    return PACE_LEVELS.find(level => selectedSpeed <= level.threshold)!;
+  }, [selectedSpeed]);
+
+  // Track pace changes for haptic feedback
+  const previousPaceName = useRef(currentPace.name);
   useEffect(() => {
-    // Check if user's weight unit is metric
-    const weight = userData.weight || userData.currentWeight;
-    if (weight && weight.unit === 'kg') {
-      setIsMetric(true);
+    if (previousPaceName.current !== currentPace.name) {
+      hapticFeedback.impact();
+      previousPaceName.current = currentPace.name;
     }
-  }, [userData]);
+  }, [currentPace.name]);
 
-  const handleSpeedChange = (value: number) => {
-    hapticFeedback.selection();
-    // Round to 1 decimal place
-    setSelectedSpeed(Math.round(value * 10) / 10);
-  };
+  // Handle speed changes
+  const handleSpeedChange = useCallback((value: number) => {
+    setSelectedSpeed(value);
+  }, []);
 
-  const handleContinue = () => {
+  const handleContinue = useCallback(() => {
     hapticFeedback.impact();
     updateUserData('weightChangeSpeed', selectedSpeed);
     goToNextStep();
-  };
+  }, [selectedSpeed, updateUserData, goToNextStep]);
+
+  const handleBack = useCallback(() => {
+    hapticFeedback.selection();
+    goToPreviousStep();
+  }, [goToPreviousStep]);
 
   const actionWord = goal === 'lose' ? 'lose' : 'gain';
 
-  // Get description based on selected speed
-  const getSpeedDescription = () => {
-    if (selectedSpeed <= 0.5) {
-      return 'Gradual pace, easier to maintain long-term';
-    } else if (selectedSpeed <= 1.0) {
-      return 'Recommended pace for sustainable results';
-    } else if (selectedSpeed <= 1.5) {
-      return 'Moderate pace, balanced approach';
-    } else if (selectedSpeed <= 2.0) {
-      return 'Ambitious pace, requires dedication';
-    } else {
-      return 'Aggressive pace, requires strict discipline';
-    }
-  };
-
-  // Get icon based on selected speed
-  const getSpeedIcon = () => {
-    if (selectedSpeed <= 1.0) {
-      return <Activity size={48} color="#320DFF" />;
-    } else if (selectedSpeed <= 1.5) {
-      return <Zap size={48} color="#320DFF" />;
-    } else {
-      return <Rocket size={48} color="#320DFF" />;
-    }
-  };
-
   // Convert to kg per week for metric display
-  const kgPerWeek = (selectedSpeed * 0.453592).toFixed(1);
+  const displayValue = isMetric
+    ? (selectedSpeed * LBS_TO_KG).toFixed(1)
+    : selectedSpeed.toFixed(1);
 
-  // Get speed indicator color
-  const getSpeedColor = () => {
-    if (selectedSpeed <= 1.0) return '#10B981'; // Green for sustainable
-    if (selectedSpeed <= 1.5) return '#320DFF'; // Primary for moderate
-    return '#F59E0B'; // Amber for aggressive
-  };
+  const handleSlidingStart = useCallback(() => {
+    setIsSliding(true);
+    hapticFeedback.selection();
+  }, []);
+
+  const handleSlidingComplete = useCallback(() => {
+    setIsSliding(false);
+    hapticFeedback.impact();
+  }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView 
-        className="flex-1" 
-        contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="flex-1 px-6 py-4">
-          {/* Header with back button */}
-          <View className="flex-row items-center mb-4">
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {/* Header with back button */}
+        <View style={styles.header}>
+          <MotiView
+            state={backButtonAnimation}
+            transition={{
+              type: 'spring',
+              damping: 15,
+              stiffness: 400,
+            }}
+          >
             <TouchableOpacity
-              onPress={() => {
-                hapticFeedback.selection();
-                goToPreviousStep();
-              }}
-              className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+              onPress={handleBack}
+              onPressIn={() => backButtonAnimation.transitionTo('pressed')}
+              onPressOut={() => backButtonAnimation.transitionTo('from')}
+              style={styles.backButton}
+              activeOpacity={1}
+              accessibilityRole="button"
+              accessibilityLabel="Go back to previous screen"
             >
               <ArrowLeft size={20} color="#000" />
             </TouchableOpacity>
-          </View>
+          </MotiView>
+        </View>
 
-          {/* Progress bar */}
-          <View className="w-full h-1 bg-gray-100 rounded-full mb-8">
-            <View 
-              className="h-full bg-primary rounded-full" 
-              style={{ width: `${progress}%` }}
-            />
-          </View>
-
-          {/* Title and subtitle */}
-          <View className="mb-8">
-            <Text className="text-3xl font-bold text-gray-900 mb-3">
-              How fast do you want to reach your goal?
-            </Text>
-            <Text className="text-gray-600 text-lg">
-              {`Select your preferred ${actionWord} weight speed`}
-            </Text>
-          </View>
-
-          {/* Speed Display */}
-          <View className="items-center mb-8">
-            {/* Icon */}
-            <MotiView
-              key={selectedSpeed <= 1.0 ? 'activity' : selectedSpeed <= 1.5 ? 'zap' : 'rocket'}
-              from={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', damping: 15 }}
-              className="mb-6"
-            >
-              {getSpeedIcon()}
-            </MotiView>
-
-            {/* Speed Value */}
-            <MotiView
-              key={selectedSpeed.toString()}
-              from={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', damping: 15 }}
-              className="mb-2"
-            >
-              <Text className="text-4xl font-bold text-center" style={{ color: getSpeedColor() }}>
-                {selectedSpeed.toFixed(1)}
-                <Text className="text-xl"> lb/week</Text>
-              </Text>
-              {isMetric && (
-                <Text className="text-sm text-gray-500 text-center mt-1">
-                  ({kgPerWeek} kg/week)
-                </Text>
-              )}
-            </MotiView>
-          </View>
-
-          {/* Slider */}
-          <View className="mb-8">
-            <Slider
-              style={{ width: '100%', height: 40 }}
-              minimumValue={0.5}
-              maximumValue={2.0}
-              value={selectedSpeed}
-              onValueChange={handleSpeedChange}
-              minimumTrackTintColor={getSpeedColor()}
-              maximumTrackTintColor="#E5E7EB"
-              thumbTintColor={getSpeedColor()}
-              step={0.1}
-            />
-            
-            {/* Labels */}
-            <View className="flex-row justify-between mt-2">
-              <Text className="text-sm text-gray-600">Gradual</Text>
-              <Text className="text-sm text-gray-600">Moderate</Text>
-              <Text className="text-sm text-gray-600">Aggressive</Text>
-            </View>
-
-            {/* Speed range indicators */}
-            <View className="flex-row justify-between mt-2 px-2">
-              <View className={`h-1 w-20 rounded-full ${selectedSpeed <= 1.0 ? 'bg-green-500' : 'bg-gray-300'}`} />
-              <View className={`h-1 w-20 rounded-full ${selectedSpeed > 1.0 && selectedSpeed <= 1.5 ? 'bg-primary' : 'bg-gray-300'}`} />
-              <View className={`h-1 w-20 rounded-full ${selectedSpeed > 1.5 ? 'bg-amber-500' : 'bg-gray-300'}`} />
-            </View>
-          </View>
-
-          {/* Description Card */}
+        {/* Progress bar */}
+        <View style={styles.progressBarContainer}>
           <MotiView
-            from={{ opacity: 0, translateY: 10 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: 200 }}
-            className="bg-primary/10 px-6 py-4 rounded-2xl mb-6"
+            from={{ width: '0%' }}
+            animate={{ width: `${progress}%` }}
+            transition={{ type: 'timing', duration: 300 }}
+            style={styles.progressBarFill}
+          />
+        </View>
+
+        {/* Title and subtitle */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>
+            How fast do you want to reach your goal?
+          </Text>
+          <Text style={styles.subtitle}>
+            Select your preferred {actionWord} weight speed
+          </Text>
+        </View>
+
+        {/* Icon Display */}
+        <View style={styles.iconContainer}>
+          <MotiView
+            key={currentPace.name}
+            from={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
           >
-            <Text className="text-center text-primary font-medium text-base">
-              {getSpeedDescription()}
+            <currentPace.Icon size={48} color="#320DFF" />
+          </MotiView>
+        </View>
+
+        {/* Speed Value Display with scaling animation */}
+        <View style={styles.speedDisplayContainer}>
+          <MotiView
+            animate={{
+              scale: isSliding ? 0.88 : 1,
+              opacity: isSliding ? 0.8 : 1,
+            }}
+            transition={{
+              type: 'spring',
+              stiffness: 500,
+              damping: 25,
+            }}
+          >
+            <Text style={styles.speedNumber}>
+              {displayValue}
+              <Text style={styles.speedUnit}> {unit}/week</Text>
             </Text>
           </MotiView>
+        </View>
 
-          {/* Recommendation Note */}
-          {selectedSpeed > 2.0 && (
-            <MotiView
-              from={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-amber-50 border border-amber-200 px-4 py-3 rounded-xl mb-6"
-            >
-              <Text className="text-amber-800 text-sm text-center">
-                Note: Speeds above 2 lbs/week may not be sustainable for everyone
-              </Text>
-            </MotiView>
-          )}
+        {/* Slider Container */}
+        <View style={styles.sliderContainer}>
+          <DecimalSlider
+            style={styles.slider}
+            minimumValue={0.2}
+            maximumValue={3.0}
+            value={selectedSpeed}
+            onValueChange={handleSpeedChange}
+            onSlidingStart={handleSlidingStart}
+            onSlidingComplete={handleSlidingComplete}
+            minimumTrackTintColor="#320DFF"
+            maximumTrackTintColor="#E5E7EB"
+            thumbTintColor="#320DFF"
+            step={0.1}
+            // V2: precisionFactor auto-calculated from step
+            accessibilityLabel="Weight change speed slider"
+            accessibilityHint={`Controls how fast you want to ${actionWord} weight. Currently set to ${displayValue} ${unit} per week.`}
+          />
 
-          {/* Spacer to push button to bottom */}
-          <View className="flex-1" />
-
-          {/* Continue Button */}
-          <View className="mb-6">
-            <TouchableOpacity
-              onPress={handleContinue}
-              className="bg-primary py-4 rounded-full items-center justify-center"
-              activeOpacity={0.8}
-            >
-              <Text className="text-white font-semibold text-base">
-                Continue
-              </Text>
-            </TouchableOpacity>
+          {/* Labels with highlighting and accessibility */}
+          <View style={styles.sliderLabels}>
+            {PACE_LEVELS.map(level => (
+              <View
+                key={level.name}
+                style={styles.labelWrapper}
+                accessibilityRole="text"
+                accessibilityLabel={`Pace level: ${level.label}`}
+                accessibilityState={{
+                  selected: currentPace.name === level.name,
+                }}
+              >
+                <MotiText
+                  style={[
+                    styles.sliderLabel,
+                    currentPace.name === level.name && styles.sliderLabelActive,
+                  ]}
+                  animate={{
+                    scale: currentPace.name === level.name ? 1.1 : 1,
+                  }}
+                  transition={{
+                    type: 'timing',
+                    duration: 150,
+                  }}
+                >
+                  {level.label}
+                </MotiText>
+              </View>
+            ))}
           </View>
         </View>
-      </ScrollView>
+
+        {/* Description Card */}
+        <MotiView
+          key={currentPace.name}
+          from={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          style={styles.descriptionCard}
+          accessibilityLiveRegion="polite"
+        >
+          <Text style={styles.descriptionText}>{currentPace.description}</Text>
+        </MotiView>
+
+        {/* Spacer */}
+        <View style={{ flex: 1 }} />
+
+        {/* Continue button */}
+        <View style={styles.buttonContainer}>
+          <MotiView
+            state={continueButtonAnimation}
+            transition={{
+              type: 'spring',
+              damping: 15,
+              stiffness: 400,
+            }}
+          >
+            <TouchableOpacity
+              onPress={handleContinue}
+              onPressIn={() => continueButtonAnimation.transitionTo('pressed')}
+              onPressOut={() => continueButtonAnimation.transitionTo('from')}
+              style={styles.continueButton}
+              activeOpacity={1}
+              accessibilityRole="button"
+              accessibilityLabel="Continue to next step"
+            >
+              <Text style={styles.continueButtonText}>Continue</Text>
+            </TouchableOpacity>
+          </MotiView>
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  header: {
+    paddingTop: 24,
+    marginBottom: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressBarContainer: {
+    width: '100%',
+    height: 4,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 2,
+    marginBottom: 36,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#320DFF',
+    borderRadius: 2,
+  },
+  titleContainer: {
+    marginBottom: 32,
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: '700',
+    color: '#000000',
+    marginBottom: 8,
+    lineHeight: 36,
+    fontFamily: 'System',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  subtitle: {
+    fontSize: 17,
+    color: '#6B7280',
+    lineHeight: 24,
+    fontFamily: 'System',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  iconContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  speedDisplayContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  speedNumber: {
+    fontSize: 64,
+    fontWeight: '700',
+    color: '#320DFF',
+    fontFamily: 'System',
+    letterSpacing: -2,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  speedUnit: {
+    fontSize: 28,
+    fontWeight: '500',
+    color: '#320DFF',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  sliderContainer: {
+    marginBottom: 40,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  sliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  sliderLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+    fontFamily: 'System',
+  },
+  sliderLabelActive: {
+    color: '#320DFF',
+    fontWeight: '700',
+  },
+  labelWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 30,
+  },
+  descriptionCard: {
+    backgroundColor: 'rgba(50, 13, 255, 0.05)',
+    paddingHorizontal: 32,
+    paddingVertical: 20,
+    borderRadius: 24,
+    marginBottom: 24,
+  },
+  descriptionText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#320DFF',
+    fontFamily: 'System',
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  buttonContainer: {
+    paddingBottom: 32,
+  },
+  continueButton: {
+    width: '100%',
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#320DFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  continueButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'System',
+  },
+});
 
 export default WeightSpeedScreen;

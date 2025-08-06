@@ -18,6 +18,7 @@ import { supabase } from '../config/supabase';
  * meal_reminders: BOOLEAN (default: false)
  * privacy_analytics: BOOLEAN (default: true)
  * unit_system: TEXT ('metric' | 'imperial', default: 'metric')
+ * has_completed_onboarding: BOOLEAN (default: false)
  * created_at: TIMESTAMP WITH TIME ZONE
  * updated_at: TIMESTAMP WITH TIME ZONE
  *
@@ -40,6 +41,7 @@ export interface UserPreferences {
   meal_reminders: boolean;
   privacy_analytics: boolean;
   unit_system: 'metric' | 'imperial';
+  has_completed_onboarding: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -61,6 +63,7 @@ export interface UserPreferencesInput {
   meal_reminders?: boolean;
   privacy_analytics?: boolean;
   unit_system?: 'metric' | 'imperial';
+  has_completed_onboarding?: boolean;
 }
 
 export interface PreferencesError {
@@ -91,6 +94,7 @@ export const DEFAULT_PREFERENCES: Omit<
   meal_reminders: false,
   privacy_analytics: true,
   unit_system: 'metric',
+  has_completed_onboarding: false,
 };
 
 /**

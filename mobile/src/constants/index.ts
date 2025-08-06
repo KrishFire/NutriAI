@@ -54,3 +54,16 @@ export const ERROR_MESSAGES = {
   AI_ANALYSIS_ERROR: 'Failed to analyze image. Please try manual entry.',
   GENERIC_ERROR: 'Something went wrong. Please try again.',
 } as const;
+
+// Spacing constants for consistent layout
+export const SPACING = {
+  xxs: 4,
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 24, // Header padding, progress rings container
+  xl: 32,
+  xxl: 36, // Big ring to macro rings
+  xxxl: 40, // Main sections
+  xxxxl: 48,
+} as const;

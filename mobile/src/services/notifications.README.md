@@ -73,14 +73,14 @@ The notification service automatically integrates with the user preferences syst
 // In ProfileScreen or Settings
 const handleToggleNotifications = async () => {
   const newState = !preferences.notifications_enabled;
-  
+
   // This will handle permissions and scheduling
   const result = await toggleNotifications(newState);
-  
+
   if (result.success) {
     // Update database preferences
     await updatePreferences({
-      notifications_enabled: newState
+      notifications_enabled: newState,
     });
   }
 };
@@ -89,12 +89,14 @@ const handleToggleNotifications = async () => {
 ## Notification Types
 
 ### 1. Daily Reminder (8 PM)
+
 - **Title**: "Time to log your meals! 📝"
 - **Body**: "How was your nutrition today? Log your meals to track your progress."
 - **Trigger**: Daily at 8:00 PM
 - **Type**: `daily_reminder`
 
 ### 2. Calorie Progress Notification
+
 - **Title**: "You've logged X% of your daily calories"
 - **Body**: "X calories left to reach your X calorie goal!"
 - **Trigger**: On-demand
@@ -112,11 +114,13 @@ import CalorieProgressNotifier from '../components/CalorieProgressNotifier';
 ## Platform Considerations
 
 ### iOS
+
 - Requires explicit permission request
 - Notifications appear in Notification Center
 - Supports notification categories and actions
 
 ### Android
+
 - Creates notification channels for better organization
 - Supports high priority notifications
 - Custom vibration patterns and LED colors
@@ -148,7 +152,7 @@ if (!result.success) {
       // Handle preference setting
       break;
     default:
-      // Handle other errors
+    // Handle other errors
   }
 }
 ```
@@ -164,17 +168,20 @@ if (!result.success) {
 ## Troubleshooting
 
 ### Notifications not appearing
+
 1. Check device notification settings
 2. Verify permissions are granted
 3. Ensure `notifications_enabled` is true in user preferences
 4. Check if app is in foreground (notifications may be silent)
 
 ### Scheduling fails
+
 1. Verify user is authenticated
 2. Check if previous notifications need to be cancelled
 3. Ensure notification identifier is unique
 
 ### Progress calculation issues
+
 1. Verify user has preferences set
 2. Check if daily_calorie_goal is valid
 3. Ensure meals are being logged correctly

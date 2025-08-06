@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,21 +10,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import {
-  ArrowLeft,
-  Search,
-  Filter,
-  Plus,
-  Heart,
-  X,
-} from 'lucide-react-native';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  Layout,
-} from 'react-native-reanimated';
+import { ArrowLeft, Search, Filter, Plus, Heart, X } from 'lucide-react-native';
+import Animated, { FadeIn, FadeOut, Layout } from 'react-native-reanimated';
 import { hapticFeedback } from '../utils/haptics';
-import tokens from '../../tokens.json';
+import tokens from '../utils/tokens';
 
 interface FoodItem {
   id: string;
@@ -53,7 +42,9 @@ export default function SearchResultsScreen() {
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [isSearching, setIsSearching] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'branded' | 'generic' | 'favorites'>('all');
+  const [activeFilter, setActiveFilter] = useState<
+    'all' | 'branded' | 'generic' | 'favorites'
+  >('all');
   const [results, setResults] = useState<FoodItem[]>([]);
 
   // Mock search results
@@ -127,39 +118,63 @@ export default function SearchResultsScreen() {
     }
   }, [searchQuery]);
 
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
   const performSearch = () => {
     setIsSearching(true);
+    // Clear any existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
     // Simulate API call
-    setTimeout(() => {
-      const filtered = mockResults.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.brand?.toLowerCase().includes(searchQuery.toLowerCase())
+    searchTimeoutRef.current = setTimeout(() => {
+      const filtered = mockResults.filter(
+        item =>
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.brand?.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setResults(filtered);
       setIsSearching(false);
     }, 500);
   };
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleSelectFood = (food: FoodItem) => {
     hapticFeedback.selection();
-    navigation.navigate('FoodDetails' as never, {
-      food,
-      mealType,
-    } as never);
+    navigation.navigate(
+      'FoodDetails' as never,
+      {
+        food,
+        mealType,
+      } as never
+    );
   };
 
   const handleToggleFavorite = (id: string) => {
     hapticFeedback.selection();
-    setResults(results.map(item =>
-      item.id === id ? { ...item, isFavorite: !item.isFavorite } : item
-    ));
+    setResults(
+      results.map(item =>
+        item.id === id ? { ...item, isFavorite: !item.isFavorite } : item
+      )
+    );
   };
 
   const handleCreateFood = () => {
     hapticFeedback.selection();
-    navigation.navigate('CreateFood' as never, {
-      searchQuery,
-    } as never);
+    navigation.navigate(
+      'CreateFood' as never,
+      {
+        searchQuery,
+      } as never
+    );
   };
 
   const filteredResults = results.filter(item => {
@@ -181,7 +196,9 @@ export default function SearchResultsScreen() {
             <Text className="text-base font-semibold flex-1">{item.name}</Text>
             {item.isVerified && (
               <View className="bg-blue-100 px-2 py-0.5 rounded-full ml-2">
-                <Text className="text-xs text-blue-600 font-medium">Verified</Text>
+                <Text className="text-xs text-blue-600 font-medium">
+                  Verified
+                </Text>
               </View>
             )}
           </View>
@@ -191,7 +208,9 @@ export default function SearchResultsScreen() {
           <Text className="text-sm text-gray-600">{item.serving}</Text>
         </View>
         <View className="items-end">
-          <Text className="text-lg font-semibold mb-1">{item.calories} cal</Text>
+          <Text className="text-lg font-semibold mb-1">
+            {item.calories} cal
+          </Text>
           <View className="flex-row items-center">
             <View className="mr-3">
               <Text className="text-xs text-gray-500">P: {item.protein}g</Text>
@@ -199,15 +218,15 @@ export default function SearchResultsScreen() {
               <Text className="text-xs text-gray-500">F: {item.fat}g</Text>
             </View>
             <TouchableOpacity
-              onPress={(e) => {
+              onPress={e => {
                 e.stopPropagation();
                 handleToggleFavorite(item.id);
               }}
             >
               <Heart
                 size={20}
-                color={item.isFavorite ? tokens.colors.danger : '#E5E7EB'}
-                fill={item.isFavorite ? tokens.colors.danger : 'transparent'}
+                color={item.isFavorite ? tokens.colors.error : '#E5E7EB'}
+                fill={item.isFavorite ? tokens.colors.error : 'transparent'}
               />
             </TouchableOpacity>
           </View>
@@ -268,7 +287,7 @@ export default function SearchResultsScreen() {
         className="px-4 mb-4"
       >
         <View className="flex-row space-x-2">
-          {(['all', 'branded', 'generic', 'favorites'] as const).map((filter) => (
+          {(['all', 'branded', 'generic', 'favorites'] as const).map(filter => (
             <TouchableOpacity
               key={filter}
               onPress={() => {
@@ -294,7 +313,10 @@ export default function SearchResultsScreen() {
       {/* Results */}
       {isSearching ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={tokens.colors.primary.DEFAULT} />
+          <ActivityIndicator
+            size="large"
+            color={tokens.colors.primary.DEFAULT}
+          />
           <Text className="text-gray-500 mt-2">Searching...</Text>
         </View>
       ) : filteredResults.length === 0 ? (
@@ -315,7 +337,9 @@ export default function SearchResultsScreen() {
                 className="flex-row items-center bg-primary rounded-xl px-4 py-3"
               >
                 <Plus size={16} color="#FFF" />
-                <Text className="text-white font-medium ml-1">Create Custom Food</Text>
+                <Text className="text-white font-medium ml-1">
+                  Create Custom Food
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -324,7 +348,7 @@ export default function SearchResultsScreen() {
         <FlatList
           data={filteredResults}
           renderItem={renderFoodItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           ListFooterComponent={

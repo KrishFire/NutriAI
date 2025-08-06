@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Pressable } from 'react-native';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
 import { hapticFeedback } from '../../utils/haptics';

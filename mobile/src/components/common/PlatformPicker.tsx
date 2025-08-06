@@ -27,9 +27,11 @@ const WebPicker: React.FC<PlatformPickerProps> = ({
     <View style={[{ width: '100%' }, style]}>
       <select
         value={selectedValue}
-        onChange={(e) => {
+        onChange={e => {
           const value = e.target.value;
-          const index = items.findIndex(item => item.value.toString() === value);
+          const index = items.findIndex(
+            item => item.value.toString() === value
+          );
           onValueChange(value, index);
         }}
         disabled={!enabled}
@@ -52,7 +54,7 @@ const WebPicker: React.FC<PlatformPickerProps> = ({
         }}
         className="platform-picker"
       >
-        {items.map((item) => (
+        {items.map(item => (
           <option key={item.value} value={item.value}>
             {item.label}
           </option>
@@ -70,7 +72,7 @@ const WebPicker: React.FC<PlatformPickerProps> = ({
 };
 
 // Cross-platform picker component
-const PlatformPicker: React.FC<PlatformPickerProps> = (props) => {
+const PlatformPicker: React.FC<PlatformPickerProps> = props => {
   if (Platform.OS === 'web') {
     return <WebPicker {...props} />;
   }
@@ -83,12 +85,8 @@ const PlatformPicker: React.FC<PlatformPickerProps> = (props) => {
       style={[{ width: '100%' }, props.style]}
       enabled={props.enabled}
     >
-      {props.items.map((item) => (
-        <Picker.Item
-          key={item.value}
-          label={item.label}
-          value={item.value}
-        />
+      {props.items.map(item => (
+        <Picker.Item key={item.value} label={item.label} value={item.value} />
       ))}
     </Picker>
   );

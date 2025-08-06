@@ -11,7 +11,11 @@ interface AnalyzingScreenProps {
   onResults: (results: any) => void;
 }
 
-export function AnalyzingScreen({ inputType, data, onResults }: AnalyzingScreenProps) {
+export function AnalyzingScreen({
+  inputType,
+  data,
+  onResults,
+}: AnalyzingScreenProps) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -39,17 +43,17 @@ export function AnalyzingScreen({ inputType, data, onResults }: AnalyzingScreenP
             calories: 320,
             protein: 28,
             carbs: 12,
-            fat: 16
+            fat: 16,
           },
           {
             name: 'Avocado',
             calories: 160,
             protein: 2,
             carbs: 8,
-            fat: 15
-          }
+            fat: 15,
+          },
         ],
-        totalCalories: 480
+        totalCalories: 480,
       });
     }, 4000);
 
@@ -70,7 +74,7 @@ export function AnalyzingScreen({ inputType, data, onResults }: AnalyzingScreenP
             transition={{
               type: 'spring',
               damping: 15,
-              stiffness: 100
+              stiffness: 100,
             }}
             className="mb-8"
           >

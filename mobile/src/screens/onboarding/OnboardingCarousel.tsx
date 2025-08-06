@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronRight, ChevronLeft } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
-import { useOnboarding } from './OnboardingFlow';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -29,12 +29,16 @@ const OnboardingCarousel = () => {
   const { goToNextStep, goToPreviousStep } = useOnboarding();
   const [currentSlide, setCurrentSlide] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
+  const [backPressed, setBackPressed] = useState(false);
+  const [skipPressed, setSkipPressed] = useState(false);
+  const [nextPressed, setNextPressed] = useState(false);
 
   const slides: Slide[] = [
     {
       id: 'camera',
       title: 'Just Take a Photo',
-      description: 'Our AI instantly identifies your meals and calculates nutrition',
+      description:
+        'Our AI instantly identifies your meals and calculates nutrition',
       image: require('../../../assets/berry/berry_taking_picture.png'),
     },
     {
@@ -86,8 +90,14 @@ const OnboardingCarousel = () => {
   };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const slideIndex = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-    if (slideIndex !== currentSlide && slideIndex >= 0 && slideIndex < slides.length) {
+    const slideIndex = Math.round(
+      event.nativeEvent.contentOffset.x / SCREEN_WIDTH
+    );
+    if (
+      slideIndex !== currentSlide &&
+      slideIndex >= 0 &&
+      slideIndex < slides.length
+    ) {
       setCurrentSlide(slideIndex);
     }
   };
@@ -96,14 +106,27 @@ const OnboardingCarousel = () => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={handleBack}
-          style={styles.backButton}
-          activeOpacity={0.7}
+        <MotiView
+          animate={{
+            scale: backPressed ? 0.95 : 1,
+          }}
+          transition={{
+            type: 'spring',
+            damping: 15,
+            stiffness: 400,
+          }}
         >
-          <ChevronLeft size={20} color="#000" />
-        </TouchableOpacity>
-        
+          <TouchableOpacity
+            onPress={handleBack}
+            onPressIn={() => setBackPressed(true)}
+            onPressOut={() => setBackPressed(false)}
+            style={styles.backButton}
+            activeOpacity={1}
+          >
+            <ChevronLeft size={20} color="#000" />
+          </TouchableOpacity>
+        </MotiView>
+
         {/* Progress dots */}
         <View style={styles.progressContainer}>
           {slides.map((_, index) => (
@@ -113,18 +136,34 @@ const OnboardingCarousel = () => {
                 backgroundColor: index === currentSlide ? '#320DFF' : '#E5E7EB',
               }}
               transition={{ type: 'timing', duration: 300 }}
-              style={[styles.progressDot, index > 0 && styles.progressDotSpacing]}
+              style={[
+                styles.progressDot,
+                index > 0 && styles.progressDotSpacing,
+              ]}
             />
           ))}
         </View>
 
-        <TouchableOpacity
-          onPress={handleSkip}
-          style={styles.skipButton}
-          activeOpacity={0.7}
+        <MotiView
+          animate={{
+            scale: skipPressed ? 0.95 : 1,
+          }}
+          transition={{
+            type: 'spring',
+            damping: 15,
+            stiffness: 400,
+          }}
         >
-          <Text style={styles.skipText}>Skip</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleSkip}
+            onPressIn={() => setSkipPressed(true)}
+            onPressOut={() => setSkipPressed(false)}
+            style={styles.skipButton}
+            activeOpacity={1}
+          >
+            <Text style={styles.skipText}>Skip</Text>
+          </TouchableOpacity>
+        </MotiView>
       </View>
 
       {/* Slides Container */}
@@ -139,49 +178,55 @@ const OnboardingCarousel = () => {
         testID="carousel-scroll-view"
         style={styles.scrollView}
       >
-          {slides.map((slide) => (
-            <View 
-              key={slide.id} 
-              style={styles.slideContainer}
-              testID="slide-container"
-            >
-              <View style={styles.slideContent} testID="slide-content">
-                {/* Illustration */}
-                <View style={styles.illustrationContainer}>
-                  <Image
-                    source={slide.image}
-                    style={styles.illustration}
-                  />
-                </View>
-
-                {/* Content */}
-                <MotiView
-                  from={{ opacity: 0, translateY: 20 }}
-                  animate={{ opacity: 1, translateY: 0 }}
-                  transition={{ delay: 100 }}
-                  style={styles.textContainer}
-                >
-                  <Text style={styles.title}>
-                    {slide.title}
-                  </Text>
-                  <Text style={styles.description}>
-                    {slide.description}
-                  </Text>
-                </MotiView>
+        {slides.map(slide => (
+          <View
+            key={slide.id}
+            style={styles.slideContainer}
+            testID="slide-container"
+          >
+            <View style={styles.slideContent} testID="slide-content">
+              {/* Illustration */}
+              <View style={styles.illustrationContainer}>
+                <Image source={slide.image} style={styles.illustration} />
               </View>
+
+              {/* Content */}
+              <MotiView
+                from={{ opacity: 0, translateY: 20 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ delay: 100 }}
+                style={styles.textContainer}
+              >
+                <Text style={styles.title}>{slide.title}</Text>
+                <Text style={styles.description}>{slide.description}</Text>
+              </MotiView>
             </View>
-          ))}
-        </ScrollView>
+          </View>
+        ))}
+      </ScrollView>
 
       {/* Next button */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          onPress={handleNext}
-          style={styles.nextButton}
-          activeOpacity={0.8}
+        <MotiView
+          animate={{
+            scale: nextPressed ? 0.95 : 1,
+          }}
+          transition={{
+            type: 'spring',
+            damping: 15,
+            stiffness: 400,
+          }}
         >
-          <ChevronRight size={28} color="white" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleNext}
+            onPressIn={() => setNextPressed(true)}
+            onPressOut={() => setNextPressed(false)}
+            style={styles.nextButton}
+            activeOpacity={1}
+          >
+            <ChevronRight size={28} color="white" />
+          </TouchableOpacity>
+        </MotiView>
       </View>
     </SafeAreaView>
   );

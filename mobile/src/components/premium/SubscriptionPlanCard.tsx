@@ -70,21 +70,20 @@ export const SubscriptionPlanCard: React.FC<SubscriptionPlanCardProps> = ({
         transition={{ duration: 300 }}
         className={`
           p-4 rounded-xl border relative
-          ${isSelected 
-            ? 'border-primary bg-primary/5 dark:border-primaryDark dark:bg-primaryDark/10' 
-            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+          ${
+            isSelected
+              ? 'border-primary bg-primary/5 dark:border-primaryDark dark:bg-primaryDark/10'
+              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
           }
         `}
       >
         {/* Badges */}
         {isPopular && (
           <View className="absolute -top-3 right-4 bg-primary dark:bg-primaryDark px-3 py-1 rounded-full">
-            <Text className="text-white text-xs font-medium">
-              Most Popular
-            </Text>
+            <Text className="text-white text-xs font-medium">Most Popular</Text>
           </View>
         )}
-        
+
         {discount && (
           <View className="absolute -top-3 left-4 bg-green-500 px-3 py-1 rounded-full">
             <Text className="text-white text-xs font-medium">
@@ -99,17 +98,16 @@ export const SubscriptionPlanCard: React.FC<SubscriptionPlanCardProps> = ({
           <View
             className={`
               w-5 h-5 rounded-full border-2 mr-2 items-center justify-center
-              ${isSelected 
-                ? 'border-primary dark:border-primaryDark bg-primary dark:bg-primaryDark' 
-                : 'border-gray-300 dark:border-gray-600'
+              ${
+                isSelected
+                  ? 'border-primary dark:border-primaryDark bg-primary dark:bg-primaryDark'
+                  : 'border-gray-300 dark:border-gray-600'
               }
             `}
           >
-            {isSelected && (
-              <View className="w-2 h-2 rounded-full bg-white" />
-            )}
+            {isSelected && <View className="w-2 h-2 rounded-full bg-white" />}
           </View>
-          
+
           <Text className="font-medium text-gray-900 dark:text-white">
             {title}
           </Text>

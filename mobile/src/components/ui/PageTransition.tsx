@@ -79,7 +79,7 @@ export const PageTransition: React.FC<PageTransitionProps> = ({
   const { entering, exiting } = getAnimation();
 
   return (
-    <Animated.View 
+    <Animated.View
       className="flex-1 w-full"
       entering={entering}
       exiting={exiting}

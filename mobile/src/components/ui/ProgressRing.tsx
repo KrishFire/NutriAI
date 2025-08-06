@@ -39,13 +39,18 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
 
   useEffect(() => {
     if (animate) {
-      animatedProgress.value = withTiming(percentage, {
-        duration: duration,
+      animatedProgress.value = withSpring(percentage, {
+        damping: 12,
+        stiffness: 150,
+        mass: 1,
+        overshootClamping: false,
+        restDisplacementThreshold: 0.01,
+        restSpeedThreshold: 0.01,
       });
     } else {
       animatedProgress.value = percentage;
     }
-  }, [percentage, animate, duration]);
+  }, [percentage, animate]);
 
   const animatedProps = useAnimatedProps(() => {
     'worklet';

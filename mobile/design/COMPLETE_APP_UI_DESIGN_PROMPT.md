@@ -3,6 +3,7 @@
 ## Design Philosophy & Innovation Guidelines
 
 ### Core Principles
+
 - **Primary Color**: RGB(50, 13, 255) / #320DFF - Your signature vibrant blue
 - **Design Inspiration**: Uber's minimalism + Robinhood's data viz + Apple's polish
 - **Typography**: Inter font family throughout
@@ -26,6 +27,7 @@
 ### 1. Launch & Splash Experience
 
 #### 1.1 Splash Screen
+
 ```
 Elements:
 - Gradient Background: Animated gradient shifting from #320DFF to lighter shade
@@ -43,17 +45,18 @@ Innovation:
 ### 2. Authentication Flow
 
 #### 2.1 Welcome Screen
+
 ```
 Layout:
-- Hero Section (60%): 
+- Hero Section (60%):
   - 3D animated illustration of diverse people with floating food items
   - Parallax effect on device tilt
   - Subtle particle effects around food
-  
+
 - Content Section:
   - Title: "Welcome to NutriAI" with subtle gradient text
   - Subtitle: Typewriter effect "Your AI Nutrition Companion"
-  
+
 - Actions:
   - "Get Started" button: Morphs from rounded rectangle to circle on press
   - "Sign In" text button: Underline animates in on hover
@@ -65,16 +68,17 @@ Innovation:
 ```
 
 #### 2.2 Sign Up Screen
+
 ```
 Header:
 - Progress Dots: Elastic animation between steps
 - Back Button: Morphs to X when keyboard active
 
 Social Auth Section:
-- Apple Sign In: 
+- Apple Sign In:
   - Black button with subtle gradient
   - Apple logo rotates 360° on success
-  
+
 - Google Sign In:
   - White with micro-shadow
   - Google colors sweep across on press
@@ -84,7 +88,7 @@ Form Section:
   - Label floats up with spring animation
   - Success checkmark draws itself
   - Error state: Field shakes with haptic
-  
+
 - Password Field:
   - Strength meter fills with gradient
   - Eye icon morphs between states
@@ -97,6 +101,7 @@ Innovation:
 ```
 
 #### 2.3 Sign In Screen
+
 ```
 Biometric Section (if enabled):
 - Face ID Animation: Animated face scanning effect
@@ -115,6 +120,7 @@ Innovation:
 ### 3. Onboarding Flow
 
 #### 3.1 Value Proposition Carousel
+
 ```
 Screen Design:
 - Full-Screen Illustrations: Each with subtle animation loop
@@ -133,6 +139,7 @@ Innovation:
 ```
 
 #### 3.2 Personal Info Collection
+
 ```
 Progressive Form:
 - Each field slides in from bottom
@@ -151,6 +158,7 @@ Innovation:
 ```
 
 #### 3.3 Activity Level Selection
+
 ```
 Design Pattern:
 - Cards with Lottie animations for each level
@@ -164,6 +172,7 @@ Innovation:
 ```
 
 #### 3.4 Goal Setting
+
 ```
 Goal Cards:
 - 3D flip animation on selection
@@ -182,6 +191,7 @@ Innovation:
 ```
 
 #### 3.5 Dietary Preferences
+
 ```
 Multi-Select Interface:
 - Pills that expand on selection
@@ -202,6 +212,7 @@ Innovation:
 ### 4. Main App Navigation
 
 #### 4.1 Tab Bar
+
 ```
 Design:
 - Glass morphism background with blur
@@ -222,11 +233,12 @@ Innovation:
 ### 5. Home Screen - Daily Dashboard
 
 #### 5.1 Header Section
+
 ```
 Elements:
 - Greeting: Text color shifts based on time
 - Date: Subtle slide-in animation
-- Streak Badge: 
+- Streak Badge:
   - Fire animation that intensifies with streak
   - Particle effects at milestones
   - Haptic pulse daily
@@ -238,6 +250,7 @@ Innovation:
 ```
 
 #### 5.2 Progress Rings Section
+
 ```
 Main Ring Design:
 - 3D appearance with subtle shadows
@@ -257,6 +270,7 @@ Innovation:
 ```
 
 #### 5.3 Quick Actions Bar
+
 ```
 Button Design:
 - Glass morphism with gradient borders
@@ -275,6 +289,7 @@ Innovation:
 ```
 
 #### 5.4 Today's Meals Timeline
+
 ```
 Meal Cards:
 - Staggered fade-in on load
@@ -298,6 +313,7 @@ Innovation:
 #### 6.1 Camera Capture Flow
 
 ##### 6.1.1 Camera Screen
+
 ```
 Interface:
 - Full-screen viewfinder with rounded corners
@@ -320,6 +336,7 @@ Innovation:
 ```
 
 ##### 6.1.2 AI Analysis Screen
+
 ```
 Layout:
 - Hero Image: Ken Burns effect on photo
@@ -342,6 +359,7 @@ Innovation:
 ```
 
 ##### 6.1.3 Meal Confirmation Screen
+
 ```
 Summary View:
 - Macro breakdown with liquid fill
@@ -363,6 +381,7 @@ Innovation:
 #### 6.2 Voice Logging Flow
 
 ##### 6.2.1 Voice Input Screen
+
 ```
 Main Interface:
 - Large microphone button with glow
@@ -385,6 +404,7 @@ Innovation:
 ```
 
 ##### 6.2.2 Voice Confirmation Screen
+
 ```
 Parsed Results:
 - Items in speech bubbles
@@ -402,6 +422,7 @@ Innovation:
 #### 6.3 Barcode Scanner Flow
 
 ##### 6.3.1 Scanner Screen
+
 ```
 Camera View:
 - Laser line animation
@@ -423,6 +444,7 @@ Innovation:
 ```
 
 ##### 6.3.2 Product Details Screen
+
 ```
 Product Display:
 - Hero image with parallax
@@ -446,6 +468,7 @@ Innovation:
 #### 6.4 Manual Search Flow
 
 ##### 6.4.1 Search Screen
+
 ```
 Search Bar:
 - Expands on focus with elastic
@@ -467,6 +490,7 @@ Innovation:
 ```
 
 ##### 6.4.2 Search Results
+
 ```
 Result Cards:
 - Lazy load with skeleton
@@ -488,6 +512,7 @@ Innovation:
 ```
 
 ##### 6.4.3 Food Details Screen
+
 ```
 Layout:
 - Hero section with food image
@@ -513,6 +538,7 @@ Innovation:
 #### 7.1 History Screen
 
 ##### 7.1.1 Calendar View
+
 ```
 Calendar Design:
 - Month view with heat map
@@ -534,6 +560,7 @@ Innovation:
 ```
 
 ##### 7.1.2 List View
+
 ```
 Daily Cards:
 - Photo collage of meals
@@ -557,6 +584,7 @@ Innovation:
 #### 7.2 Analytics Dashboard
 
 ##### 7.2.1 Overview Screen
+
 ```
 Key Metrics:
 - Average calories with trend
@@ -578,6 +606,7 @@ Innovation:
 ```
 
 ##### 7.2.2 Detailed Analytics
+
 ```
 Chart Types:
 - Macro trends over time
@@ -601,6 +630,7 @@ Innovation:
 ### 8. Meal Management
 
 #### 8.1 Meal Details Screen
+
 ```
 Hero Section:
 - Full-width meal photo
@@ -628,6 +658,7 @@ Innovation:
 ```
 
 #### 8.2 Meal Editing Flow
+
 ```
 Edit Mode:
 - Items become draggable
@@ -651,6 +682,7 @@ Innovation:
 ### 9. Settings & Profile
 
 #### 9.1 Profile Screen
+
 ```
 Header Section:
 - Avatar with edit overlay
@@ -680,6 +712,7 @@ Innovation:
 #### 9.2 Settings Screens
 
 ##### 9.2.1 Nutrition Settings
+
 ```
 Goal Adjustments:
 - Visual sliders with preview
@@ -701,6 +734,7 @@ Innovation:
 ```
 
 ##### 9.2.2 App Preferences
+
 ```
 Appearance:
 - Theme selector with preview
@@ -724,6 +758,7 @@ Innovation:
 ### 10. Premium Features
 
 #### 10.1 AI Coach Chat
+
 ```
 Chat Interface:
 - Messages with avatars
@@ -747,6 +782,7 @@ Innovation:
 #### 10.2 Meal Planning
 
 ##### 10.2.1 Weekly Planner
+
 ```
 Calendar Grid:
 - Drag & drop meals
@@ -768,6 +804,7 @@ Innovation:
 ```
 
 ##### 10.2.2 Recipe Builder
+
 ```
 Creation Interface:
 - Ingredient search/add
@@ -791,6 +828,7 @@ Innovation:
 ### 11. Social & Gamification
 
 #### 11.1 Social Feed
+
 ```
 Feed Design:
 - Instagram-style cards
@@ -814,6 +852,7 @@ Innovation:
 #### 11.2 Achievements & Gamification
 
 ##### 11.2.1 Trophy Room
+
 ```
 Achievement Grid:
 - 3D trophies that rotate
@@ -835,6 +874,7 @@ Innovation:
 ```
 
 ##### 11.2.2 Streak System
+
 ```
 Streak Display:
 - Fire that grows with days
@@ -860,6 +900,7 @@ Innovation:
 #### 12.1 AR Features
 
 ##### 12.1.1 Portion Scanner
+
 ```
 AR Interface:
 - Real-time portion overlay
@@ -881,6 +922,7 @@ Innovation:
 ```
 
 ##### 12.1.2 Restaurant Menu Scanner
+
 ```
 Menu Recognition:
 - Point at menu items
@@ -904,6 +946,7 @@ Innovation:
 #### 12.2 Health Integrations
 
 ##### 12.2.1 Wearable Sync
+
 ```
 Dashboard Integration:
 - Real-time calorie burn
@@ -925,6 +968,7 @@ Innovation:
 ```
 
 ##### 12.2.2 Health Metrics
+
 ```
 Tracking Options:
 - Weight with trends
@@ -948,6 +992,7 @@ Innovation:
 ### 13. Utility Screens
 
 #### 13.1 Loading States
+
 ```
 Skeleton Screens:
 - Content placeholders
@@ -969,6 +1014,7 @@ Innovation:
 ```
 
 #### 13.2 Empty States
+
 ```
 Illustrations:
 - Friendly characters
@@ -978,7 +1024,7 @@ Illustrations:
 
 Categories:
 - No meals today
-- No search results  
+- No search results
 - No internet
 - No permissions
 
@@ -990,6 +1036,7 @@ Innovation:
 ```
 
 #### 13.3 Error States
+
 ```
 Error Display:
 - Clear messaging
@@ -1013,6 +1060,7 @@ Innovation:
 ### 14. Onboarding & Education
 
 #### 14.1 Feature Tours
+
 ```
 Tour Design:
 - Spotlight effects
@@ -1034,6 +1082,7 @@ Innovation:
 ```
 
 #### 14.2 Help System
+
 ```
 Help Interface:
 - Searchable FAQ
@@ -1057,6 +1106,7 @@ Innovation:
 ### 15. Accessibility Features
 
 #### 15.1 Vision Accessibility
+
 ```
 Features:
 - High contrast mode
@@ -1078,6 +1128,7 @@ Innovation:
 ```
 
 #### 15.2 Motor Accessibility
+
 ```
 Features:
 - Large touch targets
@@ -1101,25 +1152,29 @@ Innovation:
 ## Design System Requirements
 
 ### Animation Principles
+
 1. **Physics-Based**: Natural spring animations
 2. **Purposeful**: Every animation has meaning
 3. **Performance**: 60fps minimum
 4. **Accessibility**: Respect reduce motion
 
 ### Haptic Feedback Patterns
+
 - Success: Light impact
-- Warning: Medium impact  
+- Warning: Medium impact
 - Error: Heavy impact
 - Selection: Selection feedback
 - Progress: Continuous gentle
 
 ### Sound Design (Optional)
+
 - Subtle UI sounds
 - Success chimes
 - Notification sounds
 - Voice feedback
 
 ### Gesture Library
+
 - Tap, double-tap, long-press
 - Swipe (all directions)
 - Pinch, spread
@@ -1129,6 +1184,7 @@ Innovation:
 ## Platform-Specific Adaptations
 
 ### iOS Specific
+
 - Dynamic Island integration
 - Live Activities
 - Widget designs
@@ -1136,6 +1192,7 @@ Innovation:
 - SharePlay for group logging
 
 ### Android Specific
+
 - Material You theming
 - Widget designs
 - Quick Settings tiles
@@ -1145,6 +1202,7 @@ Innovation:
 ## Performance Considerations
 
 ### Optimization Requirements
+
 - Lazy loading everywhere
 - Image optimization
 - Smooth 60fps animations
@@ -1152,6 +1210,7 @@ Innovation:
 - Offline-first architecture
 
 ### Memory Management
+
 - Proper cleanup
 - Image caching
 - Data pagination
@@ -1160,6 +1219,7 @@ Innovation:
 ## Handoff Specifications
 
 ### File Organization
+
 ```
 Figma Structure:
 ├── 📐 Design System
@@ -1170,7 +1230,7 @@ Figma Structure:
 │   └── Icons
 ├── 📱 Screens - Light Mode
 │   ├── Onboarding
-│   ├── Authentication  
+│   ├── Authentication
 │   ├── Core App
 │   ├── Meal Logging
 │   ├── Analytics
@@ -1206,6 +1266,7 @@ Documentation:
 ## Success Metrics
 
 The design succeeds when:
+
 1. Every screen has a "wow" moment
 2. Animations feel natural and purposeful
 3. The app feels faster than it actually is
@@ -1217,6 +1278,7 @@ The design succeeds when:
 ## Final Vision
 
 NutriAI should feel like:
+
 - **Premium**: Every pixel considered
 - **Intelligent**: Anticipates needs
 - **Delightful**: Joy to use daily

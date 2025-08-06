@@ -1,9 +1,20 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+} from 'react-native';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { PageTransition } from '@/components/ui/PageTransition';
+import { StandardHeaderWithBack } from '@/components/common';
 import * as Haptics from 'expo-haptics';
 
 interface TextInputScreenProps {
@@ -38,7 +49,7 @@ export function TextInputScreen({ onBack, onSubmit }: TextInputScreenProps) {
     'Chicken salad with avocado',
     'Greek yogurt with berries',
     'Grilled salmon with vegetables',
-    'Protein shake with banana'
+    'Protein shake with banana',
   ];
 
   return (
@@ -49,22 +60,15 @@ export function TextInputScreen({ onBack, onSubmit }: TextInputScreenProps) {
           className="flex-1"
         >
           {/* Header */}
-          <View className="px-4 pt-4 pb-4 flex-row items-center">
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.selectionAsync();
-                onBack();
-              }}
-              className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mr-4"
-            >
-              <Ionicons name="arrow-back" size={20} color="#6b7280" />
-            </TouchableOpacity>
-            <Text className="text-xl font-bold text-gray-900 dark:text-white">
-              Describe Your Meal
-            </Text>
-          </View>
+          <StandardHeaderWithBack 
+            title="Describe Your Meal" 
+            onBack={onBack}
+          />
 
-          <ScrollView className="flex-1 px-4" keyboardShouldPersistTaps="handled">
+          <ScrollView
+            className="flex-1 px-4"
+            keyboardShouldPersistTaps="handled"
+          >
             {/* Instructions */}
             <MotiView
               from={{ opacity: 0, translateY: -10 }}
@@ -110,12 +114,12 @@ export function TextInputScreen({ onBack, onSubmit }: TextInputScreenProps) {
                   </TouchableOpacity>
                 )}
               </View>
-              
+
               <View className="flex-row justify-between mt-3">
                 <TouchableOpacity className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 items-center justify-center">
                   <Ionicons name="mic" size={18} color="#374151" />
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity
                   onPress={handleSubmit}
                   disabled={!inputText.trim()}
@@ -125,11 +129,13 @@ export function TextInputScreen({ onBack, onSubmit }: TextInputScreenProps) {
                       : 'bg-gray-200 dark:bg-gray-700'
                   }`}
                 >
-                  <Text className={`mr-1 ${
-                    inputText.trim()
-                      ? 'text-white'
-                      : 'text-gray-400 dark:text-gray-500'
-                  }`}>
+                  <Text
+                    className={`mr-1 ${
+                      inputText.trim()
+                        ? 'text-white'
+                        : 'text-gray-400 dark:text-gray-500'
+                    }`}
+                  >
                     Analyze
                   </Text>
                   <Ionicons
@@ -158,7 +164,7 @@ export function TextInputScreen({ onBack, onSubmit }: TextInputScreenProps) {
                     animate={{ opacity: 1, translateY: 0 }}
                     transition={{
                       duration: 300,
-                      delay: 300 + index * 100
+                      delay: 300 + index * 100,
                     }}
                   >
                     <TouchableOpacity

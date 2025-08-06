@@ -31,13 +31,13 @@ interface MilestoneInfo {
 }
 
 const MILESTONES = [
-  { days: 7, message: "One week strong!", emoji: "🔥" },
-  { days: 14, message: "Two weeks of consistency!", emoji: "💪" },
-  { days: 21, message: "21 days - a new habit!", emoji: "🌟" },
-  { days: 30, message: "30 day champion!", emoji: "🎯" },
-  { days: 50, message: "50 days of dedication!", emoji: "🏆" },
-  { days: 100, message: "Century streak!", emoji: "💯" },
-  { days: 365, message: "One year warrior!", emoji: "👑" },
+  { days: 7, message: 'One week strong!', emoji: '🔥' },
+  { days: 14, message: 'Two weeks of consistency!', emoji: '💪' },
+  { days: 21, message: '21 days - a new habit!', emoji: '🌟' },
+  { days: 30, message: '30 day champion!', emoji: '🎯' },
+  { days: 50, message: '50 days of dedication!', emoji: '🏆' },
+  { days: 100, message: 'Century streak!', emoji: '💯' },
+  { days: 365, message: 'One year warrior!', emoji: '👑' },
 ];
 
 const StreakContext = createContext<StreakContextType | undefined>(undefined);
@@ -62,16 +62,16 @@ export function StreakProvider({ children }: { children: ReactNode }) {
 
     try {
       setStreakData(prev => ({ ...prev, loading: true, error: null }));
-      
+
       const result = await getUserStats(user.id);
-      
+
       if (result.success) {
         const { currentStreak, longestStreak, totalDaysLogged } = result.data;
-        
+
         // Check if streak is active (logged today)
         const today = new Date().toISOString().split('T')[0];
         const isActive = result.data.totalDaysLogged > 0; // This is a simplified check
-        
+
         setStreakData({
           currentStreak,
           longestStreak,
@@ -104,10 +104,10 @@ export function StreakProvider({ children }: { children: ReactNode }) {
 
   const checkMilestone = useCallback((): MilestoneInfo | null => {
     const { currentStreak } = streakData;
-    
+
     // Check if current streak matches any milestone
     const milestone = MILESTONES.find(m => m.days === currentStreak);
-    
+
     if (milestone) {
       return {
         milestone: milestone.days,
@@ -115,7 +115,7 @@ export function StreakProvider({ children }: { children: ReactNode }) {
         emoji: milestone.emoji,
       };
     }
-    
+
     return null;
   }, [streakData.currentStreak]);
 

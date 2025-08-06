@@ -10,11 +10,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
-import { useOnboarding } from './OnboardingFlow';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const GenderSelectionScreen = () => {
-  const { goToNextStep, goToPreviousStep, progress, updateUserData } = useOnboarding();
+  const { goToNextStep, goToPreviousStep, progress, updateUserData } =
+    useOnboarding();
   const [selectedGender, setSelectedGender] = useState('');
+  const [backPressed, setBackPressed] = useState(false);
+  const [continuePressed, setContinuePressed] = useState(false);
+  const [pressedOption, setPressedOption] = useState<string | null>(null);
 
   const handleSelect = (gender: string) => {
     hapticFeedback.selection();
@@ -42,19 +46,32 @@ const GenderSelectionScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Header with back button */}
         <View style={styles.header}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.backButton}
-            activeOpacity={0.7}
+          <MotiView
+            animate={{
+              scale: backPressed ? 0.95 : 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 15,
+              stiffness: 400,
+            }}
           >
-            <ArrowLeft size={20} color="#000" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleBack}
+              onPressIn={() => setBackPressed(true)}
+              onPressOut={() => setBackPressed(false)}
+              style={styles.backButton}
+              activeOpacity={1}
+            >
+              <ArrowLeft size={20} color="#000" />
+            </TouchableOpacity>
+          </MotiView>
         </View>
 
         {/* Progress bar */}
@@ -85,42 +102,70 @@ const GenderSelectionScreen = () => {
               animate={{ opacity: 1, translateY: 0 }}
               transition={{ delay: index * 100 }}
             >
-              <TouchableOpacity
-                onPress={() => handleSelect(option.value)}
-                activeOpacity={0.7}
-                style={[
-                  styles.optionButton,
-                  selectedGender === option.value && styles.optionButtonSelected,
-                ]}
-                testID={`gender-option-${option.value}`}
+              <MotiView
+                animate={{
+                  scale: pressedOption === option.value ? 0.95 : 1,
+                }}
+                transition={{
+                  type: 'spring',
+                  damping: 15,
+                  stiffness: 400,
+                }}
               >
-                <Text
+                <TouchableOpacity
+                  onPress={() => handleSelect(option.value)}
+                  onPressIn={() => setPressedOption(option.value)}
+                  onPressOut={() => setPressedOption(null)}
+                  activeOpacity={1}
                   style={[
-                    styles.optionText,
-                    selectedGender === option.value && styles.optionTextSelected,
+                    styles.optionButton,
+                    selectedGender === option.value &&
+                      styles.optionButtonSelected,
                   ]}
+                  testID={`gender-option-${option.value}`}
                 >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.optionText,
+                      selectedGender === option.value &&
+                        styles.optionTextSelected,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              </MotiView>
             </MotiView>
           ))}
         </View>
 
         {/* Continue button */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            onPress={handleContinue}
-            style={[
-              styles.continueButton,
-              !selectedGender && styles.continueButtonDisabled,
-            ]}
-            activeOpacity={selectedGender ? 0.8 : 1}
-            disabled={!selectedGender}
-            testID="continue-button"
+          <MotiView
+            animate={{
+              scale: continuePressed ? 0.95 : 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 15,
+              stiffness: 400,
+            }}
           >
-            <Text style={styles.continueButtonText}>Continue</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleContinue}
+              onPressIn={() => setContinuePressed(true)}
+              onPressOut={() => setContinuePressed(false)}
+              style={[
+                styles.continueButton,
+                !selectedGender && styles.continueButtonDisabled,
+              ]}
+              activeOpacity={1}
+              disabled={!selectedGender}
+              testID="continue-button"
+            >
+              <Text style={styles.continueButtonText}>Continue</Text>
+            </TouchableOpacity>
+          </MotiView>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -1,16 +1,11 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Check } from 'lucide-react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { hapticFeedback } from '../../utils/haptics';
-import tokens from '../../../tokens.json';
+import tokens from '../../utils/tokens';
 
 interface DietaryOption {
   id: string;
@@ -20,15 +15,45 @@ interface DietaryOption {
 }
 
 const dietaryOptions: DietaryOption[] = [
-  { id: 'none', label: 'No restrictions', emoji: '🍽️', description: 'I eat everything' },
-  { id: 'vegetarian', label: 'Vegetarian', emoji: '🥗', description: 'No meat or fish' },
-  { id: 'vegan', label: 'Vegan', emoji: '🌱', description: 'No animal products' },
+  {
+    id: 'none',
+    label: 'No restrictions',
+    emoji: '🍽️',
+    description: 'I eat everything',
+  },
+  {
+    id: 'vegetarian',
+    label: 'Vegetarian',
+    emoji: '🥗',
+    description: 'No meat or fish',
+  },
+  {
+    id: 'vegan',
+    label: 'Vegan',
+    emoji: '🌱',
+    description: 'No animal products',
+  },
   { id: 'keto', label: 'Keto', emoji: '🥑', description: 'Low carb, high fat' },
   { id: 'paleo', label: 'Paleo', emoji: '🥩', description: 'Whole foods only' },
-  { id: 'gluten-free', label: 'Gluten-free', emoji: '🌾', description: 'No gluten' },
-  { id: 'dairy-free', label: 'Dairy-free', emoji: '🥛', description: 'No dairy products' },
+  {
+    id: 'gluten-free',
+    label: 'Gluten-free',
+    emoji: '🌾',
+    description: 'No gluten',
+  },
+  {
+    id: 'dairy-free',
+    label: 'Dairy-free',
+    emoji: '🥛',
+    description: 'No dairy products',
+  },
   { id: 'halal', label: 'Halal', emoji: '🕌', description: 'Halal certified' },
-  { id: 'kosher', label: 'Kosher', emoji: '✡️', description: 'Kosher certified' },
+  {
+    id: 'kosher',
+    label: 'Kosher',
+    emoji: '✡️',
+    description: 'Kosher certified',
+  },
 ];
 
 const allergyOptions: DietaryOption[] = [
@@ -104,7 +129,7 @@ export default function DietaryPreferencesScreen() {
       <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
         {/* Progress indicator */}
         <View className="flex-row space-x-2 mb-8">
-          {[1, 2, 3, 4, 5].map((step) => (
+          {[1, 2, 3, 4, 5].map(step => (
             <View
               key={step}
               className={`h-1 flex-1 rounded-full ${
@@ -138,9 +163,13 @@ export default function DietaryPreferencesScreen() {
                 >
                   <Text className="text-2xl mr-3">{option.emoji}</Text>
                   <View className="flex-1">
-                    <Text className="text-base font-medium">{option.label}</Text>
+                    <Text className="text-base font-medium">
+                      {option.label}
+                    </Text>
                     {option.description && (
-                      <Text className="text-sm text-gray-500">{option.description}</Text>
+                      <Text className="text-sm text-gray-500">
+                        {option.description}
+                      </Text>
                     )}
                   </View>
                   {selectedDiets.includes(option.id) && (
@@ -154,7 +183,9 @@ export default function DietaryPreferencesScreen() {
           </View>
 
           {/* Allergies */}
-          <Text className="text-lg font-semibold mb-4">Allergies & intolerances</Text>
+          <Text className="text-lg font-semibold mb-4">
+            Allergies & intolerances
+          </Text>
           <View className="flex-row flex-wrap mb-8">
             {allergyOptions.map((option, index) => (
               <Animated.View
@@ -173,7 +204,7 @@ export default function DietaryPreferencesScreen() {
                   <Text className="mr-2">{option.emoji}</Text>
                   <Text className="flex-1 text-sm">{option.label}</Text>
                   {selectedAllergies.includes(option.id) && (
-                    <Check size={16} color={tokens.colors.danger} />
+                    <Check size={16} color={tokens.colors.error} />
                   )}
                 </TouchableOpacity>
               </Animated.View>
@@ -188,7 +219,9 @@ export default function DietaryPreferencesScreen() {
           onPress={handleContinue}
           className="bg-primary rounded-2xl py-4 px-6"
         >
-          <Text className="text-white text-center font-semibold text-lg">Continue</Text>
+          <Text className="text-white text-center font-semibold text-lg">
+            Continue
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

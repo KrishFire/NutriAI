@@ -1,7 +1,17 @@
-import React, { useState, createContext, useContext } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import ErrorBoundary from '../../components/common/ErrorBoundary';
+
+// Import context
+import {
+  OnboardingContext,
+  OnboardingContextType,
+  OnboardingData,
+  ONBOARDING_STEPS,
+} from '../../contexts/OnboardingContext';
 
 // Import all onboarding screens
 import WelcomeScreen from './WelcomeScreen';
@@ -15,6 +25,7 @@ import BirthDateScreen from './BirthDateScreen';
 import TargetWeightScreen from './TargetWeightScreen';
 import WeightSpeedScreen from './WeightSpeedScreen';
 import WeightTransitionScreen from './WeightTransitionScreen';
+import DietSelectionScreen from './DietSelectionScreen';
 import GoalAccomplishmentScreen from './GoalAccomplishmentScreen';
 import ReferralSourceScreen from './ReferralSourceScreen';
 import ReferralCodeScreen from './ReferralCodeScreen';
@@ -25,79 +36,32 @@ import AuthScreen from './AuthScreen';
 import SubscriptionScreen from './SubscriptionScreen';
 import TutorialOverlay from './TutorialOverlay';
 
-// Define the complete onboarding steps for progress calculation
-const ONBOARDING_STEPS = [
-  'welcome',
-  'carousel',
-  'gender', 
-  'activity',
-  'referral-source',
-  'height-weight',
-  'birth-date',
-  'goal-selection',
-  'target-weight',
-  'weight-speed',
-  'weight-transition',
-  'goal-accomplishment',
-  'referral-code',
-  'nutrition-loading',
-  'macros',
-  'auth',
-  'subscription',
-  'notifications',
-  'success',
-  'tutorial'
-];
+import { OnboardingStackParamList } from '../../navigation/OnboardingStack';
 
-// Context for onboarding data
-interface OnboardingData {
-  gender: string;
-  activityLevel: string;
-  referralSource: string;
-  height: { feet: string; inches: string; cm: string };
-  weight: { value: string; unit: 'lbs' | 'kg' };
-  currentWeight?: { value: string; unit: 'lbs' | 'kg' }; // Alias for weight
-  birthDate: { month: string; day: string; year: string };
-  goal: string;
-  targetWeight: { value: string; unit: 'lbs' | 'kg' };
-  weightChangeSpeed: number;
-  accomplishmentGoals: string[];
-  referralCode: string;
-  dailyCalories: number;
-  macroTargets: { carbs: number; protein: number; fat: number };
-  email: string;
-  authMethod: string;
-  selectedPlan: 'monthly' | 'yearly' | null;
-  isSubscribed: boolean;
-  notificationsEnabled: boolean;
-}
-
-interface OnboardingContextType {
-  currentStep: string;
-  userData: Partial<OnboardingData>;
-  updateUserData: (field: string, value: any) => void;
-  goToNextStep: () => void;
-  goToPreviousStep: () => void;
-  progress: number;
-}
-
-const OnboardingContext = createContext<OnboardingContextType | null>(null);
-
-export const useOnboarding = () => {
-  const context = useContext(OnboardingContext);
-  if (!context) {
-    throw new Error('useOnboarding must be used within OnboardingProvider');
-  }
-  return context;
+type OnboardingFlowProps = {
+  onComplete: () => void;
+  navigation: NativeStackScreenProps<
+    OnboardingStackParamList,
+    'OnboardingFlow'
+  >['navigation'];
+  route: NativeStackScreenProps<
+    OnboardingStackParamList,
+    'OnboardingFlow'
+  >['route'];
 };
 
-interface OnboardingFlowProps {
-  onComplete: () => void;
-}
-
-export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
-  const [currentStep, setCurrentStep] = useState('welcome');
-  const [userData, setUserData] = useState<Partial<OnboardingData>>({});
+export default function OnboardingFlow({
+  onComplete,
+  navigation,
+  route,
+}: OnboardingFlowProps) {
+  const [currentStep, setCurrentStep] = useState(
+    route.params?.initialStep || 'welcome'
+  );
+  const [userData, setUserData] = useState<Partial<OnboardingData>>({
+    authMode: route.params?.authMode || 'signup',
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
   // Calculate progress percentage based on current step
   const getProgressPercentage = (step: string) => {
@@ -108,22 +72,35 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
 
   const progress = getProgressPercentage(currentStep);
 
-  const updateUserData = (field: string, value: any) => {
-    setUserData(prev => ({ ...prev, [field]: value }));
-    // Also update currentWeight if weight is updated
-    if (field === 'weight') {
-      setUserData(prev => ({ ...prev, currentWeight: value }));
+  const updateUserData = useCallback((field: string, value: any) => {
+    setUserData(prev => {
+      const newData = { ...prev, [field]: value };
+      // Also update currentWeight if weight is updated
+      if (field === 'weight') {
+        newData.currentWeight = value;
+      }
+      return newData;
+    });
+  }, []);
+
+  const transitionToStep = useCallback((step: string) => {
+    try {
+      Haptics.selectionAsync();
+      setCurrentStep(step);
+    } catch (error) {
+      console.error('Error transitioning to step:', error);
+      // Still transition even if haptics fail
+      setCurrentStep(step);
     }
-  };
+  }, []);
 
-  const transitionToStep = (step: string) => {
-    Haptics.selectionAsync();
-    setCurrentStep(step);
-  };
+  const goToNextStep = useCallback(() => {
+    try {
+      Haptics.selectionAsync();
+    } catch (error) {
+      console.error('Haptics error:', error);
+    }
 
-  const goToNextStep = () => {
-    Haptics.selectionAsync();
-    
     // State-based navigation logic
     switch (currentStep) {
       case 'welcome':
@@ -150,7 +127,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       case 'goal-selection':
         // Branching logic: skip target weight if goal is maintain
         if (userData.goal === 'maintain') {
-          transitionToStep('goal-accomplishment');
+          transitionToStep('diet-selection');
         } else {
           transitionToStep('target-weight');
         }
@@ -162,6 +139,9 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         transitionToStep('weight-transition');
         break;
       case 'weight-transition':
+        transitionToStep('diet-selection');
+        break;
+      case 'diet-selection':
         transitionToStep('goal-accomplishment');
         break;
       case 'goal-accomplishment':
@@ -186,18 +166,29 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         transitionToStep('success');
         break;
       case 'success':
-        transitionToStep('tutorial');
+        // Complete onboarding when user clicks "Start Tracking"
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (error) {
+          console.error('Haptics error:', error);
+        }
+        // Only update state - let RootNavigator handle navigation
+        onComplete();
         break;
       case 'tutorial':
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Tutorial is optional, complete onboarding here too
         onComplete();
         break;
     }
-  };
+  }, [currentStep, userData, transitionToStep, onComplete]);
 
-  const goToPreviousStep = () => {
-    Haptics.selectionAsync();
-    
+  const goToPreviousStep = useCallback(() => {
+    try {
+      Haptics.selectionAsync();
+    } catch (error) {
+      console.error('Haptics error:', error);
+    }
+
     // State-based back navigation
     switch (currentStep) {
       case 'carousel':
@@ -230,13 +221,16 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       case 'weight-transition':
         transitionToStep('weight-speed');
         break;
-      case 'goal-accomplishment':
+      case 'diet-selection':
         // Branch back correctly based on goal
         if (userData.goal === 'maintain') {
           transitionToStep('goal-selection');
         } else {
           transitionToStep('weight-transition');
         }
+        break;
+      case 'goal-accomplishment':
+        transitionToStep('diet-selection');
         break;
       case 'referral-code':
         transitionToStep('goal-accomplishment');
@@ -245,7 +239,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         transitionToStep('referral-code');
         break;
       case 'macros':
-        transitionToStep('nutrition-loading');
+        transitionToStep('referral-code');
         break;
       case 'auth':
         transitionToStep('macros');
@@ -263,7 +257,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         transitionToStep('success');
         break;
     }
-  };
+  }, [currentStep, userData, transitionToStep]);
 
   const renderCurrentStep = () => {
     switch (currentStep) {
@@ -289,6 +283,8 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         return <WeightSpeedScreen />;
       case 'weight-transition':
         return <WeightTransitionScreen />;
+      case 'diet-selection':
+        return <DietSelectionScreen />;
       case 'goal-accomplishment':
         return <GoalAccomplishmentScreen />;
       case 'referral-code':
@@ -298,13 +294,14 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       case 'macros':
         return <MacroTargetsScreen />;
       case 'auth':
-        return <AuthScreen mode="signup" />;
+        // Use authMode from userData, which is initialized from route params
+        return <AuthScreen mode={userData.authMode || 'signup'} />;
       case 'subscription':
         return <SubscriptionScreen />;
       case 'notifications':
         return <NotificationsPermissionScreen />;
       case 'success':
-        return <SuccessScreen />;
+        return <SuccessScreen onContinue={goToNextStep} />;
       case 'tutorial':
         return <TutorialOverlay />;
       default:
@@ -312,27 +309,40 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     }
   };
 
+  const contextValue = useMemo<OnboardingContextType>(
+    () => ({
+      currentStep,
+      userData,
+      updateUserData,
+      goToNextStep,
+      goToPreviousStep,
+      transitionToStep,
+      progress,
+      navigation,
+      route,
+      isLoading,
+    }),
+    [
+      currentStep,
+      userData,
+      updateUserData,
+      goToNextStep,
+      goToPreviousStep,
+      transitionToStep,
+      progress,
+      navigation,
+      route,
+      isLoading,
+    ]
+  );
+
+  // Navigation and route are now guaranteed to be provided by OnboardingStack
+
   return (
-    <OnboardingContext.Provider
-      value={{
-        currentStep,
-        userData,
-        updateUserData,
-        goToNextStep,
-        goToPreviousStep,
-        progress,
-      }}
-    >
-      <View className="flex-1">
-        <Animated.View
-          key={currentStep}
-          entering={FadeIn.duration(300)}
-          exiting={FadeOut.duration(200)}
-          className="flex-1"
-        >
-          {renderCurrentStep()}
-        </Animated.View>
-      </View>
-    </OnboardingContext.Provider>
+    <ErrorBoundary>
+      <OnboardingContext.Provider value={contextValue}>
+        <View className="flex-1">{renderCurrentStep()}</View>
+      </OnboardingContext.Provider>
+    </ErrorBoundary>
   );
 }

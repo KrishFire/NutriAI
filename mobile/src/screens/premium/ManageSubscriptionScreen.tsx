@@ -14,11 +14,15 @@ import { useNavigation } from '@react-navigation/native';
 import { hapticFeedback } from '../../utils/haptics';
 import { Button } from '../../components/ui/Button';
 import { PageTransition } from '../../components/ui/PageTransition';
+import { StandardHeaderWithBack } from '../../components/common';
 import { MotiView } from 'moti';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../types/navigation';
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ManageSubscription'>;
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'ManageSubscription'
+>;
 
 interface SubscriptionData {
   status: 'active' | 'inactive';
@@ -75,17 +79,10 @@ export const ManageSubscriptionScreen: React.FC = () => {
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
         <View className="flex-1">
           {/* Header */}
-          <View className="flex-row items-center px-4 pt-4 pb-2">
-            <Pressable
-              onPress={handleBack}
-              className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
-            >
-              <Ionicons name="arrow-back" size={20} color="#6B7280" />
-            </Pressable>
-            <Text className="text-2xl font-bold text-gray-900 dark:text-white ml-4">
-              Subscription
-            </Text>
-          </View>
+          <StandardHeaderWithBack 
+            title="Subscription" 
+            onBack={handleBack}
+          />
 
           <ScrollView
             className="flex-1"
@@ -119,13 +116,23 @@ export const ManageSubscriptionScreen: React.FC = () => {
 
                 <View className="bg-white/10 rounded-lg p-4 mb-4">
                   <View className="flex-row items-center mb-2">
-                    <Ionicons name="time-outline" size={16} color="white" opacity={0.8} />
+                    <Ionicons
+                      name="time-outline"
+                      size={16}
+                      color="white"
+                      opacity={0.8}
+                    />
                     <Text className="text-white/80 text-sm ml-2">
                       Next billing: {subscription.nextBillingDate}
                     </Text>
                   </View>
                   <View className="flex-row items-center">
-                    <Ionicons name="card-outline" size={16} color="white" opacity={0.8} />
+                    <Ionicons
+                      name="card-outline"
+                      size={16}
+                      color="white"
+                      opacity={0.8}
+                    />
                     <Text className="text-white/80 text-sm ml-2">
                       Payment method: {subscription.paymentMethod}
                     </Text>
@@ -136,7 +143,9 @@ export const ManageSubscriptionScreen: React.FC = () => {
                   variant="secondary"
                   fullWidth
                   onPress={handleManageSubscription}
-                  icon={<Ionicons name="link-outline" size={16} color="white" />}
+                  icon={
+                    <Ionicons name="link-outline" size={16} color="white" />
+                  }
                   iconPosition="right"
                   className="bg-white/20 border-white/20"
                 >
@@ -153,7 +162,7 @@ export const ManageSubscriptionScreen: React.FC = () => {
               >
                 Premium Features
               </Animated.Text>
-              
+
               <View className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
                 <View className="space-y-3">
                   {subscription.features.map((feature, index) => (
@@ -189,7 +198,11 @@ export const ManageSubscriptionScreen: React.FC = () => {
                   If you have any questions about your subscription or need
                   assistance, our support team is here to help.
                 </Text>
-                <Button variant="outline" fullWidth onPress={handleContactSupport}>
+                <Button
+                  variant="outline"
+                  fullWidth
+                  onPress={handleContactSupport}
+                >
                   Contact Support
                 </Button>
               </Animated.View>
@@ -208,7 +221,11 @@ export const ManageSubscriptionScreen: React.FC = () => {
                   Changed devices or reinstalled the app? Restore your previous
                   purchases.
                 </Text>
-                <Button variant="secondary" fullWidth onPress={handleRestorePurchases}>
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onPress={handleRestorePurchases}
+                >
                   Restore Purchases
                 </Button>
               </Animated.View>

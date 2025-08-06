@@ -60,7 +60,10 @@ export default function VoiceLogScreen({
       try {
         await nativeSpeech.start();
       } catch (err) {
-        console.error('[VoiceLogScreen] Failed to start speech recognition:', err);
+        console.error(
+          '[VoiceLogScreen] Failed to start speech recognition:',
+          err
+        );
         // Don't show error immediately on iOS - it might just need permission
         if (Platform.OS !== 'ios') {
           setError('Speech recognition is not available on this device');
@@ -75,7 +78,6 @@ export default function VoiceLogScreen({
       nativeSpeech.cancel();
     };
   }, []);
-
 
   const handleSubmit = async (text: string) => {
     if (!text.trim() || isProcessing) return;

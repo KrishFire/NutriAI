@@ -7,9 +7,10 @@ You are tasked with designing a complete mobile application UI/UX in Figma for N
 ## Core Design Philosophy
 
 ### Aesthetic Direction
+
 - **Primary Inspiration**: Ultra-clean minimalist design inspired by Uber and Robinhood
 - **Secondary References**: Apple Health (data visualization), MyFitnessPal (nutrition tracking), Duolingo (gamification)
-- **Key Principles**: 
+- **Key Principles**:
   - Minimize visual clutter
   - Focus on data visualization
   - Generous white space
@@ -18,6 +19,7 @@ You are tasked with designing a complete mobile application UI/UX in Figma for N
   - Delightful micro-interactions
 
 ### Brand Identity
+
 - **Primary Color**: RGB(50, 13, 255) / #320DFF - A vibrant blue that serves as the brand's hero color
 - **Typography**: Inter font family (or SF Pro as alternative) - clean, modern, highly legible
 - **Voice & Tone**: Encouraging, supportive, scientifically-informed but accessible
@@ -25,6 +27,7 @@ You are tasked with designing a complete mobile application UI/UX in Figma for N
 ## Technical Requirements
 
 ### Platform Specifications
+
 - **Primary Target**: iOS (iPhone 14 Pro as base frame)
 - **Secondary Target**: Android (Pixel 7 Pro as base frame)
 - **Minimum iOS Version**: iOS 15+
@@ -33,6 +36,7 @@ You are tasked with designing a complete mobile application UI/UX in Figma for N
 - **Accessibility**: WCAG AA compliance mandatory
 
 ### Design System Requirements
+
 - **Grid System**: 4px baseline grid
 - **Touch Targets**: Minimum 44x44px (Apple HIG)
 - **Safe Areas**: Respect all platform safe areas
@@ -44,58 +48,53 @@ You are tasked with designing a complete mobile application UI/UX in Figma for N
 ### 1. Authentication & Onboarding
 
 #### Splash Screen
+
 - App logo animation
 - Loading progress indicator
 - Seamless transition to next screen
 
 #### Welcome Flow (First-Time Users)
+
 1. **Welcome Screen**
    - Hero illustration showcasing app benefits
    - "Get Started" and "I have an account" buttons
-   
 2. **Key Benefits Screen** (3-slide carousel)
    - AI-powered food recognition
    - Effortless tracking methods
    - Personalized insights
-   
 3. **Account Creation**
    - Email/password or social login (Apple, Google)
    - Progressive form with inline validation
    - Password strength indicator
-   
 4. **Personal Information**
    - Name, age, gender, height, weight
    - Activity level selector (sedentary to very active)
    - These inform initial calorie calculations
-   
 5. **Goals Setting**
    - Primary goal (lose weight, maintain, gain muscle)
    - Target weight (optional)
    - Timeline preference
-   
 6. **Dietary Preferences & Restrictions**
    - Multi-select dietary types (Vegan, Keto, Paleo, etc.)
    - Allergy inputs with autocomplete
    - Food dislikes/avoidances
    - These create filter tags throughout the app
-   
 7. **Macro Targets**
    - Smart defaults based on goals
    - Manual adjustment sliders
    - Visual preview of macro split
-   
 8. **Notification Preferences**
    - Meal reminders
    - Streak notifications
    - Weekly summaries
    - Permission request with benefits explanation
-   
 9. **Quick Tutorial**
    - Interactive walkthrough of logging methods
    - Swipeable cards showing key features
    - "Skip" option for experienced users
 
 #### Login Screen (Returning Users)
+
 - Email/password fields with show/hide toggle
 - Biometric login option (Face ID/Touch ID)
 - "Forgot Password" flow
@@ -105,6 +104,7 @@ You are tasked with designing a complete mobile application UI/UX in Figma for N
 ### 2. Core Navigation Structure
 
 #### Bottom Tab Bar
+
 - **Home** (house icon) - Daily dashboard
 - **Log** (plus icon) - Quick access to logging
 - **History** (calendar icon) - Past meals and trends
@@ -114,12 +114,14 @@ You are tasked with designing a complete mobile application UI/UX in Figma for N
 ### 3. Home Screen (Daily Dashboard)
 
 #### Header Section
+
 - Greeting with user's name
 - Current date
 - Streak badge (fire icon with number)
 - Notification bell (with badge for unread)
 
 #### Daily Progress Hero Card
+
 - Large circular progress rings showing:
   - Calories (primary, uses brand blue)
   - Carbs (amber)
@@ -130,6 +132,7 @@ You are tasked with designing a complete mobile application UI/UX in Figma for N
 - "Quick Log" button prominently placed
 
 #### Today's Meals Section
+
 - Chronological list of logged meals
 - Each meal card shows:
   - Meal type (Breakfast, Lunch, Dinner, Snack)
@@ -140,13 +143,16 @@ You are tasked with designing a complete mobile application UI/UX in Figma for N
   - Tap for details, swipe for options
 
 #### Quick Actions Bar
+
 Instead of hidden FAB, prominent action buttons:
+
 - **Camera** - "Snap a Photo"
 - **Voice** - "Speak to Log"
 - **Barcode** - "Scan Product"
 - **Search** - "Search Foods"
 
 #### Motivational Elements
+
 - Daily tip or insight
 - Progress milestone notifications
 - Water intake tracker (8 glasses)
@@ -154,17 +160,16 @@ Instead of hidden FAB, prominent action buttons:
 ### 4. Logging Flows
 
 #### Photo Capture Flow
+
 1. **Camera Screen**
    - Full-screen camera view
    - Flash, flip camera, gallery access
    - Grid overlay option
    - Recent photos strip at bottom
-   
 2. **Processing Screen**
    - Show captured image
    - Animated AI analysis indicator
    - "Analyzing your meal..." message
-   
 3. **Results Screen**
    - Identified foods list with confidence scores
    - Portion size adjustment (visual + numeric)
@@ -173,23 +178,23 @@ Instead of hidden FAB, prominent action buttons:
    - Save or retake options
 
 #### Voice Logging Flow
+
 1. **Voice Input Screen**
    - Large microphone button
    - Real-time audio waveform
    - Transcription appears live
    - Examples: "I had a grande latte and a blueberry muffin"
-   
 2. **Confirmation Screen**
    - Parsed items from transcription
    - Edit quantities or items
    - Add to meal functionality
 
 #### Barcode Scanner Flow
+
 1. **Scanner Screen**
    - Camera view with guide overlay
    - Manual barcode entry option
    - Recent scans section
-   
 2. **Product Details**
    - Product image and name
    - Full nutrition label
@@ -197,17 +202,16 @@ Instead of hidden FAB, prominent action buttons:
    - Add to meal button
 
 #### Manual Search Flow
+
 1. **Search Screen**
    - Search bar with recent searches
    - Categories (Branded, Generic, Recipes, My Foods)
    - Filters (dietary preferences highlighted)
-   
 2. **Results List**
    - Food items with calories prominent
    - Branded foods show logos
    - Quick add (+) buttons
    - Tap for nutrition details
-   
 3. **Food Details**
    - Complete macro and micro nutrients
    - Serving size customization
@@ -217,6 +221,7 @@ Instead of hidden FAB, prominent action buttons:
 ### 5. Meal Management
 
 #### Meal Details Screen
+
 - Hero image of meal
 - Individual food items list
 - Each item shows:
@@ -230,6 +235,7 @@ Instead of hidden FAB, prominent action buttons:
 - AI Correction feature (prominent button)
 
 #### Meal Correction Modal
+
 - "Help AI improve" messaging
 - Current analysis display
 - Text input for corrections
@@ -239,6 +245,7 @@ Instead of hidden FAB, prominent action buttons:
 ### 6. History & Tracking
 
 #### History Screen
+
 - Calendar view / List view toggle
 - Calendar shows:
   - Color coding for goal achievement
@@ -250,6 +257,7 @@ Instead of hidden FAB, prominent action buttons:
   - Goal achievement badges
 
 #### Daily Summary Screen
+
 - Date navigation (swipe or arrows)
 - Comprehensive nutrition breakdown
 - Meal timeline with photos
@@ -260,6 +268,7 @@ Instead of hidden FAB, prominent action buttons:
 ### 7. Insights & Analytics
 
 #### Insights Dashboard
+
 - Weekly/Monthly/Yearly toggles
 - Key metrics cards:
   - Average daily calories
@@ -273,6 +282,7 @@ Instead of hidden FAB, prominent action buttons:
   - Top foods frequency
 
 #### Progress Tracking
+
 - Before/after photo comparison
 - Measurement tracking (weight, body measurements)
 - Goal progress visualization
@@ -282,6 +292,7 @@ Instead of hidden FAB, prominent action buttons:
 ### 8. Gamification & Engagement
 
 #### Achievements Screen
+
 - Trophy room layout
 - Categories:
   - Streaks (7, 30, 100 days)
@@ -293,6 +304,7 @@ Instead of hidden FAB, prominent action buttons:
 - Share achievement cards
 
 #### Streak System
+
 - Daily streak counter
 - Streak freeze tokens (earn or purchase)
 - Milestone celebrations (7, 30, 50, 100 days)
@@ -300,6 +312,7 @@ Instead of hidden FAB, prominent action buttons:
 - Calendar heat map of activity
 
 #### Challenges
+
 - Weekly challenges (e.g., "Log 5 vegetables")
 - Community challenges (optional)
 - Personal best tracking
@@ -308,6 +321,7 @@ Instead of hidden FAB, prominent action buttons:
 ### 9. User Profile & Settings
 
 #### Profile Overview
+
 - Avatar and name
 - Stats summary (member since, total meals, current streak)
 - Achievement showcase (top 3 badges)
@@ -316,6 +330,7 @@ Instead of hidden FAB, prominent action buttons:
 #### Settings Categories
 
 **Account Settings**
+
 - Edit profile information
 - Email and password
 - Social account connections
@@ -323,6 +338,7 @@ Instead of hidden FAB, prominent action buttons:
 - Data export/deletion
 
 **Nutrition Settings**
+
 - Daily calorie goal adjustment
 - Macro targets (percentage or grams)
 - Dietary preferences
@@ -331,6 +347,7 @@ Instead of hidden FAB, prominent action buttons:
 - Fasting window settings
 
 **App Preferences**
+
 - Appearance (light/dark/auto)
 - Notifications granular control
 - Default meal names
@@ -339,6 +356,7 @@ Instead of hidden FAB, prominent action buttons:
 - Language selection
 
 **Tracking Preferences**
+
 - Default serving sizes
 - Frequently used foods
 - Custom recipes management
@@ -346,17 +364,20 @@ Instead of hidden FAB, prominent action buttons:
 - Voice command shortcuts
 
 **Premium Features** (if applicable)
+
 - Subscription management
 - Premium features list
 - Upgrade prompts (non-intrusive)
 
 **Health Integrations**
+
 - Apple Health sync
 - Google Fit sync
 - Fitness tracker connections
 - Export to other apps
 
 **Support & About**
+
 - Help center
 - Contact support
 - FAQs
@@ -368,6 +389,7 @@ Instead of hidden FAB, prominent action buttons:
 ### 10. Additional Crucial Screens
 
 #### Empty States
+
 - Design engaging empty states for:
   - No meals logged today
   - No history yet
@@ -376,6 +398,7 @@ Instead of hidden FAB, prominent action buttons:
   - Network offline
 
 #### Error States
+
 - Network connection errors
 - AI processing failures
 - Camera permissions denied
@@ -384,11 +407,13 @@ Instead of hidden FAB, prominent action buttons:
 - All with clear recovery actions
 
 #### Loading States
+
 - Skeleton screens for all lists
 - Progress indicators for uploads
 - Smooth transitions between states
 
 #### Success States
+
 - Meal logged successfully
 - Goal achieved for the day
 - New achievement unlocked
@@ -396,6 +421,7 @@ Instead of hidden FAB, prominent action buttons:
 - Profile updated
 
 #### Permission Requests
+
 - Camera access (with benefits)
 - Photo library access
 - Microphone access
@@ -404,6 +430,7 @@ Instead of hidden FAB, prominent action buttons:
 - Each with custom UI explaining value
 
 #### Miscellaneous Screens
+
 - Terms of Service
 - Privacy Policy
 - App walkthrough/tour
@@ -420,23 +447,27 @@ Instead of hidden FAB, prominent action buttons:
 ### Color System
 
 #### Brand Colors
+
 - Primary: RGB(50, 13, 255) / #320DFF
 - Primary Pressed: RGB(40, 10, 204) / #280ACC
 - Primary Disabled: #320DFF @ 40% opacity
 
 #### Semantic Colors
+
 - Success: #66BB6A
 - Error: #F44336
 - Warning: #FFA726
 - Info: #42A5F5
 
 #### Macro Visualization
+
 - Calories: #320DFF (Primary)
 - Carbohydrates: #FFA726
 - Protein: #42A5F5
 - Fat: #66BB6A
 
 #### Neutral Palette (Light Mode)
+
 - Background Primary: #FFFFFF
 - Background Secondary: #F5F5F5
 - Surface: #FFFFFF
@@ -448,6 +479,7 @@ Instead of hidden FAB, prominent action buttons:
 - Text Tertiary: #9E9E9E
 
 #### Neutral Palette (Dark Mode)
+
 - Background Primary: #121212
 - Background Secondary: #1E1E1E
 - Surface: #1E1E1E
@@ -459,7 +491,9 @@ Instead of hidden FAB, prominent action buttons:
 - Text Tertiary: #808080
 
 ### Typography Scale
+
 Using Inter font family:
+
 - Heading XL: 32px/40px, Bold
 - Heading L: 24px/32px, Semibold
 - Heading M: 20px/28px, Semibold
@@ -488,6 +522,7 @@ Build these components with all states and variants:
 ### Interaction Patterns
 
 #### Gestures
+
 - Tap: Primary action
 - Long press: Secondary options
 - Swipe left/right: Reveal actions
@@ -495,6 +530,7 @@ Build these components with all states and variants:
 - Pinch: Zoom images
 
 #### Animations
+
 - Micro-interactions: 200ms
 - Page transitions: 300ms
 - Data loading: 400ms
@@ -502,6 +538,7 @@ Build these components with all states and variants:
 - 60fps for all animations
 
 #### Feedback
+
 - Haptic feedback for important actions
 - Sound effects (optional) for achievements
 - Visual feedback for all interactions
@@ -618,6 +655,7 @@ Build these components with all states and variants:
 ## Success Criteria
 
 The design will be considered complete when:
+
 1. All screens are designed in both light and dark modes
 2. Complete design system is documented
 3. All components have necessary states
@@ -630,6 +668,7 @@ The design will be considered complete when:
 ## Final Notes
 
 This is a nutrition tracking app that should feel:
+
 - **Trustworthy**: Accurate, scientific, reliable
 - **Effortless**: Minimal friction in logging
 - **Motivating**: Celebrates progress, encourages consistency

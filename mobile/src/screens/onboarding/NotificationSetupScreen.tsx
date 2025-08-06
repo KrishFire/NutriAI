@@ -13,7 +13,7 @@ import { ArrowLeft, Bell, Calendar, Target } from 'lucide-react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { hapticFeedback } from '../../utils/haptics';
 import * as Notifications from 'expo-notifications';
-import tokens from '../../../tokens.json';
+import tokens from '../../utils/tokens';
 
 interface NotificationSetting {
   id: string;
@@ -49,11 +49,16 @@ const notificationSettings: NotificationSetting[] = [
 
 export default function NotificationSetupScreen() {
   const navigation = useNavigation();
-  const [enabledNotifications, setEnabledNotifications] = useState<Record<string, boolean>>(
-    notificationSettings.reduce((acc, setting) => ({
-      ...acc,
-      [setting.id]: setting.defaultEnabled,
-    }), {})
+  const [enabledNotifications, setEnabledNotifications] = useState<
+    Record<string, boolean>
+  >(
+    notificationSettings.reduce(
+      (acc, setting) => ({
+        ...acc,
+        [setting.id]: setting.defaultEnabled,
+      }),
+      {}
+    )
   );
 
   const handleToggle = (settingId: string) => {
@@ -66,17 +71,20 @@ export default function NotificationSetupScreen() {
 
   const handleEnableAll = async () => {
     hapticFeedback.success();
-    
+
     // Request notification permissions
     const { status } = await Notifications.requestPermissionsAsync();
     if (status === 'granted') {
       // Enable all notifications
-      const allEnabled = notificationSettings.reduce((acc, setting) => ({
-        ...acc,
-        [setting.id]: true,
-      }), {});
+      const allEnabled = notificationSettings.reduce(
+        (acc, setting) => ({
+          ...acc,
+          [setting.id]: true,
+        }),
+        {}
+      );
       setEnabledNotifications(allEnabled);
-      
+
       // Navigate to completion
       navigation.navigate('OnboardingComplete' as never);
     } else {
@@ -111,7 +119,7 @@ export default function NotificationSetupScreen() {
       <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
         {/* Progress indicator */}
         <View className="flex-row space-x-2 mb-8">
-          {[1, 2, 3, 4, 5].map((step) => (
+          {[1, 2, 3, 4, 5].map(step => (
             <View
               key={step}
               className={`h-1 flex-1 rounded-full ${
@@ -151,13 +159,20 @@ export default function NotificationSetupScreen() {
                     <Icon size={24} color={tokens.colors.primary.DEFAULT} />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-base font-medium mb-1">{setting.title}</Text>
-                    <Text className="text-sm text-gray-500">{setting.description}</Text>
+                    <Text className="text-base font-medium mb-1">
+                      {setting.title}
+                    </Text>
+                    <Text className="text-sm text-gray-500">
+                      {setting.description}
+                    </Text>
                   </View>
                   <Switch
                     value={enabledNotifications[setting.id]}
                     onValueChange={() => handleToggle(setting.id)}
-                    trackColor={{ false: '#E5E7EB', true: tokens.colors.primary.DEFAULT }}
+                    trackColor={{
+                      false: '#E5E7EB',
+                      true: tokens.colors.primary.DEFAULT,
+                    }}
                     thumbColor="#FFF"
                   />
                 </Animated.View>
@@ -168,7 +183,8 @@ export default function NotificationSetupScreen() {
           {/* Privacy note */}
           <View className="bg-blue-50 rounded-2xl p-4 mb-8">
             <Text className="text-sm text-blue-800 text-center">
-              🔔 You can change your notification preferences anytime in settings
+              🔔 You can change your notification preferences anytime in
+              settings
             </Text>
           </View>
         </Animated.View>

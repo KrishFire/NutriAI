@@ -1,225 +1,232 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
   RefreshControl,
   Image,
+  ActivityIndicator,
+  ScrollView,
+  Animated as RNAnimated,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { HistoryStackParamList } from '../types/navigation';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-} from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import Animated, {
   useAnimatedStyle,
   withTiming,
-  withDelay,
-  withSpring,
+  useSharedValue,
+  useAnimatedProps,
 } from 'react-native-reanimated';
 import { TAB_BAR_HEIGHT } from '../utils/tokens';
 import { hapticFeedback } from '../utils/haptics';
 import { Card } from '../components/ui/Card';
+import { useAuth } from '../hooks/useAuth';
+import { useDebounce } from '../hooks/useDebounce';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getMealHistory } from '../services/meals';
+import { SPACING } from '../constants';
+import Svg, { Circle } from 'react-native-svg';
+import { StandardHeader, ScrollAwareHeader } from '../components/common';
+import { colors } from '../constants/theme';
+import { useHeaderHeight } from '../hooks/useHeaderHeight';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 type HistoryScreenNavigationProp = StackNavigationProp<
   HistoryStackParamList,
   'HistoryScreen'
 >;
 
-// Mock data types
-interface MealEntry {
-  id: number | string;
-  type: string;
-  time: string;
-  calories: number;
-  image: string;
-  macros: {
-    carbs: number;
-    protein: number;
-    fat: number;
-  };
-  isFavorite: boolean;
-  items: Array<{
-    id: string;
-    name: string;
-    quantity: string;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    isFavorite: boolean;
-  }>;
+interface MealData {
+  id: string;
+  mealGroupId?: string;
+  date: string;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  foods: Array<{ name: string; calories: number }>;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  imageUrl?: string;
+  hasMealGroupId: boolean;
+}
+
+interface HistoryData {
+  date: string;
+  totalCalories: number;
+  totalMeals: number;
+  meals: MealData[];
 }
 
 interface DailySummary {
-  date: Date;
+  date: string;
   totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
   goalCalories: number;
-  macros: {
-    carbs: {
-      consumed: number;
-      goal: number;
-      percentage: number;
-    };
-    protein: {
-      consumed: number;
-      goal: number;
-      percentage: number;
-    };
-    fat: {
-      consumed: number;
-      goal: number;
-      percentage: number;
-    };
-  };
+  goalProtein: number;
+  goalCarbs: number;
+  goalFat: number;
 }
 
 export default function HistoryScreen() {
   const navigation = useNavigation<HistoryScreenNavigationProp>();
+  const { user, preferences } = useAuth();
+  const insets = useSafeAreaInsets();
+  const { headerHeight } = useHeaderHeight();
+  const scrollY = useRef(new RNAnimated.Value(0)).current;
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
-  // Mock data - TODO: Replace with real data
-  const dailySummary: DailySummary = {
-    date: selectedDate,
-    totalCalories: 1850,
-    goalCalories: 2000,
-    macros: {
-      carbs: {
-        consumed: 210,
-        goal: 250,
-        percentage: 84,
-      },
-      protein: {
-        consumed: 120,
-        goal: 150,
-        percentage: 80,
-      },
-      fat: {
-        consumed: 55,
-        goal: 65,
-        percentage: 85,
-      },
-    },
-  };
-  
-  const [meals] = useState<MealEntry[]>([
-    {
-      id: 1,
-      type: 'Breakfast',
-      time: '8:30 AM',
-      calories: 420,
-      image: 'https://images.unsplash.com/photo-1494390248081-4e521a5940db?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-      macros: { carbs: 65, protein: 15, fat: 12 },
-      isFavorite: false,
-      items: [
-        {
-          id: 'eggs',
-          name: 'Scrambled Eggs',
-          quantity: '2 large',
-          calories: 180,
-          protein: 12,
-          carbs: 1,
-          fat: 10,
-          isFavorite: false,
-        },
-      ],
-    },
-    {
-      id: 2,
-      type: 'Lunch',
-      time: '12:45 PM',
-      calories: 650,
-      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-      macros: { carbs: 75, protein: 45, fat: 22 },
-      isFavorite: false,
-      items: [
-        {
-          id: 'salad',
-          name: 'Chicken Salad',
-          quantity: '1 bowl',
-          calories: 350,
-          protein: 35,
-          carbs: 15,
-          fat: 15,
-          isFavorite: false,
-        },
-      ],
-    },
-    {
-      id: 3,
-      type: 'Snack',
-      time: '3:30 PM',
-      calories: 180,
-      image: 'https://images.unsplash.com/photo-1470119693884-47d3a1d1f180?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-      macros: { carbs: 25, protein: 5, fat: 8 },
-      isFavorite: false,
-      items: [
-        {
-          id: 'yogurt',
-          name: 'Greek Yogurt',
-          quantity: '1 cup',
-          calories: 130,
-          protein: 15,
-          carbs: 8,
-          fat: 4,
-          isFavorite: false,
-        },
-      ],
-    },
-    {
-      id: 4,
-      type: 'Dinner',
-      time: '7:15 PM',
-      calories: 600,
-      image: 'https://images.unsplash.com/photo-1559847844-5315695dadae?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-      macros: { carbs: 45, protein: 55, fat: 13 },
-      isFavorite: false,
-      items: [
-        {
-          id: 'salmon',
-          name: 'Grilled Salmon',
-          quantity: '6 oz',
-          calories: 350,
-          protein: 40,
-          carbs: 0,
-          fat: 18,
-          isFavorite: false,
-        },
-      ],
-    },
-  ]);
+  const [historyData, setHistoryData] = useState<HistoryData | null>(null);
+  const [dailySummary, setDailySummary] = useState<DailySummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Debounce the selected date to prevent rapid API calls
+  const debouncedDate = useDebounce(selectedDate, 300);
+
+  // Animation values for the progress ring
+  const rotateAnimation = useSharedValue(-90);
+  const progressAnimation = useSharedValue(0);
+  const isInitialLoad = useRef(true);
+
+  // Show loading state immediately when date changes (before debounce)
+  useEffect(() => {
+    setIsLoading(true);
+  }, [selectedDate]);
+
+  // Fetch data with race condition prevention
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchData = async () => {
+      if (!user) return;
+
+      // Don't set loading here as it's already set when date changes
+      setError(null);
+
+      try {
+        // Get meal history for last 30 days
+        const response = await getMealHistory(user.id, 30);
+        
+        if (!isActive) return; // Prevent state update if component unmounted or date changed
+        
+        if (response.success && response.data) {
+          // Find data for selected date
+          const selectedDateStr = debouncedDate.toISOString().split('T')[0];
+          const dateData = response.data.find(item => item.date === selectedDateStr);
+          
+          if (dateData) {
+            setHistoryData(dateData);
+            
+            // Calculate daily summary
+            const summary: DailySummary = {
+              date: selectedDateStr,
+              totalCalories: dateData.totalCalories,
+              totalProtein: dateData.meals.reduce((sum, meal) => sum + meal.totalProtein, 0),
+              totalCarbs: dateData.meals.reduce((sum, meal) => sum + meal.totalCarbs, 0),
+              totalFat: dateData.meals.reduce((sum, meal) => sum + meal.totalFat, 0),
+              goalCalories: preferences?.daily_calorie_goal || 2000,
+              goalProtein: preferences?.daily_protein_goal || 150,
+              goalCarbs: preferences?.daily_carb_goal || 200,
+              goalFat: preferences?.daily_fat_goal || 65,
+            };
+            
+            setDailySummary(summary);
+          } else {
+            // No data for this date
+            setHistoryData(null);
+            setDailySummary({
+              date: selectedDateStr,
+              totalCalories: 0,
+              totalProtein: 0,
+              totalCarbs: 0,
+              totalFat: 0,
+              goalCalories: preferences?.daily_calorie_goal || 2000,
+              goalProtein: preferences?.daily_protein_goal || 150,
+              goalCarbs: preferences?.daily_carb_goal || 200,
+              goalFat: preferences?.daily_fat_goal || 65,
+            });
+          }
+        } else {
+          setError(response.error || 'Failed to fetch meal history');
+        }
+      } catch (err) {
+        if (isActive) {
+          console.error('Error fetching meal history:', err);
+          setError('Failed to load meal history');
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isActive = false; // Cleanup to prevent stale updates
+    };
+  }, [debouncedDate, user, preferences]);
+
+  // Start rotation animation when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      rotateAnimation.value = withTiming(0, { 
+        duration: 500,
+        delay: 200 
+      });
+
+      return () => {
+        // Reset rotation when leaving screen
+        rotateAnimation.value = -90;
+      };
+    }, [])
+  );
+
+  // Animate progress when data becomes available
+  useEffect(() => {
+    if (dailySummary && dailySummary.goalCalories > 0 && isInitialLoad.current) {
+      const percentage = Math.min(
+        (dailySummary.totalCalories / dailySummary.goalCalories) * 100,
+        100
+      );
+      progressAnimation.value = withTiming(percentage, { 
+        duration: 800,
+        delay: 200 
+      });
+      isInitialLoad.current = false;
+    }
+  }, [dailySummary]);
 
   const getWeekDays = () => {
     const days = [];
     const day = new Date(currentDate);
     day.setDate(day.getDate() - 3); // Start 3 days before
-    
+
     for (let i = 0; i < 7; i++) {
       days.push(new Date(day));
       day.setDate(day.getDate() + 1);
     }
     return days;
   };
-  
+
   const weekDays = getWeekDays();
-  
+
   const formatDay = (date: Date) => {
     return date.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0);
   };
-  
+
   const formatDate = (date: Date) => {
     return date.getDate().toString();
   };
-  
+
   const isToday = (date: Date) => {
     const today = new Date();
     return (
@@ -228,7 +235,7 @@ export default function HistoryScreen() {
       date.getFullYear() === today.getFullYear()
     );
   };
-  
+
   const isSelected = (date: Date) => {
     return (
       date.getDate() === selectedDate.getDate() &&
@@ -236,57 +243,149 @@ export default function HistoryScreen() {
       date.getFullYear() === selectedDate.getFullYear()
     );
   };
-  
+
   const navigateWeek = (direction: number) => {
     hapticFeedback.selection();
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + 7 * direction);
     setCurrentDate(newDate);
   };
-  
+
   const handleDateSelect = (day: Date) => {
     hapticFeedback.selection();
-    setIsLoading(true);
     setSelectedDate(day);
     
-    // Simulate loading
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
+    // Reset animations for new date
+    if (!isToday(day) || !isInitialLoad.current) {
+      isInitialLoad.current = true;
+      progressAnimation.value = 0;
+    }
   };
-  
-  const handleRefresh = () => {
+
+  const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    // TODO: Reload data
+    // Reset the date to trigger a refresh
+    const currentDateCopy = new Date(selectedDate);
+    setSelectedDate(new Date(currentDateCopy));
+    
+    // The useEffect will handle the actual refresh
     setTimeout(() => {
       setRefreshing(false);
-    }, 1500);
-  };
-  
-  const handleViewMeal = (meal: MealEntry) => {
+    }, 1000);
+  }, [selectedDate]);
+
+  const handleViewMeal = (meal: MealData) => {
     hapticFeedback.selection();
     navigation.navigate('MealDetails', {
-      mealId: meal.id.toString(),
-      mealGroupId: undefined,
+      mealId: meal.id,
+      mealGroupId: meal.mealGroupId,
     });
   };
 
   const getMacroColor = (key: string) => {
     switch (key) {
       case 'carbs':
-        return '#FFA726';
+        return colors.macro.carbs;
       case 'protein':
-        return '#42A5F5';
+        return colors.macro.protein;
       case 'fat':
-        return '#66BB6A';
+        return colors.macro.fat;
       default:
-        return '#9CA3AF';
+        return colors.gray[400];
+    }
+  };
+
+  // Progress Ring Component with actual progress fill
+  const ProgressRing = ({ percentage }: { percentage: number }) => {
+    const size = 64;
+    const strokeWidth = 4;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    
+    const animatedProps = useAnimatedProps(() => {
+      const strokeDashoffset = circumference - (progressAnimation.value / 100) * circumference;
+      return {
+        strokeDashoffset,
+      };
+    });
+
+    const textRotateStyle = useAnimatedStyle(() => {
+      return {
+        transform: [{ rotateZ: `${rotateAnimation.value}deg` }],
+      };
+    });
+
+    return (
+      <View className="relative">
+        <Svg width={size} height={size} className="rotate-[-90deg]">
+          {/* Background circle */}
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#E5E7EB"
+            strokeWidth={strokeWidth}
+            fill="none"
+          />
+          {/* Progress circle */}
+          <AnimatedCircle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#320DFF"
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={circumference}
+            strokeLinecap="round"
+            animatedProps={animatedProps}
+          />
+        </Svg>
+        <Animated.View 
+          style={[
+            { 
+              position: 'absolute', 
+              width: size, 
+              height: size, 
+              alignItems: 'center', 
+              justifyContent: 'center' 
+            },
+            textRotateStyle
+          ]}
+        >
+          <Text className="font-bold text-lg text-gray-900">
+            {Math.round(percentage)}%
+          </Text>
+        </Animated.View>
+      </View>
+    );
+  };
+
+  const formatMealTime = (mealType: string): string => {
+    switch (mealType) {
+      case 'breakfast':
+        return '8:30 AM';
+      case 'lunch':
+        return '12:45 PM';
+      case 'snack':
+        return '3:30 PM';
+      case 'dinner':
+        return '7:15 PM';
+      default:
+        return '';
     }
   };
 
   return (
     <View className="flex-1 bg-white">
-      <ScrollView
+      <ScrollAwareHeader scrollY={scrollY}>
+        <StandardHeader 
+          title="History" 
+          subtitle="Track your nutrition journey" 
+        />
+      </ScrollAwareHeader>
+      
+      <RNAnimated.ScrollView
+        className="flex-1"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -295,16 +394,20 @@ export default function HistoryScreen() {
             tintColor="#320DFF"
           />
         }
-        contentContainerStyle={{ paddingBottom: TAB_BAR_HEIGHT + 20 }}
+        contentContainerStyle={{
+          paddingTop: headerHeight + 20,
+          paddingBottom: TAB_BAR_HEIGHT + 20,
+        }}
+        onScroll={RNAnimated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
       >
-        {/* Header */}
-        <View className="px-4 pt-12 pb-4">
-          <Text className="text-2xl font-bold text-gray-900">History</Text>
-          <Text className="text-gray-600">Track your nutrition journey</Text>
-        </View>
         
+        <View className="px-4">
         {/* Calendar Navigation */}
-        <View className="px-4 mb-6">
+        <View className="mb-6">
           <View className="flex-row items-center justify-between mb-4">
             <TouchableOpacity
               className="w-8 h-8 items-center justify-center rounded-full bg-gray-100"
@@ -313,17 +416,17 @@ export default function HistoryScreen() {
             >
               <ChevronLeft size={20} color="#374151" />
             </TouchableOpacity>
-            
+
             <View className="flex-row items-center">
               <Calendar size={16} color="#320DFF" />
-              <Text className="font-medium text-gray-900 ml-2">
+              <Text className="font-semibold text-gray-900 ml-2">
                 {currentDate.toLocaleDateString('en-US', {
                   month: 'long',
                   year: 'numeric',
                 })}
               </Text>
             </View>
-            
+
             <TouchableOpacity
               className="w-8 h-8 items-center justify-center rounded-full bg-gray-100"
               activeOpacity={0.7}
@@ -332,7 +435,7 @@ export default function HistoryScreen() {
               <ChevronRight size={20} color="#374151" />
             </TouchableOpacity>
           </View>
-          
+
           {/* Week Day Selector */}
           <View className="flex-row justify-between">
             {weekDays.map((day, index) => (
@@ -342,8 +445,8 @@ export default function HistoryScreen() {
                   isSelected(day)
                     ? 'bg-primary'
                     : isToday(day)
-                    ? 'bg-primary/10'
-                    : 'bg-transparent'
+                      ? 'bg-primary/10'
+                      : 'bg-transparent'
                 }`}
                 activeOpacity={0.7}
                 onPress={() => handleDateSelect(day)}
@@ -353,8 +456,8 @@ export default function HistoryScreen() {
                     isSelected(day)
                       ? 'text-white'
                       : isToday(day)
-                      ? 'text-primary'
-                      : 'text-gray-700'
+                        ? 'text-primary'
+                        : 'text-gray-700'
                   }`}
                 >
                   {formatDay(day)}
@@ -364,8 +467,8 @@ export default function HistoryScreen() {
                     isSelected(day)
                       ? 'text-white'
                       : isToday(day)
-                      ? 'text-primary'
-                      : 'text-gray-700'
+                        ? 'text-primary'
+                        : 'text-gray-700'
                   }`}
                 >
                   {formatDate(day)}
@@ -374,19 +477,17 @@ export default function HistoryScreen() {
             ))}
           </View>
         </View>
-        
-        {/* Daily Summary */}
-        <MotiView
-          from={{ opacity: 0, translateY: 20 }}
-          animate={{ opacity: isLoading ? 0.5 : 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 300 }}
-          className="px-4 mb-6"
-        >
+
+          {/* Daily Summary */}
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'timing', duration: 300 }}
+            className="mb-6"
+          >
           <Card className="bg-gray-50 p-4">
             <View className="flex-row justify-between mb-3">
-              <Text className="font-semibold text-gray-900">
-                Daily Summary
-              </Text>
+              <Text className="font-semibold text-gray-900">Daily Summary</Text>
               <Text className="text-sm text-gray-500">
                 {selectedDate.toLocaleDateString('en-US', {
                   month: 'short',
@@ -394,66 +495,104 @@ export default function HistoryScreen() {
                 })}
               </Text>
             </View>
-            
-            <View className="flex-row items-center justify-between mb-3">
-              <View>
-                <Text className="text-sm text-gray-500">Calories Consumed</Text>
-                <View className="flex-row items-baseline">
-                  <Text className="text-2xl font-bold text-gray-900">
-                    {dailySummary.totalCalories}
-                  </Text>
-                  <Text className="text-sm text-gray-500 ml-1">
-                    / {dailySummary.goalCalories}
-                  </Text>
+
+            <View style={{ opacity: isLoading ? 0.5 : 1 }}>
+              <View className="flex-row items-center justify-between mb-3">
+                <View>
+                  <Text className="text-sm text-gray-500">Calories Consumed</Text>
+                  <View className="flex-row items-baseline">
+                    <Text className="text-2xl font-bold text-gray-900">
+                      {dailySummary?.totalCalories || 0}
+                    </Text>
+                    <Text className="text-sm text-gray-500 ml-1">
+                      / {dailySummary?.goalCalories || preferences?.daily_calorie_goal || 2000}
+                    </Text>
+                  </View>
                 </View>
+                <ProgressRing 
+                  percentage={dailySummary ? Math.min(
+                    Math.round((dailySummary.totalCalories / dailySummary.goalCalories) * 100),
+                    100
+                  ) : 0} 
+                />
               </View>
-              <View className="w-16 h-16 rounded-full border-4 border-primary items-center justify-center">
-                <Text className="font-bold text-lg text-gray-900">
-                  {Math.round(
-                    (dailySummary.totalCalories / dailySummary.goalCalories) *
-                      100
-                  )}
-                  %
-                </Text>
-              </View>
-            </View>
-            
-            {/* Macros */}
-            <View className="flex-row justify-between space-x-2">
-              {Object.entries(dailySummary.macros).map(([key, macro], index) => (
-                <View
-                  key={key}
-                  className="flex-1 bg-white rounded-lg p-2 items-center"
-                >
-                  <Text className="text-xs text-gray-500 capitalize">
-                    {key}
-                  </Text>
+
+              {/* Macros */}
+              <View className="flex-row justify-between space-x-2">
+                <View className="flex-1 bg-white rounded-lg p-2 items-center">
+                  <Text className="text-xs text-gray-500">Carbs</Text>
                   <Text className="font-medium text-gray-900">
-                    {macro.consumed}g
+                    {dailySummary?.totalCarbs || 0}g
                   </Text>
                   <View className="h-1 bg-gray-100 rounded-full mt-1 w-full overflow-hidden">
                     <MotiView
                       from={{ width: '0%' }}
-                      animate={{ width: `${macro.percentage}%` }}
+                      animate={{ 
+                        width: dailySummary ? `${Math.min((dailySummary.totalCarbs / dailySummary.goalCarbs) * 100, 100)}%` : '0%'
+                      }}
                       transition={{
                         type: 'timing',
                         duration: 800,
-                        delay: 200 + index * 100,
+                        delay: 0,
                       }}
                       className="h-full rounded-full"
-                      style={{ backgroundColor: getMacroColor(key) }}
+                      style={{ backgroundColor: getMacroColor('carbs') }}
                     />
                   </View>
                 </View>
-              ))}
+
+                <View className="flex-1 bg-white rounded-lg p-2 items-center mx-2">
+                  <Text className="text-xs text-gray-500">Protein</Text>
+                  <Text className="font-medium text-gray-900">
+                    {dailySummary?.totalProtein || 0}g
+                  </Text>
+                  <View className="h-1 bg-gray-100 rounded-full mt-1 w-full overflow-hidden">
+                    <MotiView
+                      from={{ width: '0%' }}
+                      animate={{ 
+                        width: dailySummary ? `${Math.min((dailySummary.totalProtein / dailySummary.goalProtein) * 100, 100)}%` : '0%'
+                      }}
+                      transition={{
+                        type: 'timing',
+                        duration: 800,
+                        delay: 100,
+                      }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: getMacroColor('protein') }}
+                    />
+                  </View>
+                </View>
+
+                <View className="flex-1 bg-white rounded-lg p-2 items-center">
+                  <Text className="text-xs text-gray-500">Fat</Text>
+                  <Text className="font-medium text-gray-900">
+                    {dailySummary?.totalFat || 0}g
+                  </Text>
+                  <View className="h-1 bg-gray-100 rounded-full mt-1 w-full overflow-hidden">
+                    <MotiView
+                      from={{ width: '0%' }}
+                      animate={{ 
+                        width: dailySummary ? `${Math.min((dailySummary.totalFat / dailySummary.goalFat) * 100, 100)}%` : '0%'
+                      }}
+                      transition={{
+                        type: 'timing',
+                        duration: 800,
+                        delay: 200,
+                      }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: getMacroColor('fat') }}
+                    />
+                  </View>
+                </View>
+              </View>
             </View>
           </Card>
         </MotiView>
-        
-        {/* Meals List */}
-        <View className="px-4">
-          <Text className="font-semibold mb-3 text-gray-900">Meals</Text>
-          <View className="space-y-3">
+
+          {/* Meals List */}
+          <View>
+            <Text className="font-semibold mb-3 text-gray-900">Meals</Text>
+            <View className="space-y-3">
             {isLoading ? (
               // Skeleton loading
               Array(3)
@@ -461,11 +600,11 @@ export default function HistoryScreen() {
                 .map((_, index) => (
                   <View
                     key={index}
-                    className="bg-gray-100 h-20 rounded-xl animate-pulse"
+                    className="bg-gray-100 h-24 rounded-xl animate-pulse mb-3"
                   />
                 ))
-            ) : (
-              meals.map((meal, index) => (
+            ) : historyData && historyData.meals.length > 0 ? (
+              historyData.meals.map((meal, index) => (
                 <MotiView
                   key={meal.id}
                   from={{ opacity: 0, translateY: 20 }}
@@ -475,56 +614,104 @@ export default function HistoryScreen() {
                     duration: 300,
                     delay: index * 100,
                   }}
+                  className="mb-3"
                 >
                   <TouchableOpacity
                     activeOpacity={0.7}
                     onPress={() => handleViewMeal(meal)}
                   >
-                    <Card className="flex-row p-3">
-                      <Image
-                        source={{ uri: meal.image }}
-                        className="w-16 h-16 rounded-lg mr-3"
-                      />
-                      <View className="flex-1">
-                        <View className="flex-row justify-between items-start">
-                          <View>
-                            <Text className="font-semibold text-gray-900">
-                              {meal.type}
-                            </Text>
-                            <Text className="text-sm text-gray-500">
-                              {meal.time}
+                    <Card className="p-3">
+                      <View className="flex-row">
+                        {meal.imageUrl ? (
+                          <Image
+                            source={{ uri: meal.imageUrl }}
+                            className="w-16 h-16 rounded-lg mr-3"
+                          />
+                        ) : (
+                          <View className="w-16 h-16 rounded-lg mr-3 bg-gray-200 items-center justify-center">
+                            <Text className="text-2xl">
+                              {meal.mealType === 'breakfast' ? '🍳' :
+                               meal.mealType === 'lunch' ? '🥗' :
+                               meal.mealType === 'dinner' ? '🍽️' : '🍎'}
                             </Text>
                           </View>
-                          <View className="items-end">
-                            <Text className="font-semibold text-gray-900">
-                              {meal.calories}
-                            </Text>
-                            <Text className="text-xs text-gray-500">cal</Text>
+                        )}
+                        <View className="flex-1">
+                          <View className="flex-row justify-between items-start">
+                            <View>
+                              <Text className="font-semibold text-gray-900 capitalize">
+                                {meal.mealType}
+                              </Text>
+                              <Text className="text-sm text-gray-500">
+                                {formatMealTime(meal.mealType)}
+                              </Text>
+                            </View>
+                            <View className="items-end">
+                              <Text className="font-semibold text-gray-900">
+                                {meal.totalCalories}
+                              </Text>
+                              <Text className="text-xs text-gray-500">cal</Text>
+                            </View>
                           </View>
-                        </View>
-                        <View className="flex-row mt-1">
-                          <Text className="text-xs text-gray-600">
-                            C: {meal.macros.carbs}g
-                          </Text>
-                          <Text className="text-xs text-gray-600 mx-2">•</Text>
-                          <Text className="text-xs text-gray-600">
-                            P: {meal.macros.protein}g
-                          </Text>
-                          <Text className="text-xs text-gray-600 mx-2">•</Text>
-                          <Text className="text-xs text-gray-600">
-                            F: {meal.macros.fat}g
-                          </Text>
+                          
+                          {/* Macro bars */}
+                          <View className="flex-row mt-2 space-x-1">
+                            <View className="flex-row items-center">
+                              <Text className="text-xs text-gray-600 mr-1">C: {meal.totalCarbs}g</Text>
+                              <View className="h-1 w-12 bg-gray-100 rounded-full overflow-hidden">
+                                <View 
+                                  className="h-full rounded-full"
+                                  style={{ 
+                                    backgroundColor: getMacroColor('carbs'),
+                                    width: `${Math.min((meal.totalCarbs / 100) * 100, 100)}%`
+                                  }}
+                                />
+                              </View>
+                            </View>
+                            
+                            <View className="flex-row items-center ml-2">
+                              <Text className="text-xs text-gray-600 mr-1">P: {meal.totalProtein}g</Text>
+                              <View className="h-1 w-12 bg-gray-100 rounded-full overflow-hidden">
+                                <View 
+                                  className="h-full rounded-full"
+                                  style={{ 
+                                    backgroundColor: getMacroColor('protein'),
+                                    width: `${Math.min((meal.totalProtein / 50) * 100, 100)}%`
+                                  }}
+                                />
+                              </View>
+                            </View>
+                            
+                            <View className="flex-row items-center ml-2">
+                              <Text className="text-xs text-gray-600 mr-1">F: {meal.totalFat}g</Text>
+                              <View className="h-1 w-12 bg-gray-100 rounded-full overflow-hidden">
+                                <View 
+                                  className="h-full rounded-full"
+                                  style={{ 
+                                    backgroundColor: getMacroColor('fat'),
+                                    width: `${Math.min((meal.totalFat / 30) * 100, 100)}%`
+                                  }}
+                                />
+                              </View>
+                            </View>
+                          </View>
                         </View>
                       </View>
                     </Card>
                   </TouchableOpacity>
                 </MotiView>
               ))
+            ) : (
+              <Card className="p-8">
+                <Text className="text-center text-gray-500">
+                  No meals logged for this date
+                </Text>
+              </Card>
             )}
+            </View>
           </View>
         </View>
-      </ScrollView>
+      </RNAnimated.ScrollView>
     </View>
   );
 }
-

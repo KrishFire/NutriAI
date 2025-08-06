@@ -47,42 +47,42 @@ export default function PrivacySettingsScreen() {
 
   const handleDataAction = (action: string) => {
     hapticFeedback.impact();
-    
+
     switch (action) {
       case 'download':
         Alert.alert(
           'Download Your Data',
-          'We\'ll prepare a copy of all your data and send it to your email address within 24 hours.',
+          "We'll prepare a copy of all your data and send it to your email address within 24 hours.",
           [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Request Download', onPress: () => {} },
           ]
         );
         break;
-      
+
       case 'deleteHistory':
         Alert.alert(
           'Delete Browsing History',
           'This will permanently delete your app usage history. This action cannot be undone.',
           [
             { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Delete', 
+            {
+              text: 'Delete',
               style: 'destructive',
               onPress: () => {},
             },
           ]
         );
         break;
-      
+
       case 'deleteAll':
         Alert.alert(
           'Delete All Data',
           'This will permanently delete all your data including meals, goals, and preferences. This action cannot be undone.',
           [
             { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Delete Everything', 
+            {
+              text: 'Delete Everything',
               style: 'destructive',
               onPress: () => {},
             },
@@ -107,7 +107,9 @@ export default function PrivacySettingsScreen() {
   }) => (
     <View className="flex-row items-center justify-between py-4 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
       <View className="flex-row items-center flex-1 pr-4">
-        <View className={`w-10 h-10 rounded-full ${iconColor} items-center justify-center mr-3`}>
+        <View
+          className={`w-10 h-10 rounded-full ${iconColor} items-center justify-center mr-3`}
+        >
           <Icon size={20} className="text-white" />
         </View>
         <View className="flex-1">
@@ -145,10 +147,14 @@ export default function PrivacySettingsScreen() {
       className="flex-row items-center py-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
       onPress={onPress}
     >
-      <View className={`w-10 h-10 rounded-full ${iconColor} items-center justify-center mr-3`}>
+      <View
+        className={`w-10 h-10 rounded-full ${iconColor} items-center justify-center mr-3`}
+      >
         <Icon size={20} className="text-white" />
       </View>
-      <Text className={`flex-1 ${isDestructive ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
+      <Text
+        className={`flex-1 ${isDestructive ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}
+      >
         {label}
       </Text>
       <ChevronRight size={18} className="text-gray-400 dark:text-gray-500" />
@@ -187,14 +193,18 @@ export default function PrivacySettingsScreen() {
         >
           <View className="flex-row items-center mb-3">
             <View className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/50 items-center justify-center mr-3">
-              <Shield size={20} className="text-primary-600 dark:text-primary-400" />
+              <Shield
+                size={20}
+                className="text-primary-600 dark:text-primary-400"
+              />
             </View>
             <Text className="text-lg font-semibold text-gray-900 dark:text-white">
               Your Privacy Matters
             </Text>
           </View>
           <Text className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            Control how your data is used and shared. Your nutrition data is always encrypted and secure.
+            Control how your data is used and shared. Your nutrition data is
+            always encrypted and secure.
           </Text>
           <TouchableOpacity onPress={() => {}}>
             <Text className="text-sm text-primary-600 dark:text-primary-400 font-medium">
@@ -264,13 +274,18 @@ export default function PrivacySettingsScreen() {
         {/* Information */}
         <View className="mx-4 mt-6 bg-gray-100 dark:bg-gray-800 rounded-xl p-4">
           <View className="flex-row items-start">
-            <Database size={16} className="text-gray-500 dark:text-gray-400 mt-0.5 mr-2" />
+            <Database
+              size={16}
+              className="text-gray-500 dark:text-gray-400 mt-0.5 mr-2"
+            />
             <View className="flex-1">
               <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Data Storage
               </Text>
               <Text className="text-sm text-gray-600 dark:text-gray-400">
-                Your data is encrypted and stored securely on our servers. We use industry-standard security measures to protect your information.
+                Your data is encrypted and stored securely on our servers. We
+                use industry-standard security measures to protect your
+                information.
               </Text>
             </View>
           </View>

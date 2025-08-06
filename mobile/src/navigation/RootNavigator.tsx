@@ -3,7 +3,7 @@ import {
   createNativeStackNavigator,
   NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, ActivityIndicator } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
@@ -18,7 +18,6 @@ import {
   OnboardingStackParamList,
 } from '../types/navigation';
 import { useAuth } from '../contexts/AuthContext';
-import { LoadingSpinner } from '../components';
 import ExpandableFAB from '../components/ExpandableFAB';
 
 // Import navigators
@@ -40,6 +39,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import ManualEntryScreen from '../screens/ManualEntryScreen';
 import BarcodeScannerScreen from '../screens/BarcodeScannerScreen';
 import VoiceLogScreen from '../screens/VoiceLogScreen';
+import PaywallScreen from '../screens/premium/PaywallScreen';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -118,7 +118,10 @@ function AuthStackNavigator() {
     >
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Signup" component={SignupScreen} />
-      <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <AuthStack.Screen
+        name="ForgotPassword"
+        component={ForgotPasswordScreen}
+      />
       <AuthStack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
     </AuthStack.Navigator>
   );
@@ -280,37 +283,64 @@ function AppStack() {
           animation: 'slide_from_right',
         }}
       />
+      <RootStack.Group screenOptions={{ presentation: 'modal' }}>
+        <RootStack.Screen
+          name="PaywallModal"
+          component={PaywallScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_bottom',
+          }}
+        />
+      </RootStack.Group>
     </RootStack.Navigator>
   );
 }
 
 export default function RootNavigator() {
-  const { user, loading, preferences } = useAuth();
+  const {
+    user,
+    loading,
+    preferences,
+    preferencesLoading,
+    hasCompletedOnboarding,
+  } = useAuth();
 
-  if (loading) {
-    return <LoadingSpinner text="Loading..." overlay />;
+  // Log for debugging
+  console.log('RootNavigator render:', {
+    user: !!user,
+    hasCompletedOnboarding,
+    loading,
+    preferencesLoading,
+  });
+
+  // Show loading spinner while checking auth state
+  if (loading || preferencesLoading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#FFFFFF',
+        }}
+      >
+        <ActivityIndicator size="large" color="#320DFF" />
+      </View>
+    );
   }
-
-  // Check if user has completed onboarding
-  const hasCompletedOnboarding = user && preferences?.has_completed_onboarding;
 
   return (
     <NavigationContainer>
       {!user ? (
-        // Show onboarding for new users
-        <RootStack.Navigator screenOptions={{ headerShown: false }}>
-          <RootStack.Screen name="Onboarding" component={OnboardingStack} />
-          <RootStack.Screen name="AuthStack" component={AuthStackNavigator} />
-        </RootStack.Navigator>
-      ) : hasCompletedOnboarding ? (
-        // Show main app for users who completed onboarding
-        <AppStack />
+        // User is not authenticated - show onboarding/auth flow
+        <OnboardingStack />
+      ) : !hasCompletedOnboarding ? (
+        // User is authenticated but hasn't completed onboarding
+        <OnboardingStack />
       ) : (
-        // Show onboarding for authenticated users who haven't completed it
-        <RootStack.Navigator screenOptions={{ headerShown: false }}>
-          <RootStack.Screen name="Onboarding" component={OnboardingStack} />
-          <RootStack.Screen name="Main" component={BottomTabNavigator} />
-        </RootStack.Navigator>
+        // User is authenticated and has completed onboarding - show main app
+        <AppStack />
       )}
     </NavigationContainer>
   );

@@ -1,26 +1,22 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Salad, Zap, Flame, Activity } from 'lucide-react-native';
+import { ArrowLeft, Apple, Zap, Target, Heart } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
-import { useOnboarding } from './OnboardingFlow';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const GoalAccomplishmentScreen = () => {
-  const { goToNextStep, goToPreviousStep, progress, updateUserData } = useOnboarding();
-  
+  const { goToNextStep, goToPreviousStep, progress, updateUserData } =
+    useOnboarding();
+
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
 
   const goals = [
     {
       id: 'healthier',
       label: 'Eat and live healthier',
-      icon: Salad,
+      icon: Apple,
     },
     {
       id: 'energy',
@@ -30,12 +26,12 @@ const GoalAccomplishmentScreen = () => {
     {
       id: 'motivation',
       label: 'Stay motivated and consistent',
-      icon: Flame,
+      icon: Target,
     },
     {
       id: 'confidence',
       label: 'Feel better about my body',
-      icon: Activity,
+      icon: Heart,
     },
   ];
 
@@ -60,8 +56,8 @@ const GoalAccomplishmentScreen = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <ScrollView 
-        className="flex-1" 
+      <ScrollView
+        className="flex-1"
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
       >
@@ -81,8 +77,8 @@ const GoalAccomplishmentScreen = () => {
 
           {/* Progress bar */}
           <View className="w-full h-1 bg-gray-100 rounded-full mb-8">
-            <View 
-              className="h-full bg-primary rounded-full" 
+            <View
+              className="h-full bg-primary rounded-full"
               style={{ width: `${progress}%` }}
             />
           </View>
@@ -102,7 +98,7 @@ const GoalAccomplishmentScreen = () => {
             {goals.map((goal, index) => {
               const Icon = goal.icon;
               const isSelected = selectedGoals.includes(goal.id);
-              
+
               return (
                 <MotiView
                   key={goal.id}
@@ -118,7 +114,9 @@ const GoalAccomplishmentScreen = () => {
                     <MotiView
                       animate={{
                         borderColor: isSelected ? '#320DFF' : '#E5E7EB',
-                        backgroundColor: isSelected ? 'rgba(50, 13, 255, 0.05)' : '#FFFFFF',
+                        backgroundColor: isSelected
+                          ? 'rgba(50, 13, 255, 0.05)'
+                          : '#FFFFFF',
                       }}
                       transition={{ type: 'timing', duration: 200 }}
                       className="flex-row items-center p-5 rounded-2xl border-2"
@@ -130,12 +128,17 @@ const GoalAccomplishmentScreen = () => {
                         transition={{ type: 'spring', damping: 15 }}
                         className="mr-4"
                       >
-                        <Icon size={24} color={isSelected ? '#320DFF' : '#9CA3AF'} />
+                        <Icon
+                          size={24}
+                          color={isSelected ? '#320DFF' : '#9CA3AF'}
+                        />
                       </MotiView>
-                      <Text className={`text-lg font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
+                      <Text
+                        className={`text-lg font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}
+                      >
                         {goal.label}
                       </Text>
-                      
+
                       {/* Checkmark indicator */}
                       {isSelected && (
                         <MotiView
@@ -145,7 +148,9 @@ const GoalAccomplishmentScreen = () => {
                           className="ml-auto"
                         >
                           <View className="w-6 h-6 rounded-full bg-primary items-center justify-center">
-                            <Text className="text-white text-xs font-bold">✓</Text>
+                            <Text className="text-white text-xs font-bold">
+                              ✓
+                            </Text>
                           </View>
                         </MotiView>
                       )}
@@ -178,9 +183,11 @@ const GoalAccomplishmentScreen = () => {
               activeOpacity={0.8}
               disabled={selectedGoals.length === 0}
             >
-              <Text className={`font-semibold text-base ${
-                selectedGoals.length > 0 ? 'text-white' : 'text-gray-500'
-              }`}>
+              <Text
+                className={`font-semibold text-base ${
+                  selectedGoals.length > 0 ? 'text-white' : 'text-gray-500'
+                }`}
+              >
                 Continue
               </Text>
             </TouchableOpacity>

@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,7 +19,10 @@ import { hapticFeedback } from '../../utils/haptics';
 import { useAuth } from '../../hooks/useAuth';
 import type { SettingsStackParamList } from '../../types/navigation';
 
-type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'Settings'>;
+type NavigationProp = NativeStackNavigationProp<
+  SettingsStackParamList,
+  'Settings'
+>;
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -36,7 +33,9 @@ export default function SettingsScreen() {
   // Settings state
   const [weightUnit, setWeightUnit] = useState<'lbs' | 'kg'>('lbs');
   const [heightUnit, setHeightUnit] = useState<'ft/in' | 'cm'>('ft/in');
-  const [energyUnit, setEnergyUnit] = useState<'calories' | 'kilojoules'>('calories');
+  const [energyUnit, setEnergyUnit] = useState<'calories' | 'kilojoules'>(
+    'calories'
+  );
 
   const handleNavigation = (screen: keyof SettingsStackParamList) => {
     hapticFeedback.selection();
@@ -60,7 +59,13 @@ export default function SettingsScreen() {
     toggleColorScheme();
   };
 
-  const SettingsSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  const SettingsSection = ({
+    title,
+    children,
+  }: {
+    title: string;
+    children: React.ReactNode;
+  }) => (
     <View className="mb-6">
       <Text className="text-sm font-medium text-gray-500 dark:text-gray-400 px-4 mb-2">
         {title}
@@ -103,10 +108,15 @@ export default function SettingsScreen() {
       {rightElement || (
         <View className="flex-row items-center">
           {value && (
-            <Text className="text-gray-500 dark:text-gray-400 mr-2">{value}</Text>
+            <Text className="text-gray-500 dark:text-gray-400 mr-2">
+              {value}
+            </Text>
           )}
           {showChevron && onPress && (
-            <ChevronRight size={18} className="text-gray-400 dark:text-gray-500" />
+            <ChevronRight
+              size={18}
+              className="text-gray-400 dark:text-gray-500"
+            />
           )}
         </View>
       )}
@@ -123,13 +133,11 @@ export default function SettingsScreen() {
     onValueChange: (value: string) => void;
   }) => (
     <View className="flex-row items-center bg-gray-100 dark:bg-gray-700 rounded-full p-1">
-      {options.map((option) => (
+      {options.map(option => (
         <TouchableOpacity
           key={option.value}
           className={`px-3 py-1 rounded-full ${
-            value === option.value
-              ? 'bg-primary-600 dark:bg-primary-500'
-              : ''
+            value === option.value ? 'bg-primary-600 dark:bg-primary-500' : ''
           }`}
           onPress={() => {
             hapticFeedback.selection();
@@ -234,7 +242,7 @@ export default function SettingsScreen() {
                   { label: 'lbs', value: 'lbs' },
                   { label: 'kg', value: 'kg' },
                 ]}
-                onValueChange={(value) => setWeightUnit(value as 'lbs' | 'kg')}
+                onValueChange={value => setWeightUnit(value as 'lbs' | 'kg')}
               />
             </View>
           </View>
@@ -247,7 +255,7 @@ export default function SettingsScreen() {
                   { label: 'ft/in', value: 'ft/in' },
                   { label: 'cm', value: 'cm' },
                 ]}
-                onValueChange={(value) => setHeightUnit(value as 'ft/in' | 'cm')}
+                onValueChange={value => setHeightUnit(value as 'ft/in' | 'cm')}
               />
             </View>
           </View>
@@ -260,7 +268,9 @@ export default function SettingsScreen() {
                   { label: 'calories', value: 'calories' },
                   { label: 'kJ', value: 'kilojoules' },
                 ]}
-                onValueChange={(value) => setEnergyUnit(value as 'calories' | 'kilojoules')}
+                onValueChange={value =>
+                  setEnergyUnit(value as 'calories' | 'kilojoules')
+                }
               />
             </View>
           </View>
@@ -292,7 +302,9 @@ export default function SettingsScreen() {
                 Terms of Service
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleNavigation('PrivacySettings')}>
+            <TouchableOpacity
+              onPress={() => handleNavigation('PrivacySettings')}
+            >
               <Text className="text-primary-600 dark:text-primary-400 text-sm">
                 Privacy Policy
               </Text>

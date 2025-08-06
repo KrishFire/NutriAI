@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { StreakService, StreakDisplayData, UserStreak } from '../services/streakService';
+import {
+  StreakService,
+  StreakDisplayData,
+  UserStreak,
+} from '../services/streakService';
 import { useAuth } from './useAuth';
 
 /**
@@ -16,13 +20,13 @@ interface UseStreakReturn {
 
 /**
  * Custom hook for managing user streak data
- * 
+ *
  * @example
  * ```tsx
  * const { streakData, loading, motivationalMessage } = useStreak();
- * 
+ *
  * if (loading) return <ActivityIndicator />;
- * 
+ *
  * return (
  *   <View>
  *     <Text>{streakData?.displayText}</Text>
@@ -61,12 +65,14 @@ export function useStreak(): UseStreakReturn {
     } catch (err) {
       console.error('Error fetching streak:', err);
       setError(err instanceof Error ? err.message : 'Failed to load streak');
-      
+
       // Set default data on error
       setStreakData(StreakService.getStreakDisplayData(null));
-      setMotivationalMessage(StreakService.getMotivationalMessage(
-        StreakService.getStreakDisplayData(null)
-      ));
+      setMotivationalMessage(
+        StreakService.getMotivationalMessage(
+          StreakService.getStreakDisplayData(null)
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -83,17 +89,17 @@ export function useStreak(): UseStreakReturn {
     loading,
     error,
     refresh: fetchStreak,
-    motivationalMessage
+    motivationalMessage,
   };
 }
 
 /**
  * Hook for milestone celebrations
- * 
+ *
  * @example
  * ```tsx
  * const { shouldCelebrate, celebration, dismissCelebration } = useStreakCelebration();
- * 
+ *
  * if (shouldCelebrate && celebration) {
  *   return (
  *     <CelebrationModal
@@ -111,14 +117,19 @@ export function useStreakCelebration() {
   const [shouldCelebrate, setShouldCelebrate] = useState(false);
 
   useEffect(() => {
-    if (streakData?.celebrationData && !celebrated.has(streakData.celebrationData.milestone)) {
+    if (
+      streakData?.celebrationData &&
+      !celebrated.has(streakData.celebrationData.milestone)
+    ) {
       setShouldCelebrate(true);
     }
   }, [streakData, celebrated]);
 
   const dismissCelebration = useCallback(() => {
     if (streakData?.celebrationData) {
-      setCelebrated(prev => new Set([...prev, streakData.celebrationData!.milestone]));
+      setCelebrated(
+        prev => new Set([...prev, streakData.celebrationData!.milestone])
+      );
       setShouldCelebrate(false);
     }
   }, [streakData]);
@@ -126,6 +137,6 @@ export function useStreakCelebration() {
   return {
     shouldCelebrate,
     celebration: streakData?.celebrationData,
-    dismissCelebration
+    dismissCelebration,
   };
 }

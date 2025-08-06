@@ -1,10 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, TextInput, ScrollView, Image, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { GlassMorphism } from '@/components/ui/GlassMorphism';
+import { StandardHeaderWithBack } from '@/components/common';
 import * as Haptics from 'expo-haptics';
 
 interface RecipeListScreenProps {
@@ -16,7 +26,7 @@ interface RecipeListScreenProps {
 export function RecipeListScreen({
   onBack,
   onCreateRecipe,
-  onSelectRecipe
+  onSelectRecipe,
 }: RecipeListScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [recipes, setRecipes] = useState<any[]>([]);
@@ -29,73 +39,77 @@ export function RecipeListScreen({
     {
       id: 1,
       name: 'Homemade Granola',
-      image: 'https://images.unsplash.com/photo-1517093157656-b9eccef91cb1?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+      image:
+        'https://images.unsplash.com/photo-1517093157656-b9eccef91cb1?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
       servings: 8,
       ingredients: [
         { id: 1, name: 'Rolled oats' },
         { id: 2, name: 'Honey' },
         { id: 3, name: 'Almonds' },
-        { id: 4, name: 'Coconut flakes' }
+        { id: 4, name: 'Coconut flakes' },
       ],
       calories: 320,
       protein: 8,
       carbs: 45,
       fat: 12,
-      category: 'breakfast'
+      category: 'breakfast',
     },
     {
       id: 2,
       name: 'Greek Salad',
-      image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+      image:
+        'https://images.unsplash.com/photo-1540420773420-3366772f4999?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
       servings: 2,
       ingredients: [
         { id: 1, name: 'Cucumber' },
         { id: 2, name: 'Tomatoes' },
         { id: 3, name: 'Feta cheese' },
         { id: 4, name: 'Olives' },
-        { id: 5, name: 'Olive oil' }
+        { id: 5, name: 'Olive oil' },
       ],
       calories: 250,
       protein: 8,
       carbs: 12,
       fat: 20,
-      category: 'lunch'
+      category: 'lunch',
     },
     {
       id: 3,
       name: 'Chicken Stir Fry',
-      image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+      image:
+        'https://images.unsplash.com/photo-1512058564366-18510be2db19?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
       servings: 4,
       ingredients: [
         { id: 1, name: 'Chicken breast' },
         { id: 2, name: 'Bell peppers' },
         { id: 3, name: 'Broccoli' },
         { id: 4, name: 'Soy sauce' },
-        { id: 5, name: 'Garlic' }
+        { id: 5, name: 'Garlic' },
       ],
       calories: 380,
       protein: 35,
       carbs: 20,
       fat: 15,
-      category: 'dinner'
+      category: 'dinner',
     },
     {
       id: 4,
       name: 'Protein Smoothie',
-      image: 'https://images.unsplash.com/photo-1505252585461-04db1eb84625?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+      image:
+        'https://images.unsplash.com/photo-1505252585461-04db1eb84625?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
       servings: 1,
       ingredients: [
         { id: 1, name: 'Protein powder' },
         { id: 2, name: 'Banana' },
         { id: 3, name: 'Almond milk' },
-        { id: 4, name: 'Peanut butter' }
+        { id: 4, name: 'Peanut butter' },
       ],
       calories: 280,
       protein: 25,
       carbs: 30,
       fat: 8,
-      category: 'snack'
-    }
+      category: 'snack',
+    },
   ];
 
   useEffect(() => {
@@ -108,8 +122,11 @@ export function RecipeListScreen({
   }, []);
 
   const filteredRecipes = recipes.filter(recipe => {
-    const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = selectedFilter === 'all' || recipe.category === selectedFilter;
+    const matchesSearch = recipe.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesFilter =
+      selectedFilter === 'all' || recipe.category === selectedFilter;
     return matchesSearch && matchesFilter;
   });
 
@@ -134,7 +151,7 @@ export function RecipeListScreen({
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
         <View className="flex-1">
           {/* Header */}
-          <View className="px-4 pt-4 pb-4 flex-row items-center justify-between">
+          <View className="px-4 pt-6 pb-6 flex-row items-center justify-between">
             <View className="flex-row items-center">
               <TouchableOpacity
                 onPress={() => {
@@ -205,8 +222,8 @@ export function RecipeListScreen({
                 {isLoading
                   ? 'Loading recipes...'
                   : filteredRecipes.length > 0
-                  ? `${filteredRecipes.length} recipes`
-                  : 'No recipes found'}
+                    ? `${filteredRecipes.length} recipes`
+                    : 'No recipes found'}
               </Text>
               <MotiView
                 animate={{
@@ -228,7 +245,11 @@ export function RecipeListScreen({
                   <Ionicons
                     name="filter"
                     size={16}
-                    color={filterOpen || selectedFilter !== 'all' ? 'white' : '#6b7280'}
+                    color={
+                      filterOpen || selectedFilter !== 'all'
+                        ? 'white'
+                        : '#6b7280'
+                    }
                   />
                   <Text
                     className={`ml-1 text-sm font-medium ${
@@ -257,34 +278,36 @@ export function RecipeListScreen({
                     Filter by meal:
                   </Text>
                   <View className="flex-row flex-wrap gap-2">
-                    {['all', 'breakfast', 'lunch', 'dinner', 'snack'].map(filter => (
-                      <MotiView
-                        key={filter}
-                        animate={{
-                          scale: selectedFilter === filter ? 1.05 : 1,
-                        }}
-                        transition={{ type: 'timing', duration: 150 }}
-                      >
-                        <TouchableOpacity
-                          onPress={() => handleFilterChange(filter)}
-                          className={`px-3 py-1.5 rounded-full ${
-                            selectedFilter === filter
-                              ? 'bg-primary-600 dark:bg-primary-500'
-                              : 'bg-gray-100 dark:bg-gray-700'
-                          }`}
+                    {['all', 'breakfast', 'lunch', 'dinner', 'snack'].map(
+                      filter => (
+                        <MotiView
+                          key={filter}
+                          animate={{
+                            scale: selectedFilter === filter ? 1.05 : 1,
+                          }}
+                          transition={{ type: 'timing', duration: 150 }}
                         >
-                          <Text
-                            className={`text-xs font-medium ${
+                          <TouchableOpacity
+                            onPress={() => handleFilterChange(filter)}
+                            className={`px-3 py-1.5 rounded-full ${
                               selectedFilter === filter
-                                ? 'text-white'
-                                : 'text-gray-700 dark:text-gray-300'
+                                ? 'bg-primary-600 dark:bg-primary-500'
+                                : 'bg-gray-100 dark:bg-gray-700'
                             }`}
                           >
-                            {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                          </Text>
-                        </TouchableOpacity>
-                      </MotiView>
-                    ))}
+                            <Text
+                              className={`text-xs font-medium ${
+                                selectedFilter === filter
+                                  ? 'text-white'
+                                  : 'text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                            </Text>
+                          </TouchableOpacity>
+                        </MotiView>
+                      )
+                    )}
                   </View>
                 </MotiView>
               )}

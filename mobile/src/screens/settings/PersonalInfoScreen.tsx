@@ -40,7 +40,7 @@ export default function PersonalInfoScreen() {
     email: user?.email || 'alex.johnson@example.com',
     dateOfBirth: 'January 15, 1990',
     gender: 'Male',
-    height: "5'10\" (178 cm)",
+    height: '5\'10" (178 cm)',
     weight: '165 lbs (75 kg)',
   });
 
@@ -53,32 +53,32 @@ export default function PersonalInfoScreen() {
 
   const handleSave = async () => {
     if (!editField) return;
-    
+
     hapticFeedback.success();
     setIsSaving(true);
-    
+
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     setPersonalInfo(prev => ({
       ...prev,
       [editField]: tempValue,
     }));
-    
+
     setIsSaving(false);
     setIsEditModalVisible(false);
     setEditField(null);
     setTempValue('');
   };
 
-  const InfoItem = ({ 
-    label, 
-    value, 
+  const InfoItem = ({
+    label,
+    value,
     field,
-    editable = false 
-  }: { 
-    label: string; 
-    value: string; 
+    editable = false,
+  }: {
+    label: string;
+    value: string;
     field?: keyof PersonalInfo;
     editable?: boolean;
   }) => (
@@ -100,7 +100,10 @@ export default function PersonalInfoScreen() {
             onPress={() => openEditModal(field)}
             className="p-2"
           >
-            <Edit2 size={16} className="text-primary-600 dark:text-primary-400" />
+            <Edit2
+              size={16}
+              className="text-primary-600 dark:text-primary-400"
+            />
           </TouchableOpacity>
         )}
       </View>
@@ -164,36 +167,39 @@ export default function PersonalInfoScreen() {
           >
             <View className="flex-row items-center mb-4">
               <View className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 items-center justify-center mr-3">
-                <User size={24} className="text-primary-600 dark:text-primary-400" />
+                <User
+                  size={24}
+                  className="text-primary-600 dark:text-primary-400"
+                />
               </View>
               <Text className="text-lg font-semibold text-gray-900 dark:text-white">
                 Profile Details
               </Text>
             </View>
-            
-            <InfoItem 
-              label="Name" 
-              value={personalInfo.name} 
+
+            <InfoItem
+              label="Name"
+              value={personalInfo.name}
               field="name"
-              editable 
+              editable
             />
-            <InfoItem 
-              label="Email" 
-              value={personalInfo.email} 
+            <InfoItem
+              label="Email"
+              value={personalInfo.email}
               field="email"
-              editable={false} 
+              editable={false}
             />
-            <InfoItem 
-              label="Date of Birth" 
-              value={personalInfo.dateOfBirth} 
+            <InfoItem
+              label="Date of Birth"
+              value={personalInfo.dateOfBirth}
               field="dateOfBirth"
-              editable 
+              editable
             />
-            <InfoItem 
-              label="Gender" 
-              value={personalInfo.gender} 
+            <InfoItem
+              label="Gender"
+              value={personalInfo.gender}
               field="gender"
-              editable 
+              editable
             />
           </MotiView>
 
@@ -207,18 +213,18 @@ export default function PersonalInfoScreen() {
             <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Body Measurements
             </Text>
-            
-            <InfoItem 
-              label="Height" 
-              value={personalInfo.height} 
+
+            <InfoItem
+              label="Height"
+              value={personalInfo.height}
               field="height"
-              editable 
+              editable
             />
-            <InfoItem 
-              label="Weight" 
-              value={personalInfo.weight} 
+            <InfoItem
+              label="Weight"
+              value={personalInfo.weight}
               field="weight"
-              editable 
+              editable
             />
           </MotiView>
         </View>
@@ -243,14 +249,14 @@ export default function PersonalInfoScreen() {
             <TouchableOpacity
               activeOpacity={1}
               className="mt-auto bg-white dark:bg-gray-800 rounded-t-3xl p-6"
-              onPress={(e) => e.stopPropagation()}
+              onPress={e => e.stopPropagation()}
             >
               <View className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full self-center mb-6" />
-              
+
               <Text className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                 Edit {editField ? getFieldLabel(editField) : ''}
               </Text>
-              
+
               <TextInput
                 className="bg-gray-100 dark:bg-gray-700 px-4 py-3 rounded-lg text-gray-900 dark:text-white mb-6"
                 value={tempValue}
@@ -260,7 +266,7 @@ export default function PersonalInfoScreen() {
                 placeholder={`Enter ${editField ? getFieldLabel(editField).toLowerCase() : ''}`}
                 placeholderTextColor="#9ca3af"
               />
-              
+
               <View className="flex-row space-x-3">
                 <TouchableOpacity
                   className="flex-1 py-3 bg-gray-200 dark:bg-gray-700 rounded-lg"
@@ -273,7 +279,7 @@ export default function PersonalInfoScreen() {
                     Cancel
                   </Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity
                   className="flex-1 py-3 bg-primary-600 dark:bg-primary-500 rounded-lg"
                   onPress={handleSave}

@@ -56,9 +56,10 @@ export const PremiumFeatureCard: React.FC<PremiumFeatureCardProps> = ({
         transition={{ duration: 300 }}
         className={`
           p-4 rounded-xl border mb-3
-          ${highlighted 
-            ? 'border-primary bg-primary/5 dark:border-primaryDark dark:bg-primaryDark/10' 
-            : 'border-gray-200 dark:border-gray-700'
+          ${
+            highlighted
+              ? 'border-primary bg-primary/5 dark:border-primaryDark dark:bg-primaryDark/10'
+              : 'border-gray-200 dark:border-gray-700'
           }
         `}
       >
@@ -66,22 +67,24 @@ export const PremiumFeatureCard: React.FC<PremiumFeatureCardProps> = ({
           <View
             className={`
               w-10 h-10 rounded-full items-center justify-center mr-3
-              ${highlighted 
-                ? 'bg-primary/10 dark:bg-primaryDark/20' 
-                : 'bg-gray-100 dark:bg-gray-800'
+              ${
+                highlighted
+                  ? 'bg-primary/10 dark:bg-primaryDark/20'
+                  : 'bg-gray-100 dark:bg-gray-800'
               }
             `}
           >
             {icon}
           </View>
-          
+
           <View className="flex-1">
             <Text
               className={`
                 font-medium
-                ${highlighted 
-                  ? 'text-primary dark:text-primaryDark' 
-                  : 'text-gray-900 dark:text-white'
+                ${
+                  highlighted
+                    ? 'text-primary dark:text-primaryDark'
+                    : 'text-gray-900 dark:text-white'
                 }
               `}
             >
@@ -91,7 +94,7 @@ export const PremiumFeatureCard: React.FC<PremiumFeatureCardProps> = ({
               {description}
             </Text>
           </View>
-          
+
           {highlighted && (
             <View className="w-6 h-6 rounded-full bg-primary dark:bg-primaryDark items-center justify-center">
               <Ionicons name="checkmark" size={14} color="white" />

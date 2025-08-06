@@ -34,23 +34,24 @@ export interface NotificationResult {
  */
 export async function requestNotificationPermissions(): Promise<NotificationResult> {
   try {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+
     let finalStatus = existingStatus;
-    
+
     // Request permission if not already granted
     if (existingStatus !== 'granted') {
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
-    
+
     if (finalStatus !== 'granted') {
       return {
         success: false,
         error: 'Notification permissions denied',
       };
     }
-    
+
     // Set up notification channel for Android
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
@@ -59,7 +60,7 @@ export async function requestNotificationPermissions(): Promise<NotificationResu
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#FF231F7C',
       });
-      
+
       await Notifications.setNotificationChannelAsync('reminders', {
         name: 'Daily Reminders',
         importance: Notifications.AndroidImportance.HIGH,
@@ -68,7 +69,7 @@ export async function requestNotificationPermissions(): Promise<NotificationResu
         description: 'Daily nutrition tracking reminders',
       });
     }
-    
+
     return {
       success: true,
       data: { status: finalStatus },
@@ -77,7 +78,10 @@ export async function requestNotificationPermissions(): Promise<NotificationResu
     console.error('Error requesting notification permissions:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to request permissions',
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to request permissions',
     };
   }
 }
@@ -87,7 +91,9 @@ export async function requestNotificationPermissions(): Promise<NotificationResu
  * @param userId - User ID for fetching preferences and nutrition data
  * @returns Promise with scheduling result
  */
-export async function scheduleDailyReminder(userId: string): Promise<NotificationResult> {
+export async function scheduleDailyReminder(
+  userId: string
+): Promise<NotificationResult> {
   try {
     // First check if user has notifications enabled
     const preferencesResult = await getUserPreferences(userId);
@@ -97,9 +103,9 @@ export async function scheduleDailyReminder(userId: string): Promise<Notificatio
         error: 'Failed to fetch user preferences',
       };
     }
-    
+
     const preferences = preferencesResult.data;
-    
+
     // Check if notifications are enabled
     if (!preferences.notifications_enabled) {
       return {
@@ -107,29 +113,29 @@ export async function scheduleDailyReminder(userId: string): Promise<Notificatio
         error: 'Notifications are disabled in user preferences',
       };
     }
-    
+
     // Request permissions if needed
     const permissionResult = await requestNotificationPermissions();
     if (!permissionResult.success) {
       return permissionResult;
     }
-    
+
     // Cancel existing reminder before scheduling new one
     await cancelDailyReminder();
-    
+
     // Create trigger for 8 PM daily
     const trigger: Notifications.NotificationTriggerInput = {
       type: 'daily',
       hour: DAILY_REMINDER_HOUR,
       minute: 0,
     } as any; // Type assertion needed due to expo-notifications type issue
-    
+
     // Schedule the notification
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Time to log your meals! 📝',
         body: 'How was your nutrition today? Log your meals to track your progress.',
-        data: { 
+        data: {
           type: 'daily_reminder',
           userId,
         },
@@ -140,12 +146,12 @@ export async function scheduleDailyReminder(userId: string): Promise<Notificatio
       trigger,
       identifier: DAILY_REMINDER_IDENTIFIER,
     });
-    
+
     // Store the notification ID
     await AsyncStorage.setItem(NOTIFICATION_STORAGE_KEY, notificationId);
-    
+
     console.log('Daily reminder scheduled successfully:', notificationId);
-    
+
     return {
       success: true,
       data: { notificationId },
@@ -154,7 +160,8 @@ export async function scheduleDailyReminder(userId: string): Promise<Notificatio
     console.error('Error scheduling daily reminder:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to schedule reminder',
+      error:
+        error instanceof Error ? error.message : 'Failed to schedule reminder',
     };
   }
 }
@@ -182,10 +189,10 @@ export async function checkDailyCalorieProgress(userId: string): Promise<{
         calorieGoal: 2000,
       };
     }
-    
+
     const preferences = preferencesResult.data;
     const calorieGoal = preferences.daily_calorie_goal;
-    
+
     // Get today's nutrition data
     const todaysNutrition = await getTodaysNutrition(userId);
     if (!todaysNutrition) {
@@ -196,10 +203,10 @@ export async function checkDailyCalorieProgress(userId: string): Promise<{
         calorieGoal,
       };
     }
-    
+
     const caloriesLogged = todaysNutrition.total_calories;
     const percentageLogged = caloriesLogged / calorieGoal;
-    
+
     return {
       shouldNotify: percentageLogged < CALORIE_THRESHOLD,
       percentageLogged: percentageLogged * 100,
@@ -222,17 +229,19 @@ export async function checkDailyCalorieProgress(userId: string): Promise<{
  * @param userId - User ID
  * @returns Promise with notification result
  */
-export async function sendCalorieProgressNotification(userId: string): Promise<NotificationResult> {
+export async function sendCalorieProgressNotification(
+  userId: string
+): Promise<NotificationResult> {
   try {
     const progress = await checkDailyCalorieProgress(userId);
-    
+
     if (!progress.shouldNotify) {
       return {
         success: false,
         error: 'User has already logged sufficient calories',
       };
     }
-    
+
     // Check if notifications are enabled
     const preferencesResult = await getUserPreferences(userId);
     if (!preferencesResult.data?.notifications_enabled) {
@@ -241,9 +250,9 @@ export async function sendCalorieProgressNotification(userId: string): Promise<N
         error: 'Notifications are disabled',
       };
     }
-    
+
     const remainingCalories = progress.calorieGoal - progress.caloriesLogged;
-    
+
     const notificationContent = {
       title: `You've logged ${Math.round(progress.percentageLogged)}% of your daily calories`,
       body: `${remainingCalories} calories left to reach your ${progress.calorieGoal} calorie goal!`,
@@ -259,12 +268,12 @@ export async function sendCalorieProgressNotification(userId: string): Promise<N
       sound: true,
       priority: Notifications.AndroidNotificationPriority.HIGH,
     };
-    
+
     await Notifications.scheduleNotificationAsync({
       content: notificationContent,
       trigger: null, // Send immediately
     });
-    
+
     return {
       success: true,
       data: progress,
@@ -273,7 +282,8 @@ export async function sendCalorieProgressNotification(userId: string): Promise<N
     console.error('Error sending calorie progress notification:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to send notification',
+      error:
+        error instanceof Error ? error.message : 'Failed to send notification',
     };
   }
 }
@@ -286,7 +296,7 @@ export async function cancelAllNotifications(): Promise<NotificationResult> {
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
     await AsyncStorage.removeItem(NOTIFICATION_STORAGE_KEY);
-    
+
     return {
       success: true,
     };
@@ -294,7 +304,10 @@ export async function cancelAllNotifications(): Promise<NotificationResult> {
     console.error('Error canceling notifications:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to cancel notifications',
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to cancel notifications',
     };
   }
 }
@@ -305,9 +318,11 @@ export async function cancelAllNotifications(): Promise<NotificationResult> {
  */
 export async function cancelDailyReminder(): Promise<NotificationResult> {
   try {
-    await Notifications.cancelScheduledNotificationAsync(DAILY_REMINDER_IDENTIFIER);
+    await Notifications.cancelScheduledNotificationAsync(
+      DAILY_REMINDER_IDENTIFIER
+    );
     await AsyncStorage.removeItem(NOTIFICATION_STORAGE_KEY);
-    
+
     return {
       success: true,
     };
@@ -315,7 +330,8 @@ export async function cancelDailyReminder(): Promise<NotificationResult> {
     console.error('Error canceling daily reminder:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to cancel reminder',
+      error:
+        error instanceof Error ? error.message : 'Failed to cancel reminder',
     };
   }
 }
@@ -330,9 +346,9 @@ export async function handleNotificationResponse(
   try {
     const { notification } = response;
     const data = notification.request.content.data;
-    
+
     console.log('Notification response received:', data);
-    
+
     // Handle different notification types
     switch (data?.type) {
       case 'daily_reminder':
@@ -340,16 +356,16 @@ export async function handleNotificationResponse(
         // This would typically be handled by navigation in the app
         console.log('Daily reminder tapped - navigate to meal logging');
         break;
-        
+
       case 'calorie_reminder':
         // Navigate to nutrition summary or quick add screen
         console.log('Calorie reminder tapped - show nutrition summary');
         break;
-        
+
       default:
         console.log('Unknown notification type:', data?.type);
     }
-    
+
     // Track analytics event
     if (data?.userId) {
       // You could track this interaction in your analytics
@@ -364,9 +380,12 @@ export async function handleNotificationResponse(
  * Get scheduled notifications
  * @returns Promise with array of scheduled notifications
  */
-export async function getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
+export async function getScheduledNotifications(): Promise<
+  Notifications.NotificationRequest[]
+> {
   try {
-    const notifications = await Notifications.getAllScheduledNotificationsAsync();
+    const notifications =
+      await Notifications.getAllScheduledNotificationsAsync();
     return notifications;
   } catch (error) {
     console.error('Error getting scheduled notifications:', error);
@@ -395,24 +414,30 @@ export async function isDailyReminderScheduled(): Promise<boolean> {
  */
 export function initializeNotificationService(): () => void {
   // Set up notification received listener (when app is in foreground)
-  const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-    console.log('Notification received in foreground:', notification);
-  });
-  
+  const notificationListener = Notifications.addNotificationReceivedListener(
+    notification => {
+      console.log('Notification received in foreground:', notification);
+    }
+  );
+
   // Set up notification response listener (when user taps notification)
-  const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-    handleNotificationResponse(response);
-  });
-  
+  const responseListener =
+    Notifications.addNotificationResponseReceivedListener(response => {
+      handleNotificationResponse(response);
+    });
+
   // Register background notification check task
   registerBackgroundNotificationCheck().then(result => {
     if (result.success) {
       console.log('Background notification check registered successfully');
     } else {
-      console.error('Failed to register background notification check:', result.error);
+      console.error(
+        'Failed to register background notification check:',
+        result.error
+      );
     }
   });
-  
+
   // Return cleanup function
   return () => {
     Notifications.removeNotificationSubscription(notificationListener);
@@ -442,7 +467,8 @@ export async function updateNotificationSettings(
     console.error('Error updating notification settings:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update settings',
+      error:
+        error instanceof Error ? error.message : 'Failed to update settings',
     };
   }
 }
@@ -460,7 +486,7 @@ export async function sendTestNotification(): Promise<NotificationResult> {
         error: 'Notification permissions not granted',
       };
     }
-    
+
     await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Test Notification 🧪',
@@ -470,7 +496,7 @@ export async function sendTestNotification(): Promise<NotificationResult> {
       },
       trigger: null, // Send immediately
     });
-    
+
     return {
       success: true,
     };
@@ -478,7 +504,10 @@ export async function sendTestNotification(): Promise<NotificationResult> {
     console.error('Error sending test notification:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to send test notification',
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to send test notification',
     };
   }
 }

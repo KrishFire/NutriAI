@@ -7,8 +7,12 @@ const MILESTONES = [7, 14, 21, 30, 50, 100, 365];
 
 export function useStreakCelebration() {
   const { currentStreak, longestStreak, loading } = useStreak();
-  const [celebratedMilestones, setCelebratedMilestones] = useState<number[]>([]);
-  const [currentCelebration, setCurrentCelebration] = useState<number | null>(null);
+  const [celebratedMilestones, setCelebratedMilestones] = useState<number[]>(
+    []
+  );
+  const [currentCelebration, setCurrentCelebration] = useState<number | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
 
   // Load celebrated milestones from storage
@@ -51,9 +55,8 @@ export function useStreakCelebration() {
   const checkForNewMilestone = () => {
     // Find milestones that have been reached but not celebrated
     const uncelebratedMilestones = MILESTONES.filter(
-      (milestone) => 
-        currentStreak >= milestone && 
-        !celebratedMilestones.includes(milestone)
+      milestone =>
+        currentStreak >= milestone && !celebratedMilestones.includes(milestone)
     );
 
     if (uncelebratedMilestones.length > 0) {

@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import {
@@ -81,14 +75,25 @@ export default function NotificationSettingsScreen() {
       className="flex-row items-center justify-between py-4 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
     >
       <View className="flex-row items-center flex-1 pr-4">
-        <View className={`w-10 h-10 rounded-full ${masterEnabled ? iconColor : 'bg-gray-200 dark:bg-gray-700'} items-center justify-center mr-3`}>
-          <Icon size={20} className={masterEnabled ? 'text-white' : 'text-gray-400 dark:text-gray-500'} />
+        <View
+          className={`w-10 h-10 rounded-full ${masterEnabled ? iconColor : 'bg-gray-200 dark:bg-gray-700'} items-center justify-center mr-3`}
+        >
+          <Icon
+            size={20}
+            className={
+              masterEnabled ? 'text-white' : 'text-gray-400 dark:text-gray-500'
+            }
+          />
         </View>
         <View className="flex-1">
-          <Text className={`font-medium ${masterEnabled ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>
+          <Text
+            className={`font-medium ${masterEnabled ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}
+          >
             {title}
           </Text>
-          <Text className={`text-sm ${masterEnabled ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-500'}`}>
+          <Text
+            className={`text-sm ${masterEnabled ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-500'}`}
+          >
             {description}
           </Text>
         </View>
@@ -135,11 +140,19 @@ export default function NotificationSettingsScreen() {
         >
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center">
-              <View className={`w-12 h-12 rounded-full ${masterEnabled ? 'bg-primary-100 dark:bg-primary-900/30' : 'bg-gray-100 dark:bg-gray-700'} items-center justify-center mr-3`}>
+              <View
+                className={`w-12 h-12 rounded-full ${masterEnabled ? 'bg-primary-100 dark:bg-primary-900/30' : 'bg-gray-100 dark:bg-gray-700'} items-center justify-center mr-3`}
+              >
                 {masterEnabled ? (
-                  <Bell size={24} className="text-primary-600 dark:text-primary-400" />
+                  <Bell
+                    size={24}
+                    className="text-primary-600 dark:text-primary-400"
+                  />
                 ) : (
-                  <BellOff size={24} className="text-gray-400 dark:text-gray-500" />
+                  <BellOff
+                    size={24}
+                    className="text-gray-400 dark:text-gray-500"
+                  />
                 )}
               </View>
               <View>
@@ -147,7 +160,9 @@ export default function NotificationSettingsScreen() {
                   {masterEnabled ? 'Notifications On' : 'Notifications Off'}
                 </Text>
                 <Text className="text-sm text-gray-500 dark:text-gray-400">
-                  {masterEnabled ? 'Stay updated with your progress' : 'You won\'t receive any notifications'}
+                  {masterEnabled
+                    ? 'Stay updated with your progress'
+                    : "You won't receive any notifications"}
                 </Text>
               </View>
             </View>

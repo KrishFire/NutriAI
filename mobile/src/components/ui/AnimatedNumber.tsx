@@ -1,14 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Text } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedProps,
-  withSpring,
-  withTiming,
-  runOnJS,
-} from 'react-native-reanimated';
-
-const AnimatedText = Animated.createAnimatedComponent(Text);
 
 interface AnimatedNumberProps {
   value: number;
@@ -25,31 +16,45 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   className = '',
   style,
 }) => {
-  const animatedValue = useSharedValue(0);
-  const [displayText, setDisplayText] = React.useState(formatValue(0));
+  const [displayValue, setDisplayValue] = React.useState(0);
+  const startValueRef = useRef(0);
+  const startTimeRef = useRef(0);
+  const rafRef = useRef<number>();
 
   useEffect(() => {
-    animatedValue.value = withSpring(value, {
-      damping: 30,
-      stiffness: 100,
-      mass: 1,
-    });
-  }, [value]);
+    startValueRef.current = displayValue;
+    startTimeRef.current = Date.now();
+    const targetValue = value;
 
-  // Update display text based on animated value
-  const animatedProps = useAnimatedProps(() => {
-    const currentValue = animatedValue.value;
-    runOnJS(setDisplayText)(formatValue(currentValue));
-    return {};
-  });
+    const animate = () => {
+      const now = Date.now();
+      const elapsed = now - startTimeRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Easing function (ease-out-cubic)
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      const currentValue =
+        startValueRef.current + (targetValue - startValueRef.current) * eased;
+      setDisplayValue(currentValue);
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [value, duration]);
 
   return (
-    <AnimatedText
-      className={className}
-      style={style}
-      animatedProps={animatedProps}
-    >
-      {displayText}
-    </AnimatedText>
+    <Text className={className} style={style}>
+      {formatValue(displayValue)}
+    </Text>
   );
 };

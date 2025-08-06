@@ -6,7 +6,10 @@ interface TikTokLogoProps {
   color?: string;
 }
 
-const TikTokLogo: React.FC<TikTokLogoProps> = ({ size = 24, color = '#000000' }) => {
+const TikTokLogo: React.FC<TikTokLogoProps> = ({
+  size = 24,
+  color = '#000000',
+}) => {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path

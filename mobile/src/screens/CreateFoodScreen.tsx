@@ -11,14 +11,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import {
-  ArrowLeft,
-  Camera,
-  Info,
-} from 'lucide-react-native';
+import { ArrowLeft, Camera, Info } from 'lucide-react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { hapticFeedback } from '../utils/haptics';
-import tokens from '../../tokens.json';
+import tokens from '../utils/tokens';
 
 type RouteParams = {
   CreateFood: {
@@ -35,9 +31,27 @@ interface NutritionField {
 }
 
 const nutritionFields: NutritionField[] = [
-  { label: 'Calories', key: 'calories', unit: '', required: true, placeholder: '0' },
-  { label: 'Protein', key: 'protein', unit: 'g', required: true, placeholder: '0' },
-  { label: 'Carbohydrates', key: 'carbs', unit: 'g', required: true, placeholder: '0' },
+  {
+    label: 'Calories',
+    key: 'calories',
+    unit: '',
+    required: true,
+    placeholder: '0',
+  },
+  {
+    label: 'Protein',
+    key: 'protein',
+    unit: 'g',
+    required: true,
+    placeholder: '0',
+  },
+  {
+    label: 'Carbohydrates',
+    key: 'carbs',
+    unit: 'g',
+    required: true,
+    placeholder: '0',
+  },
   { label: 'Fat', key: 'fat', unit: 'g', required: true, placeholder: '0' },
   { label: 'Saturated Fat', key: 'saturatedFat', unit: 'g', placeholder: '0' },
   { label: 'Sugar', key: 'sugar', unit: 'g', placeholder: '0' },
@@ -63,7 +77,7 @@ export default function CreateFoodScreen() {
     // Only allow numbers and decimals
     const cleanedValue = value.replace(/[^0-9.]/g, '');
     setNutrition({ ...nutrition, [key]: cleanedValue });
-    
+
     // Clear error when user starts typing
     if (errors[key]) {
       setErrors({ ...errors, [key]: undefined });
@@ -115,13 +129,25 @@ export default function CreateFoodScreen() {
         ...nutrition,
       };
 
-      navigation.navigate('FoodDetails' as never, {
-        food: newFood,
-      } as never);
+      navigation.navigate(
+        'FoodDetails' as never,
+        {
+          food: newFood,
+        } as never
+      );
     }, 1000);
   };
 
-  const servingUnits = ['g', 'oz', 'cup', 'tbsp', 'tsp', 'ml', 'serving', 'piece'];
+  const servingUnits = [
+    'g',
+    'oz',
+    'cup',
+    'tbsp',
+    'tsp',
+    'ml',
+    'serving',
+    'piece',
+  ];
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -156,8 +182,10 @@ export default function CreateFoodScreen() {
 
             {/* Basic info */}
             <View className="bg-white rounded-2xl p-4 mb-6 shadow-sm">
-              <Text className="text-lg font-semibold mb-4">Basic Information</Text>
-              
+              <Text className="text-lg font-semibold mb-4">
+                Basic Information
+              </Text>
+
               <View className="mb-4">
                 <Text className="text-sm font-medium text-gray-700 mb-2">
                   Food Name <Text className="text-red-500">*</Text>
@@ -168,7 +196,7 @@ export default function CreateFoodScreen() {
                   }`}
                   placeholder="e.g., Chicken Breast"
                   value={foodName}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     setFoodName(text);
                     if (errors.foodName) {
                       setErrors({ ...errors, foodName: undefined });
@@ -176,7 +204,9 @@ export default function CreateFoodScreen() {
                   }}
                 />
                 {errors.foodName && (
-                  <Text className="text-red-500 text-sm mt-1">{errors.foodName}</Text>
+                  <Text className="text-red-500 text-sm mt-1">
+                    {errors.foodName}
+                  </Text>
                 )}
               </View>
 
@@ -203,7 +233,7 @@ export default function CreateFoodScreen() {
                     }`}
                     placeholder="100"
                     value={servingSize}
-                    onChangeText={(text) => {
+                    onChangeText={text => {
                       setServingSize(text.replace(/[^0-9.]/g, ''));
                       if (errors.servingSize) {
                         setErrors({ ...errors, servingSize: undefined });
@@ -212,18 +242,22 @@ export default function CreateFoodScreen() {
                     keyboardType="numeric"
                   />
                   {errors.servingSize && (
-                    <Text className="text-red-500 text-sm mt-1">{errors.servingSize}</Text>
+                    <Text className="text-red-500 text-sm mt-1">
+                      {errors.servingSize}
+                    </Text>
                   )}
                 </View>
                 <View className="w-32">
-                  <Text className="text-sm font-medium text-gray-700 mb-2">Unit</Text>
+                  <Text className="text-sm font-medium text-gray-700 mb-2">
+                    Unit
+                  </Text>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     className="bg-gray-50 rounded-xl"
                   >
                     <View className="flex-row p-2">
-                      {servingUnits.map((unit) => (
+                      {servingUnits.map(unit => (
                         <TouchableOpacity
                           key={unit}
                           onPress={() => {
@@ -236,7 +270,9 @@ export default function CreateFoodScreen() {
                         >
                           <Text
                             className={`text-sm ${
-                              servingUnit === unit ? 'text-white font-medium' : 'text-gray-700'
+                              servingUnit === unit
+                                ? 'text-white font-medium'
+                                : 'text-gray-700'
                             }`}
                           >
                             {unit}
@@ -252,7 +288,9 @@ export default function CreateFoodScreen() {
             {/* Nutrition info */}
             <View className="bg-white rounded-2xl p-4 mb-6 shadow-sm">
               <View className="flex-row items-center justify-between mb-4">
-                <Text className="text-lg font-semibold">Nutrition Information</Text>
+                <Text className="text-lg font-semibold">
+                  Nutrition Information
+                </Text>
                 <TouchableOpacity>
                   <Info size={20} color="#9CA3AF" />
                 </TouchableOpacity>
@@ -263,11 +301,13 @@ export default function CreateFoodScreen() {
               </Text>
 
               <View className="space-y-3">
-                {nutritionFields.map((field) => (
+                {nutritionFields.map(field => (
                   <View key={field.key} className="flex-row items-center">
                     <Text className="flex-1 text-sm font-medium text-gray-700">
                       {field.label}
-                      {field.required && <Text className="text-red-500"> *</Text>}
+                      {field.required && (
+                        <Text className="text-red-500"> *</Text>
+                      )}
                     </Text>
                     <View className="flex-row items-center">
                       <TextInput
@@ -276,11 +316,15 @@ export default function CreateFoodScreen() {
                         }`}
                         placeholder={field.placeholder}
                         value={nutrition[field.key] || ''}
-                        onChangeText={(text) => handleNutritionChange(field.key, text)}
+                        onChangeText={text =>
+                          handleNutritionChange(field.key, text)
+                        }
                         keyboardType="numeric"
                       />
                       {field.unit && (
-                        <Text className="ml-2 text-sm text-gray-500 w-8">{field.unit}</Text>
+                        <Text className="ml-2 text-sm text-gray-500 w-8">
+                          {field.unit}
+                        </Text>
                       )}
                     </View>
                   </View>

@@ -1,11 +1,5 @@
 import React, { useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  Modal,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Image, Modal } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { CheckCircle } from 'lucide-react-native';
 import Animated, {
@@ -23,7 +17,7 @@ import Animated, {
 import { BlurView } from 'expo-blur';
 import { hapticFeedback } from '../utils/haptics';
 import { MotiView } from 'moti';
-import tokens from '../../tokens.json';
+import tokens from '../utils/tokens';
 
 type RouteParams = {
   MealSaved: {
@@ -42,7 +36,7 @@ export default function MealSavedScreen() {
 
   useEffect(() => {
     hapticFeedback.success();
-    
+
     // Animate in
     scale.value = withSpring(1, { damping: 15 });
     opacity.value = withTiming(1, { duration: 300 });
@@ -91,9 +85,13 @@ export default function MealSavedScreen() {
           position: 'absolute',
           width: 10,
           height: 10,
-          backgroundColor: ['#320DFF', '#4F46E5', '#818CF8', '#66BB6A', '#FFA726'][
-            Math.floor(Math.random() * 5)
-          ],
+          backgroundColor: [
+            '#320DFF',
+            '#4F46E5',
+            '#818CF8',
+            '#66BB6A',
+            '#FFA726',
+          ][Math.floor(Math.random() * 5)],
           borderRadius: 5,
           top: '30%',
           left: `${20 + Math.random() * 60}%`,
@@ -123,7 +121,7 @@ export default function MealSavedScreen() {
 
           {/* Glass morphism effect */}
           <View className="absolute inset-0 bg-primary/5 rounded-3xl" />
-          
+
           <View className="items-center">
             {/* Berry mascot */}
             <Animated.View style={berryStyle} className="mb-4">

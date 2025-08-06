@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Activity, Heart, Droplets } from 'lucide-react-native';
@@ -37,16 +32,18 @@ export default function HealthDataScreen() {
       className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-4"
     >
       <View className="flex-row items-center mb-4">
-        <View className={`w-10 h-10 rounded-full ${iconBgColor} items-center justify-center mr-3`}>
+        <View
+          className={`w-10 h-10 rounded-full ${iconBgColor} items-center justify-center mr-3`}
+        >
           <Icon size={20} className={iconColor} />
         </View>
         <Text className="text-lg font-semibold text-gray-900 dark:text-white">
           {title}
         </Text>
       </View>
-      
+
       {children}
-      
+
       <TouchableOpacity
         className="mt-3 py-2 border border-primary-200 dark:border-primary-800 rounded-lg"
         onPress={() => {
@@ -61,8 +58,17 @@ export default function HealthDataScreen() {
     </MotiView>
   );
 
-  const ActivityBar = ({ value, maxValue }: { value: number; maxValue: number }) => (
-    <View className="h-16 w-3 bg-red-500/60 rounded-t" style={{ height: (value / maxValue) * 64 }} />
+  const ActivityBar = ({
+    value,
+    maxValue,
+  }: {
+    value: number;
+    maxValue: number;
+  }) => (
+    <View
+      className="h-16 w-3 bg-red-500/60 rounded-t"
+      style={{ height: (value / maxValue) * 64 }}
+    />
   );
 
   return (
@@ -103,7 +109,8 @@ export default function HealthDataScreen() {
               Track Your Health Metrics
             </Text>
             <Text className="text-gray-600 dark:text-gray-400 text-center px-6">
-              Log and track your health metrics to get personalized nutrition recommendations.
+              Log and track your health metrics to get personalized nutrition
+              recommendations.
             </Text>
           </MotiView>
 
@@ -117,19 +124,33 @@ export default function HealthDataScreen() {
           >
             <View className="flex-row justify-between mb-3">
               <View className="flex-1 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg mr-2">
-                <Text className="text-xs text-gray-500 dark:text-gray-400">Steps</Text>
-                <Text className="text-lg font-bold text-gray-900 dark:text-white">8,432</Text>
+                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                  Steps
+                </Text>
+                <Text className="text-lg font-bold text-gray-900 dark:text-white">
+                  8,432
+                </Text>
                 <Text className="text-xs text-green-500">+12% ↑</Text>
               </View>
               <View className="flex-1 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg mx-1">
-                <Text className="text-xs text-gray-500 dark:text-gray-400">Calories</Text>
-                <Text className="text-lg font-bold text-gray-900 dark:text-white">386</Text>
+                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                  Calories
+                </Text>
+                <Text className="text-lg font-bold text-gray-900 dark:text-white">
+                  386
+                </Text>
                 <Text className="text-xs text-green-500">+8% ↑</Text>
               </View>
               <View className="flex-1 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg ml-2">
-                <Text className="text-xs text-gray-500 dark:text-gray-400">Distance</Text>
-                <Text className="text-lg font-bold text-gray-900 dark:text-white">3.2</Text>
-                <Text className="text-xs text-gray-500 dark:text-gray-400">miles</Text>
+                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                  Distance
+                </Text>
+                <Text className="text-lg font-bold text-gray-900 dark:text-white">
+                  3.2
+                </Text>
+                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                  miles
+                </Text>
               </View>
             </View>
           </MetricCard>
@@ -144,9 +165,15 @@ export default function HealthDataScreen() {
           >
             <View className="flex-row justify-between items-end mb-2">
               <View>
-                <Text className="text-xs text-gray-500 dark:text-gray-400">Resting</Text>
-                <Text className="text-2xl font-bold text-gray-900 dark:text-white">68</Text>
-                <Text className="text-xs text-gray-500 dark:text-gray-400">BPM</Text>
+                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                  Resting
+                </Text>
+                <Text className="text-2xl font-bold text-gray-900 dark:text-white">
+                  68
+                </Text>
+                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                  BPM
+                </Text>
               </View>
               <View className="flex-row items-end space-x-1 h-16">
                 {[60, 75, 65, 80, 70, 85, 68].map((value, index) => (
@@ -166,11 +193,17 @@ export default function HealthDataScreen() {
           >
             <View className="flex-row items-center">
               <View className="w-16 h-16 rounded-full border-4 border-blue-300 dark:border-blue-700 items-center justify-center mr-4">
-                <Text className="text-xl font-bold text-gray-900 dark:text-white">65%</Text>
+                <Text className="text-xl font-bold text-gray-900 dark:text-white">
+                  65%
+                </Text>
               </View>
               <View className="flex-1">
-                <Text className="font-medium text-gray-900 dark:text-white">1.3 / 2.0 L</Text>
-                <Text className="text-sm text-gray-500 dark:text-gray-400">Today's intake</Text>
+                <Text className="font-medium text-gray-900 dark:text-white">
+                  1.3 / 2.0 L
+                </Text>
+                <Text className="text-sm text-gray-500 dark:text-gray-400">
+                  Today's intake
+                </Text>
                 <View className="mt-2 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <View className="h-full w-[65%] bg-blue-500 rounded-full" />
                 </View>

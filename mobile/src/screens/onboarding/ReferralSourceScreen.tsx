@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Users, Tv, HelpCircle } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
-import { useOnboarding } from './OnboardingFlow';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 import {
   FacebookLogo,
   InstagramLogo,
@@ -29,8 +29,12 @@ interface ReferralSource {
 }
 
 const ReferralSourceScreen = () => {
-  const { goToNextStep, goToPreviousStep, progress, updateUserData } = useOnboarding();
+  const { goToNextStep, goToPreviousStep, progress, updateUserData } =
+    useOnboarding();
   const [selectedSource, setSelectedSource] = useState('');
+  const [backPressed, setBackPressed] = useState(false);
+  const [continuePressed, setContinuePressed] = useState(false);
+  const [pressedOption, setPressedOption] = useState<string | null>(null);
 
   const handleSelect = (source: string) => {
     hapticFeedback.selection();
@@ -115,13 +119,26 @@ const ReferralSourceScreen = () => {
       >
         {/* Header with back button */}
         <View style={styles.header}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.backButton}
-            activeOpacity={0.7}
+          <MotiView
+            animate={{
+              scale: backPressed ? 0.95 : 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 15,
+              stiffness: 400,
+            }}
           >
-            <ArrowLeft size={20} color="#000" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleBack}
+              onPressIn={() => setBackPressed(true)}
+              onPressOut={() => setBackPressed(false)}
+              style={styles.backButton}
+              activeOpacity={1}
+            >
+              <ArrowLeft size={20} color="#000" />
+            </TouchableOpacity>
+          </MotiView>
         </View>
 
         {/* Progress bar */}
@@ -158,34 +175,60 @@ const ReferralSourceScreen = () => {
                 transition={{ delay: index * 50 }}
                 style={styles.gridItem}
               >
-                <TouchableOpacity
-                  onPress={() => handleSelect(source.id)}
-                  activeOpacity={0.7}
-                  style={[
-                    styles.optionButton,
-                    isSelected && styles.optionButtonSelected,
-                  ]}
-                  testID={`referral-option-${source.id}`}
+                <MotiView
+                  animate={{
+                    scale: pressedOption === source.id ? 0.95 : 1,
+                  }}
+                  transition={{
+                    type: 'spring',
+                    damping: 15,
+                    stiffness: 400,
+                  }}
                 >
-                  <View style={styles.logoContainer} testID={`logo-${source.id}`}>
-                    {Logo ? (
-                      <Logo size={32} color={isSelected ? '#320DFF' : source.color} />
-                    ) : Icon ? (
-                      <View style={[
-                        styles.iconWrapper,
-                        isSelected && styles.iconWrapperSelected,
-                      ]}>
-                        <Icon size={24} color={isSelected ? '#320DFF' : '#6B7280'} />
-                      </View>
-                    ) : null}
-                  </View>
-                  <Text style={[
-                    styles.optionLabel,
-                    isSelected && styles.optionLabelSelected,
-                  ]}>
-                    {source.label}
-                  </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleSelect(source.id)}
+                    onPressIn={() => setPressedOption(source.id)}
+                    onPressOut={() => setPressedOption(null)}
+                    activeOpacity={1}
+                    style={[
+                      styles.optionButton,
+                      isSelected && styles.optionButtonSelected,
+                    ]}
+                    testID={`referral-option-${source.id}`}
+                  >
+                    <View
+                      style={styles.logoContainer}
+                      testID={`logo-${source.id}`}
+                    >
+                      {Logo ? (
+                        <Logo
+                          size={32}
+                          color={isSelected ? '#320DFF' : source.color}
+                        />
+                      ) : Icon ? (
+                        <View
+                          style={[
+                            styles.iconWrapper,
+                            isSelected && styles.iconWrapperSelected,
+                          ]}
+                        >
+                          <Icon
+                            size={24}
+                            color={isSelected ? '#320DFF' : '#6B7280'}
+                          />
+                        </View>
+                      ) : null}
+                    </View>
+                    <Text
+                      style={[
+                        styles.optionLabel,
+                        isSelected && styles.optionLabelSelected,
+                      ]}
+                    >
+                      {source.label}
+                    </Text>
+                  </TouchableOpacity>
+                </MotiView>
               </MotiView>
             );
           })}
@@ -193,18 +236,31 @@ const ReferralSourceScreen = () => {
 
         {/* Continue button */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            onPress={handleContinue}
-            style={[
-              styles.continueButton,
-              !selectedSource && styles.continueButtonDisabled,
-            ]}
-            activeOpacity={selectedSource ? 0.8 : 1}
-            disabled={!selectedSource}
-            testID="continue-button"
+          <MotiView
+            animate={{
+              scale: continuePressed ? 0.95 : 1,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 15,
+              stiffness: 400,
+            }}
           >
-            <Text style={styles.continueButtonText}>Continue</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleContinue}
+              onPressIn={() => setContinuePressed(true)}
+              onPressOut={() => setContinuePressed(false)}
+              style={[
+                styles.continueButton,
+                !selectedSource && styles.continueButtonDisabled,
+              ]}
+              activeOpacity={1}
+              disabled={!selectedSource}
+              testID="continue-button"
+            >
+              <Text style={styles.continueButtonText}>Continue</Text>
+            </TouchableOpacity>
+          </MotiView>
         </View>
       </ScrollView>
     </SafeAreaView>

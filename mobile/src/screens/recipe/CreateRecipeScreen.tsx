@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { GlassMorphism } from '@/components/ui/GlassMorphism';
 import { Berry } from '@/components/ui/Berry';
+import { StandardHeaderWithBack } from '@/components/common';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
@@ -52,7 +53,7 @@ export function CreateRecipeScreen({
 
   const handleRemoveIngredient = (id: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setIngredients(ingredients.filter((item) => item.id !== id));
+    setIngredients(ingredients.filter(item => item.id !== id));
   };
 
   const handleSave = async () => {
@@ -60,7 +61,7 @@ export function CreateRecipeScreen({
       Alert.alert('Missing Information', 'Please enter a recipe name');
       return;
     }
-    
+
     if (ingredients.length === 0) {
       Alert.alert('Missing Information', 'Please add at least one ingredient');
       return;
@@ -135,7 +136,7 @@ export function CreateRecipeScreen({
           className="flex-1"
         >
           {/* Header */}
-          <View className="px-4 pt-4 pb-4 flex-row items-center justify-between">
+          <View className="px-4 pt-6 pb-6 flex-row items-center justify-between">
             <View className="flex-row items-center">
               <TouchableOpacity
                 onPress={() => {
@@ -155,7 +156,10 @@ export function CreateRecipeScreen({
             </TouchableOpacity>
           </View>
 
-          <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            className="flex-1 px-4"
+            showsVerticalScrollIndicator={false}
+          >
             <View className="space-y-6 pb-6">
               {/* Recipe Image */}
               <MotiView
@@ -313,7 +317,9 @@ export function CreateRecipeScreen({
               onPress={handleSave}
               variant="primary"
               fullWidth
-              disabled={!recipeName.trim() || ingredients.length === 0 || isSaving}
+              disabled={
+                !recipeName.trim() || ingredients.length === 0 || isSaving
+              }
               loading={isSaving}
             >
               {isSaving ? 'Saving Recipe...' : 'Save Recipe'}

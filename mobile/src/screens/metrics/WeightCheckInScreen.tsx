@@ -1,20 +1,34 @@
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Button } from '@/components/ui/Button';
 import { WeightTrendGraph } from '@/components/metrics/WeightTrendGraph';
 import * as Haptics from 'expo-haptics';
+import { StandardHeaderWithBack } from '../../components/common';
 
 interface WeightCheckInScreenProps {
   onBack: () => void;
   onComplete: () => void;
 }
 
-export function WeightCheckInScreen({ onBack, onComplete }: WeightCheckInScreenProps) {
-  const [currentStep, setCurrentStep] = useState<'weight' | 'mood' | 'recommendation'>('weight');
-  const [selectedMood, setSelectedMood] = useState<'happy' | 'neutral' | 'unhappy' | null>(null);
+export function WeightCheckInScreen({
+  onBack,
+  onComplete,
+}: WeightCheckInScreenProps) {
+  const [currentStep, setCurrentStep] = useState<
+    'weight' | 'mood' | 'recommendation'
+  >('weight');
+  const [selectedMood, setSelectedMood] = useState<
+    'happy' | 'neutral' | 'unhappy' | null
+  >(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Sample data
@@ -84,7 +98,7 @@ export function WeightCheckInScreen({ onBack, onComplete }: WeightCheckInScreenP
             </Text>
           </View>
         </View>
-        
+
         <View className="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-3 mb-3">
           <View className="flex-row items-center">
             <View className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 items-center justify-center mr-3">
@@ -100,7 +114,7 @@ export function WeightCheckInScreen({ onBack, onComplete }: WeightCheckInScreenP
             </View>
           </View>
         </View>
-        
+
         <TouchableOpacity>
           <Text className="text-sm text-primary-600 dark:text-primary-400 font-medium">
             Update Weight
@@ -150,22 +164,26 @@ export function WeightCheckInScreen({ onBack, onComplete }: WeightCheckInScreenP
                 : 'border-gray-200 dark:border-gray-700'
             }`}
           >
-            <View className={`w-16 h-16 rounded-full ${
-              selectedMood === 'happy'
-                ? 'bg-green-100 dark:bg-green-800/30'
-                : 'bg-gray-100 dark:bg-gray-800'
-            } items-center justify-center mb-3`}>
+            <View
+              className={`w-16 h-16 rounded-full ${
+                selectedMood === 'happy'
+                  ? 'bg-green-100 dark:bg-green-800/30'
+                  : 'bg-gray-100 dark:bg-gray-800'
+              } items-center justify-center mb-3`}
+            >
               <Ionicons
                 name="happy"
                 size={32}
                 color={selectedMood === 'happy' ? '#22c55e' : '#6b7280'}
               />
             </View>
-            <Text className={`font-medium ${
-              selectedMood === 'happy'
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-gray-700 dark:text-gray-300'
-            }`}>
+            <Text
+              className={`font-medium ${
+                selectedMood === 'happy'
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}
+            >
               Happy
             </Text>
           </MotiView>
@@ -186,22 +204,26 @@ export function WeightCheckInScreen({ onBack, onComplete }: WeightCheckInScreenP
                 : 'border-gray-200 dark:border-gray-700'
             }`}
           >
-            <View className={`w-16 h-16 rounded-full ${
-              selectedMood === 'neutral'
-                ? 'bg-blue-100 dark:bg-blue-800/30'
-                : 'bg-gray-100 dark:bg-gray-800'
-            } items-center justify-center mb-3`}>
+            <View
+              className={`w-16 h-16 rounded-full ${
+                selectedMood === 'neutral'
+                  ? 'bg-blue-100 dark:bg-blue-800/30'
+                  : 'bg-gray-100 dark:bg-gray-800'
+              } items-center justify-center mb-3`}
+            >
               <Ionicons
                 name="remove-circle"
                 size={32}
                 color={selectedMood === 'neutral' ? '#3b82f6' : '#6b7280'}
               />
             </View>
-            <Text className={`font-medium ${
-              selectedMood === 'neutral'
-                ? 'text-blue-600 dark:text-blue-400'
-                : 'text-gray-700 dark:text-gray-300'
-            }`}>
+            <Text
+              className={`font-medium ${
+                selectedMood === 'neutral'
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}
+            >
               Neutral
             </Text>
           </MotiView>
@@ -222,22 +244,26 @@ export function WeightCheckInScreen({ onBack, onComplete }: WeightCheckInScreenP
                 : 'border-gray-200 dark:border-gray-700'
             }`}
           >
-            <View className={`w-16 h-16 rounded-full ${
-              selectedMood === 'unhappy'
-                ? 'bg-amber-100 dark:bg-amber-800/30'
-                : 'bg-gray-100 dark:bg-gray-800'
-            } items-center justify-center mb-3`}>
+            <View
+              className={`w-16 h-16 rounded-full ${
+                selectedMood === 'unhappy'
+                  ? 'bg-amber-100 dark:bg-amber-800/30'
+                  : 'bg-gray-100 dark:bg-gray-800'
+              } items-center justify-center mb-3`}
+            >
               <Ionicons
                 name="sad"
                 size={32}
                 color={selectedMood === 'unhappy' ? '#f59e0b' : '#6b7280'}
               />
             </View>
-            <Text className={`font-medium ${
-              selectedMood === 'unhappy'
-                ? 'text-amber-600 dark:text-amber-400'
-                : 'text-gray-700 dark:text-gray-300'
-            }`}>
+            <Text
+              className={`font-medium ${
+                selectedMood === 'unhappy'
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}
+            >
               Unhappy
             </Text>
           </MotiView>
@@ -252,8 +278,8 @@ export function WeightCheckInScreen({ onBack, onComplete }: WeightCheckInScreenP
           className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 rounded-xl p-4 mb-6"
         >
           <Text className="text-sm text-amber-700 dark:text-amber-400">
-            Remember that progress isn't always linear. Would you like
-            to discuss adjusting your goals?
+            Remember that progress isn't always linear. Would you like to
+            discuss adjusting your goals?
           </Text>
         </MotiView>
       )}
@@ -286,9 +312,8 @@ export function WeightCheckInScreen({ onBack, onComplete }: WeightCheckInScreenP
               Plan Update: +80 kcal Daily Target
             </Text>
             <Text className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-              You're losing weight faster than your goal rate. We're
-              adjusting your daily calorie target to ensure sustainable
-              progress.
+              You're losing weight faster than your goal rate. We're adjusting
+              your daily calorie target to ensure sustainable progress.
             </Text>
             <View className="flex-row items-center">
               <View className="flex-1 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -375,20 +400,10 @@ export function WeightCheckInScreen({ onBack, onComplete }: WeightCheckInScreenP
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
         <View className="flex-1">
           {/* Header */}
-          <View className="px-4 pt-4 pb-4 flex-row items-center">
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.selectionAsync();
-                onBack();
-              }}
-              className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mr-4"
-            >
-              <Ionicons name="arrow-back" size={20} color="#6b7280" />
-            </TouchableOpacity>
-            <Text className="text-2xl font-bold text-gray-900 dark:text-white">
-              Weekly Check-In
-            </Text>
-          </View>
+          <StandardHeaderWithBack 
+            title="Weekly Check-In" 
+            onBack={onBack}
+          />
 
           {/* Content */}
           <ScrollView className="flex-1 px-4">
@@ -406,14 +421,13 @@ export function WeightCheckInScreen({ onBack, onComplete }: WeightCheckInScreenP
               disabled={currentStep === 'mood' && selectedMood === null}
               loading={isLoading}
             >
-              {currentStep === 'weight' 
-                ? 'Continue' 
-                : currentStep === 'mood' 
-                  ? 'Next' 
-                  : isLoading 
-                    ? 'Updating Plan...' 
-                    : 'Apply Changes & Continue'
-              }
+              {currentStep === 'weight'
+                ? 'Continue'
+                : currentStep === 'mood'
+                  ? 'Next'
+                  : isLoading
+                    ? 'Updating Plan...'
+                    : 'Apply Changes & Continue'}
             </Button>
           </View>
         </View>

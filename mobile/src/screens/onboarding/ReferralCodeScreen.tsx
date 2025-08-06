@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,19 +8,37 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
-import { useOnboarding } from './OnboardingFlow';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const ReferralCodeScreen = () => {
-  const { goToNextStep, goToPreviousStep, progress, updateUserData } = useOnboarding();
-  
+  const { goToNextStep, goToPreviousStep, progress, updateUserData } =
+    useOnboarding();
+
   const [referralCode, setReferralCode] = useState('');
   const [isValidating, setIsValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState<'valid' | 'invalid' | null>(null);
+  const [validationResult, setValidationResult] = useState<
+    'valid' | 'invalid' | null
+  >(null);
+  const validationTimeoutRef = useRef<NodeJS.Timeout>();
+  const successTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleChange = (text: string) => {
     setReferralCode(text.toUpperCase());
@@ -39,8 +57,16 @@ const ReferralCodeScreen = () => {
     setIsValidating(true);
     hapticFeedback.selection();
 
+    // Clear any existing timeouts
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+    }
+    if (successTimeoutRef.current) {
+      clearTimeout(successTimeoutRef.current);
+    }
+
     // Simulate API call to validate code
-    setTimeout(() => {
+    validationTimeoutRef.current = setTimeout(() => {
       // For demo purposes, consider codes starting with "NUTRIAI" as valid
       const isValid = referralCode.startsWith('NUTRIAI');
       setValidationResult(isValid ? 'valid' : 'invalid');
@@ -49,7 +75,7 @@ const ReferralCodeScreen = () => {
       if (isValid) {
         hapticFeedback.impact();
         // Wait a moment to show success state before proceeding
-        setTimeout(() => {
+        successTimeoutRef.current = setTimeout(() => {
           updateUserData('referralCode', referralCode);
           goToNextStep();
         }, 1000);
@@ -71,8 +97,8 @@ const ReferralCodeScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView 
-          className="flex-1" 
+        <ScrollView
+          className="flex-1"
           contentContainerStyle={{ flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -93,8 +119,8 @@ const ReferralCodeScreen = () => {
 
             {/* Progress bar */}
             <View className="w-full h-1 bg-gray-100 rounded-full mb-8">
-              <View 
-                className="h-full bg-primary rounded-full" 
+              <View
+                className="h-full bg-primary rounded-full"
                 style={{ width: `${progress}%` }}
               />
             </View>
@@ -114,22 +140,23 @@ const ReferralCodeScreen = () => {
               <Text className="text-lg font-medium text-gray-700 mb-3">
                 Referral Code (Optional)
               </Text>
-              
+
               <View className="relative">
                 <TextInput
                   value={referralCode}
                   onChangeText={handleChange}
                   placeholder="Enter code"
                   placeholderTextColor="#9CA3AF"
-                  className={`h-16 px-4 bg-gray-100 rounded-2xl text-xl font-medium text-center ${
-                    validationResult === 'valid' ? 'border-2 border-green-500' :
-                    validationResult === 'invalid' ? 'border-2 border-red-500' : ''
-                  }`}
+                  style={[
+                    styles.input,
+                    validationResult === 'valid' && styles.inputValid,
+                    validationResult === 'invalid' && styles.inputInvalid,
+                  ]}
                   maxLength={10}
                   autoCapitalize="characters"
                   autoCorrect={false}
                 />
-                
+
                 {/* Validation Icons */}
                 <AnimatePresence>
                   {validationResult === 'valid' && (
@@ -142,7 +169,7 @@ const ReferralCodeScreen = () => {
                       <CheckCircle size={24} color="#10B981" />
                     </MotiView>
                   )}
-                  
+
                   {validationResult === 'invalid' && (
                     <MotiView
                       from={{ opacity: 0, scale: 0.8 }}
@@ -169,7 +196,7 @@ const ReferralCodeScreen = () => {
                     </Text>
                   </MotiView>
                 )}
-                
+
                 {validationResult === 'invalid' && (
                   <MotiView
                     from={{ opacity: 0, translateY: -10 }}
@@ -201,7 +228,7 @@ const ReferralCodeScreen = () => {
                   <ActivityIndicator color="white" />
                 ) : (
                   <Text className="text-white font-semibold text-base">
-                    {referralCode ? 'Apply Code' : 'Continue'}
+                    Continue
                   </Text>
                 )}
               </TouchableOpacity>
@@ -209,11 +236,11 @@ const ReferralCodeScreen = () => {
               {referralCode && validationResult !== 'valid' && (
                 <TouchableOpacity
                   onPress={handleSkip}
-                  className="py-4 rounded-full items-center justify-center border border-gray-300"
+                  className="py-4 rounded-full items-center justify-center"
                   activeOpacity={0.8}
                   disabled={isValidating}
                 >
-                  <Text className="text-gray-700 font-semibold text-base">
+                  <Text className="text-gray-700 font-medium text-base">
                     Skip
                   </Text>
                 </TouchableOpacity>
@@ -225,5 +252,29 @@ const ReferralCodeScreen = () => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  input: {
+    height: 64,
+    paddingHorizontal: 16,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 16,
+    fontSize: 20,
+    fontWeight: '500',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    color: '#111827',
+    // Ensure proper vertical centering
+    paddingTop: Platform.OS === 'ios' ? 2 : 0,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  inputValid: {
+    borderColor: '#10B981',
+  },
+  inputInvalid: {
+    borderColor: '#EF4444',
+  },
+});
 
 export default ReferralCodeScreen;

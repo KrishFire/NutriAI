@@ -1,8 +1,8 @@
 import React from 'react';
 import { Pressable, Text, View, ActivityIndicator } from 'react-native';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
   withSpring,
   interpolate,
 } from 'react-native-reanimated';
@@ -14,6 +14,7 @@ interface ButtonProps {
   children: React.ReactNode;
   onPress?: () => void;
   variant?: 'primary' | 'secondary' | 'outline' | 'danger';
+  size?: 'small' | 'medium' | 'large';
   fullWidth?: boolean;
   disabled?: boolean;
   loading?: boolean;
@@ -26,6 +27,7 @@ export const Button: React.FC<ButtonProps> = ({
   children,
   onPress,
   variant = 'primary',
+  size = 'medium',
   fullWidth = false,
   disabled = false,
   loading = false,
@@ -60,6 +62,18 @@ export const Button: React.FC<ButtonProps> = ({
         return 'text-gray-900 dark:text-white';
       default:
         return 'text-white';
+    }
+  };
+
+  const getSizeStyles = () => {
+    switch (size) {
+      case 'small':
+        return 'py-2 px-4';
+      case 'large':
+        return 'py-4 px-6';
+      case 'medium':
+      default:
+        return 'py-3 px-5';
     }
   };
 
@@ -103,7 +117,7 @@ export const Button: React.FC<ButtonProps> = ({
       style={animatedStyle}
       className={`
         flex-row items-center justify-center 
-        px-6 py-4 rounded-full 
+        ${getSizeStyles()} rounded-full 
         border ${getVariantStyles()}
         ${fullWidth ? 'w-full' : ''}
         ${disabled ? 'opacity-50' : ''}
@@ -112,9 +126,13 @@ export const Button: React.FC<ButtonProps> = ({
     >
       {loading ? (
         <View className="flex-row items-center space-x-2">
-          <ActivityIndicator 
-            size="small" 
-            color={variant === 'primary' || variant === 'danger' ? '#FFFFFF' : '#320DFF'} 
+          <ActivityIndicator
+            size="small"
+            color={
+              variant === 'primary' || variant === 'danger'
+                ? '#FFFFFF'
+                : '#320DFF'
+            }
           />
           <Text className={`font-medium ml-2 ${getTextStyles()}`}>
             Loading...
@@ -125,9 +143,7 @@ export const Button: React.FC<ButtonProps> = ({
           {icon && iconPosition === 'left' && (
             <View className="mr-2">{icon}</View>
           )}
-          <Text className={`font-medium ${getTextStyles()}`}>
-            {children}
-          </Text>
+          <Text className={`font-medium ${getTextStyles()}`}>{children}</Text>
           {icon && iconPosition === 'right' && (
             <View className="ml-2">{icon}</View>
           )}

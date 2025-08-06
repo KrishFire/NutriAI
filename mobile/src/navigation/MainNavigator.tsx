@@ -1,5 +1,4 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 
@@ -24,11 +23,11 @@ export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
   ForgotPassword: undefined;
-  
+
   // Main flows
   Onboarding: undefined;
   MainApp: undefined;
-  
+
   // Modal screens
   Paywall: { feature?: string };
   SubscriptionSuccess: undefined;
@@ -48,66 +47,64 @@ export default function MainNavigator() {
   return (
     <>
       <StatusBar style="dark" />
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
-            animation: 'slide_from_right',
-          }}
-        >
-          {!isAuthenticated ? (
-            // Auth flow
-            <Stack.Group>
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Signup" component={SignupScreen} />
-              <Stack.Screen 
-                name="ForgotPassword" 
-                component={ForgotPasswordScreen}
-                options={{
-                  animation: 'slide_from_bottom',
-                }}
-              />
-            </Stack.Group>
-          ) : !hasCompletedOnboarding ? (
-            // Onboarding flow
-            <Stack.Screen 
-              name="Onboarding" 
-              component={OnboardingStack}
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      >
+        {!isAuthenticated ? (
+          // Auth flow
+          <Stack.Group>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Signup" component={SignupScreen} />
+            <Stack.Screen
+              name="ForgotPassword"
+              component={ForgotPasswordScreen}
+              options={{
+                animation: 'slide_from_bottom',
+              }}
+            />
+          </Stack.Group>
+        ) : !hasCompletedOnboarding ? (
+          // Onboarding flow
+          <Stack.Screen
+            name="Onboarding"
+            component={OnboardingStack}
+            options={{
+              animation: 'fade',
+            }}
+          />
+        ) : (
+          // Main app
+          <>
+            <Stack.Screen
+              name="MainApp"
+              component={BottomTabNavigator}
               options={{
                 animation: 'fade',
               }}
             />
-          ) : (
-            // Main app
-            <>
-              <Stack.Screen 
-                name="MainApp" 
-                component={BottomTabNavigator}
+
+            {/* Modal screens */}
+            <Stack.Group
+              screenOptions={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            >
+              <Stack.Screen name="Paywall" component={PaywallScreen} />
+              <Stack.Screen
+                name="SubscriptionSuccess"
+                component={SubscriptionSuccessScreen}
                 options={{
-                  animation: 'fade',
+                  presentation: 'fullScreenModal',
                 }}
               />
-              
-              {/* Modal screens */}
-              <Stack.Group
-                screenOptions={{
-                  presentation: 'modal',
-                  animation: 'slide_from_bottom',
-                }}
-              >
-                <Stack.Screen name="Paywall" component={PaywallScreen} />
-                <Stack.Screen 
-                  name="SubscriptionSuccess" 
-                  component={SubscriptionSuccessScreen}
-                  options={{
-                    presentation: 'fullScreenModal',
-                  }}
-                />
-              </Stack.Group>
-            </>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
+            </Stack.Group>
+          </>
+        )}
+      </Stack.Navigator>
     </>
   );
 }
