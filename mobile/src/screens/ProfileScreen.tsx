@@ -283,40 +283,41 @@ export default function ProfileScreen() {
                       transition={{ delay: index * 50 }}
                     >
                       <TouchableOpacity
-                        className="flex-row items-center justify-between p-4 border-b border-gray-100"
+                        className="flex-row items-center p-4 border-b border-gray-100"
                         activeOpacity={0.7}
                         onPress={() => handleNavigate(item.screen)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${item.title}${item.badge ? `, ${item.badge}` : ''}`}
                       >
-                        <View className="flex-row items-center">
-                          <View className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center mr-3">
-                            <item.icon size={18} color="#6B7280" />
-                          </View>
-                          <Text className="font-medium text-gray-900">
-                            {item.title}
-                          </Text>
+                        <View className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center">
+                          <item.icon size={18} color="#6B7280" />
                         </View>
-                        <View className="flex-row items-center">
-                          {item.badge && (
-                            <View
-                              className={`mr-2 px-2 py-0.5 rounded-full ${
+                        <Text 
+                          className="flex-1 font-medium text-gray-900 ml-3 mr-2" 
+                          numberOfLines={1}
+                        >
+                          {item.title}
+                        </Text>
+                        {item.badge && (
+                          <View
+                            className={`mr-2 px-2 py-0.5 rounded-full ${
+                              typeof item.badge === 'number'
+                                ? 'bg-red-500'
+                                : 'bg-primary/10'
+                            }`}
+                          >
+                            <Text
+                              className={`text-xs font-medium ${
                                 typeof item.badge === 'number'
-                                  ? 'bg-red-500'
-                                  : 'bg-primary/10'
+                                  ? 'text-white'
+                                  : 'text-primary'
                               }`}
                             >
-                              <Text
-                                className={`text-xs font-medium ${
-                                  typeof item.badge === 'number'
-                                    ? 'text-white'
-                                    : 'text-primary'
-                                }`}
-                              >
-                                {item.badge}
-                              </Text>
-                            </View>
-                          )}
-                          <ChevronRight size={18} color="#9CA3AF" />
-                        </View>
+                              {item.badge}
+                            </Text>
+                          </View>
+                        )}
+                        <ChevronRight size={18} color="#9CA3AF" />
                       </TouchableOpacity>
                     </MotiView>
                   ))}
