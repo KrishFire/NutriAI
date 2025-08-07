@@ -178,7 +178,7 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: headerHeight + 20,
-          paddingBottom: TAB_BAR_HEIGHT + 20,
+          paddingBottom: TAB_BAR_HEIGHT + 60,
         }}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -269,8 +269,8 @@ export default function ProfileScreen() {
 
           {/* Menu Sections */}
           <View className="space-y-6">
-            {menuItems.map(section => (
-              <View key={section.id}>
+            {menuItems.map((section, sectionIndex) => (
+              <View key={section.id} className={sectionIndex > 0 ? "mt-6" : ""}>
                 <Text className="text-sm font-medium text-gray-500 mb-2">
                   {section.title}
                 </Text>
@@ -283,7 +283,7 @@ export default function ProfileScreen() {
                       transition={{ delay: index * 50 }}
                     >
                       <TouchableOpacity
-                        className="flex-row items-center p-4 border-b border-gray-100"
+                        className="flex-row items-center pl-3 pr-4 py-4 border-b border-gray-100"
                         activeOpacity={0.7}
                         onPress={() => handleNavigate(item.screen)}
                         accessibilityRole="button"
