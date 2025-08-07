@@ -283,7 +283,7 @@ export default function ProfileScreen() {
                       transition={{ delay: index * 50 }}
                     >
                       <TouchableOpacity
-                        className="flex-row items-center pl-3 pr-4 py-3.5 border-b border-gray-100"
+                        className="flex-row items-center pl-1 pr-4 py-4 border-b border-gray-100"
                         activeOpacity={0.7}
                         onPress={() => handleNavigate(item.screen)}
                         accessibilityRole="button"
@@ -293,7 +293,7 @@ export default function ProfileScreen() {
                           <item.icon size={18} color="#6B7280" />
                         </View>
                         <Text 
-                          className="flex-1 font-medium text-gray-900 ml-3 mr-2" 
+                          className="flex-1 font-medium text-gray-900 text-sm ml-3 mr-2" 
                           numberOfLines={1}
                         >
                           {item.title}
