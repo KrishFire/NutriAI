@@ -274,7 +274,7 @@ export default function ProfileScreen() {
                 <Text className="text-sm font-medium text-gray-500 mb-2">
                   {section.title}
                 </Text>
-                <Card className="overflow-hidden">
+                <Card className="overflow-hidden -mx-4">
                   {section.items.map((item, index) => (
                     <MotiView
                       key={item.id}
@@ -283,7 +283,7 @@ export default function ProfileScreen() {
                       transition={{ delay: index * 50 }}
                     >
                       <TouchableOpacity
-                        className="flex-row items-center pl-3 pr-4 py-4 border-b border-gray-100"
+                        className="flex-row items-center pl-4 pr-4 py-4 border-b border-gray-100"
                         activeOpacity={0.7}
                         onPress={() => handleNavigate(item.screen)}
                         accessibilityRole="button"
