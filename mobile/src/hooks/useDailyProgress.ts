@@ -1,13 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getCurrentUser } from '../services/auth';
 import { getTodaysNutrition, getTodaysMeals } from '../services/meals';
-import {
-  getUserPreferences,
-  getOrCreateUserPreferences,
-} from '../services/userPreferences';
+import { getOrCreateUserPreferences } from '../services/userPreferences';
 import { getUserStats } from '../services/meals';
-import type { DailyLog, MealEntry } from '../services/meals';
-import type { UserPreferences } from '../services/userPreferences';
+import type { GroupedMeal } from '../services/meals';
 
 export interface DailyProgressData {
   calories: {
@@ -44,6 +40,8 @@ export interface DailyProgressData {
       protein: number;
       fat: number;
     };
+    foods?: Array<{ name: string; calories: number }>; // Added for grouped meals
+    mealGroupId?: string; // Added for meal group identification
   }>;
   streak: number;
   notifications: number;
@@ -129,10 +127,10 @@ export function useDailyProgress() {
         Math.round((fatConsumed / fatGoal) * 100)
       );
 
-      // Transform meals data
-      const transformedMeals = meals.map((meal: MealEntry) => ({
-        id: meal.id || '',
-        type: meal.meal_type,
+      // Transform grouped meals data
+      const transformedMeals = meals.map((meal: GroupedMeal) => ({
+        id: meal.id,
+        type: meal.mealType,
         time: meal.logged_at
           ? new Date(meal.logged_at).toLocaleTimeString('en-US', {
               hour: 'numeric',
@@ -140,13 +138,16 @@ export function useDailyProgress() {
               hour12: true,
             })
           : '',
-        calories: meal.calories,
-        image: meal.image_url,
+        calories: meal.totalCalories,
+        image: meal.imageUrl,
         macros: {
-          carbs: meal.carbs,
-          protein: meal.protein,
-          fat: meal.fat,
+          carbs: meal.totalCarbs,
+          protein: meal.totalProtein,
+          fat: meal.totalFat,
         },
+        foods: meal.foods,
+        mealGroupId: meal.mealGroupId,
+        title: meal.title,
       }));
 
       // Get user name

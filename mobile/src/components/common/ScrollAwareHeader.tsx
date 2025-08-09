@@ -16,14 +16,15 @@ const ScrollAwareHeader: React.FC<ScrollAwareHeaderProps> = ({
   const insets = useSafeAreaInsets();
   
   // Interpolate scroll position to show/hide header background
+  // Increased threshold to 65px for better spacing with larger fonts
   const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 50],
+    inputRange: [0, 65],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   });
 
   const headerShadow = scrollY.interpolate({
-    inputRange: [0, 50],
+    inputRange: [0, 65],
     outputRange: [0, 0.1],
     extrapolate: 'clamp',
   });

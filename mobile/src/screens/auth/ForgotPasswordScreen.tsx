@@ -7,7 +7,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -96,7 +95,7 @@ export default function ForgotPasswordScreen() {
             entering={FadeIn.delay(100).springify()}
             style={styles.successIconContainer}
           >
-            <CheckCircle size={32} color="#320DFF" />
+            <CheckCircle size={32} />
           </Animated.View>
 
           <Text style={styles.successTitle}>Check Your Email</Text>
@@ -212,7 +211,7 @@ export default function ForgotPasswordScreen() {
                 accessibilityState={{ disabled: isLoading || !email }}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="white" />
+                  <LoadingIndicator size="small" color="white" />
                 ) : (
                   <Text style={styles.submitButtonText}>Send Reset Link</Text>
                 )}

@@ -3,7 +3,8 @@ import {
   createNativeStackNavigator,
   NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
-import { TouchableOpacity, ActivityIndicator } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+import { LoadingIndicator } from '../components/ui/LoadingIndicator';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
@@ -36,10 +37,14 @@ import CameraScreen from '../screens/CameraScreen';
 import MealDetailsScreen from '../screens/MealDetailsScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import ManualEntryScreen from '../screens/ManualEntryScreen';
+import TextInputScreen from '../screens/food-input/TextInputScreen';
+import AnalyzingScreen from '../screens/food-input/AnalyzingScreen';
 import BarcodeScannerScreen from '../screens/BarcodeScannerScreen';
 import VoiceLogScreen from '../screens/VoiceLogScreen';
 import PaywallScreen from '../screens/premium/PaywallScreen';
+import FoodResultsScreen from '../screens/food-input/FoodResultsScreen';
+import MealSavedScreen from '../screens/MealSavedScreen';
+import RefineWithAIScreen from '../screens/RefineWithAIScreen';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -58,7 +63,7 @@ function CloseButton() {
       onPress={() => navigation.getParent()?.goBack()}
       style={{ padding: 4 }}
     >
-      <Ionicons name="close" size={24} color="#007AFF" />
+      <Ionicons name="close" size={24} />
     </TouchableOpacity>
   );
 }
@@ -81,10 +86,9 @@ function AddMealStackNavigator() {
       />
       <AddMealStack.Screen
         name="ManualEntry"
-        component={ManualEntryScreen}
+        component={TextInputScreen}
         options={{
-          title: 'Manual Entry',
-          headerLeft: () => <CloseButton />,
+          headerShown: false, // TextInputScreen has its own header
         }}
         initialParams={undefined}
       />
@@ -283,6 +287,70 @@ function AppStack() {
           animation: 'slide_from_right',
         }}
       />
+      {/* Food Input Screens */}
+      <RootStack.Screen
+        name="TextInput"
+        component={TextInputScreen}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          presentation: 'card',
+        }}
+      />
+      <RootStack.Screen
+        name="VoiceLog"
+        component={VoiceLogScreen}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          presentation: 'card',
+        }}
+      />
+      <RootStack.Screen
+        name="CameraInput"
+        component={CameraScreen}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          presentation: 'card',
+        }}
+      />
+      <RootStack.Screen
+        name="BarcodeInput"
+        component={BarcodeScannerScreen}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          presentation: 'card',
+        }}
+      />
+      <RootStack.Screen
+        name="AnalyzingScreen"
+        component={AnalyzingScreen}
+        options={{
+          headerShown: false,
+          animation: 'fade',
+          presentation: 'card',
+        }}
+      />
+      <RootStack.Screen
+        name="FoodResultsScreen"
+        component={FoodResultsScreen}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          presentation: 'card',
+        }}
+      />
+      <RootStack.Screen
+        name="RefineWithAIScreen"
+        component={RefineWithAIScreen}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          presentation: 'card',
+        }}
+      />
       <RootStack.Group screenOptions={{ presentation: 'modal' }}>
         <RootStack.Screen
           name="PaywallModal"
@@ -290,6 +358,15 @@ function AppStack() {
           options={{
             headerShown: false,
             animation: 'slide_from_bottom',
+          }}
+        />
+        <RootStack.Screen
+          name="MealSaved"
+          component={MealSavedScreen}
+          options={{
+            headerShown: false,
+            presentation: 'transparentModal',
+            animation: 'fade',
           }}
         />
       </RootStack.Group>
@@ -325,7 +402,7 @@ export default function RootNavigator() {
           backgroundColor: '#FFFFFF',
         }}
       >
-        <ActivityIndicator size="large" color="#320DFF" />
+        <LoadingIndicator size="large" />
       </View>
     );
   }

@@ -5,12 +5,12 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LoadingIndicator } from '../../components/ui/LoadingIndicator';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { hapticFeedback } from '../../utils/haptics';
@@ -225,7 +225,7 @@ const ReferralCodeScreen = () => {
                 disabled={isValidating}
               >
                 {isValidating ? (
-                  <ActivityIndicator color="white" />
+                  <LoadingIndicator color="white" />
                 ) : (
                   <Text className="text-white font-semibold text-base">
                     Continue

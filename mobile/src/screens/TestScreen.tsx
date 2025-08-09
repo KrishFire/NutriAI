@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
 } from 'react-native';
 import { supabase } from '../config/supabase';
@@ -176,7 +175,7 @@ export default function TestScreen() {
 
       {testing && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00aced" />
+          <LoadingIndicator size="large" color="#00aced" />
           <Text style={styles.loadingText}>Running tests...</Text>
         </View>
       )}

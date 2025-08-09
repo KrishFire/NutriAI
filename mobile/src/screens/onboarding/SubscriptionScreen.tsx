@@ -5,12 +5,12 @@ import {
   ScrollView,
   Pressable,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Check, Zap } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { LoadingIndicator } from '../../components/ui/LoadingIndicator';
 import { hapticFeedback } from '../../utils/haptics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 
@@ -228,7 +228,7 @@ const SubscriptionScreen = () => {
                     accessibilityHint="Starts your free trial with monthly billing"
                   >
                     {loadingPlan === 'monthly' ? (
-                      <ActivityIndicator color="white" size="small" />
+                      <LoadingIndicator color="white" size="small" />
                     ) : (
                       <Text className="text-white font-semibold text-sm">
                         Start Free Trial
@@ -272,7 +272,7 @@ const SubscriptionScreen = () => {
                   </View>
 
                   <View className="flex-row items-center mb-4">
-                    <Zap size={20} color="#320DFF" />
+                    <Zap size={20} />
                     <Text className="text-lg font-semibold ml-2">Yearly</Text>
                   </View>
 
@@ -303,7 +303,7 @@ const SubscriptionScreen = () => {
                         accessibilityLabel={`Feature: ${feature}`}
                       >
                         <View className="mr-2 mt-0.5">
-                          <Check size={14} color="#320DFF" />
+                          <Check size={14} />
                         </View>
                         <Text className="flex-1 text-sm text-gray-700">
                           {feature}
@@ -337,7 +337,7 @@ const SubscriptionScreen = () => {
                     accessibilityHint="Starts your free trial with yearly billing and save 50%"
                   >
                     {loadingPlan === 'yearly' ? (
-                      <ActivityIndicator color="white" size="small" />
+                      <LoadingIndicator color="white" size="small" />
                     ) : (
                       <Text className="text-white font-semibold text-sm">
                         Start Free Trial

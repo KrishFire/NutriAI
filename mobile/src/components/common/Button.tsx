@@ -2,10 +2,10 @@ import {
   TouchableOpacity,
   Text,
   StyleSheet,
-  ActivityIndicator,
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import { LoadingIndicator } from '../ui/LoadingIndicator';
 
 interface ButtonProps {
   title: string;
@@ -52,7 +52,7 @@ export default function Button({
       activeOpacity={0.7}
     >
       {loading ? (
-        <ActivityIndicator
+        <LoadingIndicator
           color={variant === 'primary' ? 'white' : '#3498db'}
           size="small"
         />

@@ -25,7 +25,7 @@ interface UseStreakReturn {
  * ```tsx
  * const { streakData, loading, motivationalMessage } = useStreak();
  *
- * if (loading) return <ActivityIndicator />;
+ * if (loading) return < />;
  *
  * return (
  *   <View>

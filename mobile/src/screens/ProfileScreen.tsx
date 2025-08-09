@@ -274,7 +274,7 @@ export default function ProfileScreen() {
                 <Text className="text-sm font-medium text-gray-500 mb-2">
                   {section.title}
                 </Text>
-                <Card className="overflow-hidden">
+                <View className="overflow-hidden rounded-xl border border-gray-100 bg-white">
                   {section.items.map((item, index) => (
                     <MotiView
                       key={item.id}
@@ -283,7 +283,9 @@ export default function ProfileScreen() {
                       transition={{ delay: index * 50 }}
                     >
                       <TouchableOpacity
-                        className="flex-row items-center pl-1 pr-4 py-4 border-b border-gray-100"
+                        className={`flex-row items-center px-4 min-h-[64px] py-2 ${
+                          index < section.items.length - 1 ? 'border-b border-gray-100' : ''
+                        }`}
                         activeOpacity={0.7}
                         onPress={() => handleNavigate(item.screen)}
                         accessibilityRole="button"
@@ -293,14 +295,14 @@ export default function ProfileScreen() {
                           <item.icon size={18} color="#6B7280" />
                         </View>
                         <Text 
-                          className="flex-1 font-medium text-gray-900 text-sm ml-3 mr-2" 
+                          className="flex-1 font-medium text-gray-900 text-sm ml-4" 
                           numberOfLines={1}
                         >
                           {item.title}
                         </Text>
                         {item.badge && (
                           <View
-                            className={`mr-2 px-2 py-0.5 rounded-full ${
+                            className={`px-2 py-0.5 rounded-full ${
                               typeof item.badge === 'number'
                                 ? 'bg-red-500'
                                 : 'bg-primary/10'
@@ -321,7 +323,7 @@ export default function ProfileScreen() {
                       </TouchableOpacity>
                     </MotiView>
                   ))}
-                </Card>
+                </View>
               </View>
             ))}
           </View>

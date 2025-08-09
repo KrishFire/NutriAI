@@ -42,10 +42,14 @@ export default function MealSavedScreen() {
     opacity.value = withTiming(1, { duration: 300 });
     berryScale.value = withDelay(200, withSpring(1, { damping: 12 }));
 
-    // Auto-dismiss after 3 seconds
+    // Auto-dismiss after 2 seconds and navigate to Home
     const timer = setTimeout(() => {
-      navigation.goBack();
-    }, 3000);
+      // Navigate to Home screen
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Main' as any }],
+      });
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, [navigation]);
@@ -202,7 +206,10 @@ export default function MealSavedScreen() {
               <TouchableOpacity
                 onPress={() => {
                   hapticFeedback.selection();
-                  navigation.goBack();
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Main' as any }],
+                  });
                 }}
                 className="bg-primary rounded-2xl py-4 px-6"
               >

@@ -23,7 +23,7 @@ const METERING_INTERVAL = 200; // Check every 200ms
 
 export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
   const {
-    maxDuration = 60,
+    maxDuration = 30, // Changed to 30 seconds
     onTranscriptionComplete,
     onError,
     silenceThreshold = DEFAULT_SILENCE_THRESHOLD,
@@ -37,6 +37,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
   const [duration, setDuration] = useState<number>(0);
   const [isAutoStopping, setIsAutoStopping] = useState<boolean>(false);
   const [hasStartedSpeaking, setHasStartedSpeaking] = useState<boolean>(false);
+  const [meteringValue, setMeteringValue] = useState<number>(-160); // Expose metering value
 
   const recordingRef = useRef<Audio.Recording | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -122,6 +123,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
       setDuration(0);
       setIsAutoStopping(false);
       setHasStartedSpeaking(false);
+      setMeteringValue(-160); // Reset metering value
       latestMeteringRef.current = -160;
       isStoppingRef.current = false; // Reset stopping flag
 
@@ -161,6 +163,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
       recording.setOnRecordingStatusUpdate(status => {
         if (status.isRecording && typeof status.metering === 'number') {
           latestMeteringRef.current = status.metering;
+          setMeteringValue(status.metering); // Update state for UI
         }
       });
 
@@ -356,6 +359,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
     setDuration(0);
     setIsAutoStopping(false);
     setHasStartedSpeaking(false);
+    setMeteringValue(-160);
   }, []);
 
   return {
@@ -366,6 +370,7 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
     maxDuration,
     isAutoStopping,
     hasStartedSpeaking,
+    meteringValue, // Expose metering value for waveform animation
     startRecording,
     stopRecording,
     cancelRecording,

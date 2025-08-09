@@ -4,12 +4,12 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Animated,
 } from 'react-native';
 import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { RecordingState } from '../hooks/useVoiceRecording';
+import { LoadingIndicator } from './ui/LoadingIndicator';
 
 interface VoiceRecordingBottomSheetProps {
   isVisible: boolean;
@@ -89,7 +89,7 @@ export default function VoiceRecordingBottomSheet({
               style={styles.micButton}
               onPress={onStartRecording}
             >
-              <Ionicons name="mic" size={48} color="#007AFF" />
+              <Ionicons name="mic" size={48} />
             </TouchableOpacity>
             <Text style={styles.hint}>Speak clearly and describe portions</Text>
           </>
@@ -135,9 +135,8 @@ export default function VoiceRecordingBottomSheet({
         return (
           <>
             <Text style={styles.title}>Transcribing...</Text>
-            <ActivityIndicator
+            <LoadingIndicator
               size="large"
-              color="#007AFF"
               style={styles.loader}
             />
             <Text style={styles.subtitle}>Converting your voice to text</Text>

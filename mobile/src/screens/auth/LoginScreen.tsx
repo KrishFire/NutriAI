@@ -8,7 +8,6 @@ import {
   Platform,
   Alert,
   TextInput,
-  ActivityIndicator,
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,6 +20,7 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { AuthStackParamList, RootStackParamList } from '@/types/navigation';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Button } from '@/components/ui/Button';
+import { LoadingIndicator } from '@/components/ui/LoadingIndicator';
 import { hapticFeedback } from '@/utils/haptics';
 import { useAuth } from '@/contexts/AuthContext';
 import { validateEmail } from '@/utils';
@@ -277,7 +277,7 @@ export default function LoginScreen() {
                 accessibilityState={{ disabled: isLoading }}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="white" />
+                  <LoadingIndicator size="small" />
                 ) : (
                   <Text style={styles.submitButtonText}>Log In</Text>
                 )}

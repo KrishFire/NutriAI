@@ -8,13 +8,13 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MealAnalysis, ChatMessage } from '../../../shared/types';
 import { mealCorrectionService } from '../../services/mealCorrection';
+import { LoadingIndicator } from '../ui/LoadingIndicator';
 
 interface MealCorrectionModalProps {
   visible: boolean;
@@ -151,7 +151,7 @@ export default function MealCorrectionModal({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Ionicons name="sparkles" size={24} color="#007AFF" />
+            <Ionicons name="sparkles" size={24} />
             <Text style={styles.headerTitle}>Refine Analysis</Text>
           </View>
           <TouchableOpacity
@@ -254,10 +254,9 @@ export default function MealCorrectionModal({
           >
             {isSubmitting ? (
               <>
-                <ActivityIndicator
+                <LoadingIndicator
                   size="small"
                   color="white"
-                  style={styles.loadingIcon}
                 />
                 <Text style={styles.submitButtonText}>Refining...</Text>
               </>

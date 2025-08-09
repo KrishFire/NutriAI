@@ -17,9 +17,9 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { searchFoods, searchFoodsStructured } from '../services/foodSearch';
+import { LoadingIndicator } from './ui/LoadingIndicator';
 
 interface SearchResult {
   groups: Array<{
@@ -182,7 +182,7 @@ export default function SearchUXDemo() {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="white" size="small" />
+            <LoadingIndicator color="white" size="small" />
           ) : (
             <Text style={styles.searchButtonText}>Search</Text>
           )}

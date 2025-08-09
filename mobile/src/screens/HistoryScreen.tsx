@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   Image,
-  ActivityIndicator,
   ScrollView,
   Animated as RNAnimated,
 } from 'react-native';
@@ -52,6 +51,7 @@ interface MealData {
   totalFat: number;
   imageUrl?: string;
   hasMealGroupId: boolean;
+  title?: string; // AI-generated meal title
 }
 
 interface HistoryData {
@@ -94,6 +94,7 @@ export default function HistoryScreen() {
   const rotateAnimation = useSharedValue(-90);
   const progressAnimation = useSharedValue(0);
   const isInitialLoad = useRef(true);
+  const [macroAnimationKey, setMacroAnimationKey] = useState(0);
 
   // Show loading state immediately when date changes (before debounce)
   useEffect(() => {
@@ -182,6 +183,9 @@ export default function HistoryScreen() {
         duration: 500,
         delay: 200 
       });
+      
+      // Trigger macro bar animations by changing the key
+      setMacroAnimationKey(prev => prev + 1);
 
       return () => {
         // Reset rotation when leaving screen
@@ -317,7 +321,7 @@ export default function HistoryScreen() {
 
     return (
       <View className="relative">
-        <Svg width={size} height={size} className="rotate-[-90deg]">
+        <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
           {/* Background circle */}
           <Circle
             cx={size / 2}
@@ -418,7 +422,7 @@ export default function HistoryScreen() {
             </TouchableOpacity>
 
             <View className="flex-row items-center">
-              <Calendar size={16} color="#320DFF" />
+              <Calendar size={16} />
               <Text className="font-semibold text-gray-900 ml-2">
                 {currentDate.toLocaleDateString('en-US', {
                   month: 'long',
@@ -526,6 +530,7 @@ export default function HistoryScreen() {
                   </Text>
                   <View className="h-1 bg-gray-100 rounded-full mt-1 w-full overflow-hidden">
                     <MotiView
+                      key={`carbs-${macroAnimationKey}`}
                       from={{ width: '0%' }}
                       animate={{ 
                         width: dailySummary ? `${Math.min((dailySummary.totalCarbs / dailySummary.goalCarbs) * 100, 100)}%` : '0%'
@@ -548,6 +553,7 @@ export default function HistoryScreen() {
                   </Text>
                   <View className="h-1 bg-gray-100 rounded-full mt-1 w-full overflow-hidden">
                     <MotiView
+                      key={`protein-${macroAnimationKey}`}
                       from={{ width: '0%' }}
                       animate={{ 
                         width: dailySummary ? `${Math.min((dailySummary.totalProtein / dailySummary.goalProtein) * 100, 100)}%` : '0%'
@@ -570,6 +576,7 @@ export default function HistoryScreen() {
                   </Text>
                   <View className="h-1 bg-gray-100 rounded-full mt-1 w-full overflow-hidden">
                     <MotiView
+                      key={`fat-${macroAnimationKey}`}
                       from={{ width: '0%' }}
                       animate={{ 
                         width: dailySummary ? `${Math.min((dailySummary.totalFat / dailySummary.goalFat) * 100, 100)}%` : '0%'
@@ -640,7 +647,7 @@ export default function HistoryScreen() {
                           <View className="flex-row justify-between items-start">
                             <View>
                               <Text className="font-semibold text-gray-900 capitalize">
-                                {meal.mealType}
+                                {meal.title || meal.mealType}
                               </Text>
                               <Text className="text-sm text-gray-500">
                                 {formatMealTime(meal.mealType)}

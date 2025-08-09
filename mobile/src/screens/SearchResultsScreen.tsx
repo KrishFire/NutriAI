@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +13,7 @@ import { ArrowLeft, Search, Filter, Plus, Heart, X } from 'lucide-react-native';
 import Animated, { FadeIn, FadeOut, Layout } from 'react-native-reanimated';
 import { hapticFeedback } from '../utils/haptics';
 import tokens from '../utils/tokens';
+import { LoadingIndicator } from '../components/ui/LoadingIndicator';
 
 interface FoodItem {
   id: string;
@@ -313,7 +313,7 @@ export default function SearchResultsScreen() {
       {/* Results */}
       {isSearching ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator
+          <LoadingIndicator
             size="large"
             color={tokens.colors.primary.DEFAULT}
           />

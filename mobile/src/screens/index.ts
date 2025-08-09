@@ -10,7 +10,6 @@ export { default as ProfileScreen } from './ProfileScreen';
 export { default as SignupScreen } from './SignupScreen';
 export { default as TestScreen } from './TestScreen';
 export { default as VoiceLogScreen } from './VoiceLogScreen';
-export { default as VoiceLogScreenWithFallback } from './VoiceLogScreenWithFallback';
 
 // Onboarding screens
 export { default as WelcomeScreen } from './onboarding/WelcomeScreen';

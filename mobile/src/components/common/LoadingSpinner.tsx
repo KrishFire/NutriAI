@@ -1,4 +1,5 @@
-import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { LoadingIndicator } from '../ui/LoadingIndicator';
 
 interface LoadingSpinnerProps {
   size?: 'small' | 'large';
@@ -15,7 +16,7 @@ export default function LoadingSpinner({
 }: LoadingSpinnerProps) {
   const content = (
     <View style={[styles.container, overlay && styles.overlay]}>
-      <ActivityIndicator size={size} color={color} />
+      <LoadingIndicator size={size} color={color} />
       {text && <Text style={styles.text}>{text}</Text>}
     </View>
   );

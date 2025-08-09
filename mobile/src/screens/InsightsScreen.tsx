@@ -1,5 +1,6 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Animated, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import { LoadingIndicator } from '../components/ui/LoadingIndicator';
 import {
   LineChart,
   TrendingUp,
@@ -490,7 +491,7 @@ export default function InsightsScreen() {
   // Loading state component
   const LoadingState = () => (
     <View className="flex-1 justify-center items-center py-20">
-      <ActivityIndicator size="large" color="#320DFF" />
+      <LoadingIndicator size="large" />
       <Text className="text-gray-600 dark:text-gray-400 mt-4">
         Analyzing your nutrition data...
       </Text>
@@ -583,7 +584,7 @@ export default function InsightsScreen() {
                   </View>
                 </View>
 
-                <SimpleBars data={displayWeeklyData.calories.dailyData} goal={displayWeeklyData.calories.target} color="#320DFF" isToday={true} todayIndex={TODAY_INDEX} size="large" />
+                <SimpleBars data={displayWeeklyData.calories.dailyData} goal={displayWeeklyData.calories.target} isToday={true} todayIndex={TODAY_INDEX} size="large" />
 
             {/* Day labels */}
             <View className="flex-row justify-between mt-1 mb-3">

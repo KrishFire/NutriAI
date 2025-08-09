@@ -7,7 +7,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, AlertTriangle, Lock } from 'lucide-react-native';
@@ -17,6 +16,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
+import { LoadingIndicator } from '../../components/ui/LoadingIndicator';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -205,7 +205,7 @@ export default function DeleteAccountScreen() {
                   }}
                 >
                   {isLoading ? (
-                    <ActivityIndicator color="white" />
+                    <LoadingIndicator color="white" />
                   ) : (
                     <Text className="text-white font-semibold text-base">
                       Permanently Delete Account

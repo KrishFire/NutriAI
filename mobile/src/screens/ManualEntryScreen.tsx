@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -179,7 +178,7 @@ export default function ManualEntryScreen({
     if (analysisState.isLoading) {
       return (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <LoadingIndicator size="large" />
           <Text style={styles.loadingText}>Analyzing your meal...</Text>
         </View>
       );

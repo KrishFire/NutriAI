@@ -5,11 +5,11 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   FlatList,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LoadingIndicator } from '../components/ui/LoadingIndicator';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -530,7 +530,7 @@ export default function FavoritesScreen() {
               }`}
             >
               {isProcessing ? (
-                <ActivityIndicator color="#FFF" size="small" />
+                <LoadingIndicator color="#FFF" size="small" />
               ) : (
                 <Text
                   className={`font-medium ${

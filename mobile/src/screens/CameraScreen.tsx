@@ -9,7 +9,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -526,7 +525,7 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
       >
         <BottomSheetView style={styles.bottomSheetContent}>
           <View style={styles.analysisModalContent}>
-            <ActivityIndicator size="large" color="#007AFF" />
+            <LoadingIndicator size="large" />
             <Text style={styles.analysisModalTitle}>
               {scanMode === 'barcode'
                 ? 'Looking up product...'

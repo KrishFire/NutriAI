@@ -7,7 +7,8 @@ import {
   useMemo,
   useCallback,
 } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
+import { LoadingIndicator } from '../components/ui/LoadingIndicator';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../config/supabase';
 import {
@@ -257,7 +258,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   if (loading && !session && !user) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#10B981" />
+        <LoadingIndicator size="large" color="#10B981" />
       </View>
     );
   }

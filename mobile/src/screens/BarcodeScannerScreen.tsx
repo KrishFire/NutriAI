@@ -4,7 +4,6 @@ import {
   View,
   TouchableOpacity,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { useState, useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -221,7 +220,7 @@ export default function BarcodeScannerScreen({
         {isProcessing && (
           <View style={styles.processingOverlay}>
             <View style={styles.processingContent}>
-              <ActivityIndicator size="large" color="#FFFFFF" />
+              <LoadingIndicator size="large" color="#FFFFFF" />
               <Text style={styles.processingText}>
                 {scannedData ? 'Looking up product...' : 'Processing...'}
               </Text>

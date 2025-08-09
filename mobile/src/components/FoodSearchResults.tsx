@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -82,7 +81,7 @@ const GroupSection: React.FC<GroupSectionProps> = ({
     return (
       <TouchableOpacity style={styles.collapsedSection} onPress={onShowMore}>
         <Text style={styles.collapsedTitle}>{group.title}</Text>
-        <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+        <Ionicons name="chevron-forward" size={20} />
       </TouchableOpacity>
     );
   }
@@ -147,7 +146,7 @@ export const FoodSearchResults: React.FC<FoodSearchResultsProps> = ({
 
       {isLoading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#007AFF" />
+          <LoadingIndicator size="small" />
           <Text style={styles.loadingText}>Loading more results...</Text>
         </View>
       )}

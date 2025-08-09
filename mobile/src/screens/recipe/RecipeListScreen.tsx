@@ -7,7 +7,6 @@ import {
   TextInput,
   ScrollView,
   Image,
-  ActivityIndicator,
 } from 'react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { Ionicons } from '@expo/vector-icons';

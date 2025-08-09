@@ -5,7 +5,7 @@ import { spacing } from '../../constants/theme';
 
 // Consistent header spacing across all screens
 export const HEADER_ADDITIONAL_PADDING = 24; // Extra padding after safe area
-export const HEADER_CONTENT_HEIGHT = 80; // Total header content height including padding
+export const HEADER_CONTENT_HEIGHT = 96; // Total header content height including padding - increased for larger fonts
 
 interface BaseHeaderProps extends ViewProps {
   children: React.ReactNode;
@@ -32,7 +32,7 @@ const BaseHeader: React.FC<BaseHeaderProps> = ({ style, children, ...props }) =>
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.xl, // Increased from lg (24px) to xl (32px) for larger fonts
     backgroundColor: 'transparent',
   },
 });

@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
-  ActivityIndicator,
   Image,
   Animated,
 } from 'react-native';
@@ -47,6 +46,7 @@ import {
   ParticleEffect,
   MealCard,
   BerryStreakBadge,
+  LoadingIndicator,
 } from '../components/ui';
 import { PremiumBanner } from '../components/premium';
 import { FeedbackForm } from '../components/feedback';
@@ -144,6 +144,12 @@ export default function HomeScreen() {
     hapticFeedback.selection();
     if (screen === 'Camera') {
       navigation.dispatch(CommonActions.navigate('Camera'));
+    } else if (screen === 'ManualEntry') {
+      // Navigate directly to TextInput screen
+      navigation.navigate('TextInput' as any);
+    } else if (screen === 'VoiceLog') {
+      // Navigate directly to VoiceLog screen
+      navigation.navigate('VoiceLog' as any);
     } else {
       navigation.navigate('AddMealFlow', {
         screen: screen,
@@ -173,7 +179,7 @@ export default function HomeScreen() {
   if (loading && !data) {
     return (
       <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color="#320DFF" />
+        <LoadingIndicator size="large" />
         <Text className="text-gray-500 mt-2">Loading your progress...</Text>
       </View>
     );

@@ -13,6 +13,11 @@ export interface MealEntry {
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number;
+  food_name?: string;
+  meal_group_id?: string;
   image_url?: string;
   notes?: string;
   logged_at?: string;
@@ -335,7 +340,8 @@ export async function updateExistingMeal(
       meal_type: mealType,
       logged_at: loggedAt,
       food_name: food.name,
-      quantity: food.quantity,
+      quantity: 1, // Convert to number, assuming quantity 1 for grouped entries
+      unit: food.quantity, // Store original quantity string in unit field
       calories: Math.round(food.nutrition.calories || 0),
       protein: Math.round(food.nutrition.protein || 0),
       carbs: Math.round(food.nutrition.carbs || 0),
@@ -409,9 +415,148 @@ export async function updateExistingMeal(
 }
 
 /**
- * Get today's meals for a user
+ * Interface for grouped meal data (similar to HistoryScreen format)
  */
-export async function getTodaysMeals(userId: string): Promise<MealEntry[]> {
+export interface GroupedMeal {
+  id: string;
+  mealGroupId?: string;
+  date: string;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  foods: Array<{ name: string; calories: number }>;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  imageUrl?: string;
+  hasMealGroupId: boolean;
+  logged_at: string; // For time display
+  title?: string; // AI-generated meal title
+}
+
+/**
+ * Get today's meals for a user (grouped by meal_group_id)
+ */
+export async function getTodaysMeals(userId: string): Promise<GroupedMeal[]> {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('meal_entries')
+    .select(
+      `
+      *,
+      food_items (*)
+    `
+    )
+    .eq('user_id', userId)
+    .gte('logged_at', `${today}T00:00:00`)
+    .lte('logged_at', `${today}T23:59:59`)
+    .order('logged_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching meals:', error);
+    return [];
+  }
+
+  if (!data || data.length === 0) {
+    return [];
+  }
+
+  // Group meal entries by meal_group_id or by meal_type + logged_at if no meal_group_id
+  const mealGroups: { [key: string]: any[] } = {};
+
+  data.forEach(entry => {
+    let groupKey: string;
+
+    if (entry.meal_group_id) {
+      // Use meal_group_id if available
+      groupKey = entry.meal_group_id;
+    } else {
+      // Fallback: group by meal_type and date (for legacy entries without meal_group_id)
+      const entryDate = entry.logged_at?.split('T')[0] || today;
+      groupKey = `${entryDate}-${entry.meal_type}`;
+    }
+
+    if (!mealGroups[groupKey]) {
+      mealGroups[groupKey] = [];
+    }
+    mealGroups[groupKey].push(entry);
+  });
+
+  // Transform grouped entries into GroupedMeal format
+  const groupedMeals: GroupedMeal[] = Object.entries(mealGroups).map(
+    ([_groupKey, entries]) => {
+      const firstEntry = entries[0];
+
+      // Calculate totals
+      const totalCalories = entries.reduce(
+        (sum, entry) => sum + (entry.calories || 0),
+        0
+      );
+      const totalProtein = entries.reduce(
+        (sum, entry) => sum + (entry.protein || 0),
+        0
+      );
+      const totalCarbs = entries.reduce(
+        (sum, entry) => sum + (entry.carbs || 0),
+        0
+      );
+      const totalFat = entries.reduce(
+        (sum, entry) => sum + (entry.fat || 0),
+        0
+      );
+
+      // Create foods array
+      const foods = entries.map(entry => ({
+        name: entry.food_items?.name || entry.food_name || 'Unknown Food',
+        calories: entry.calories || 0,
+      }));
+
+      // Create synthetic ID (similar to HistoryScreen)
+      // Use timestamp to ensure uniqueness when multiple meals of same type exist
+      const syntheticId =
+        firstEntry.meal_group_id ||
+        `${today}-${firstEntry.meal_type}-${firstEntry.logged_at}`;
+
+      // Extract title from notes field if available
+      // Notes format: "Title - AI-powered analysis" or just "Title"
+      let title: string | undefined;
+      if (firstEntry.notes) {
+        const titleMatch = firstEntry.notes.match(/^([^-]+)(?:\s*-\s*)?/);
+        if (titleMatch) {
+          title = titleMatch[1].trim();
+        }
+      }
+
+      return {
+        id: syntheticId,
+        mealGroupId: firstEntry.meal_group_id,
+        date: today,
+        mealType: firstEntry.meal_type,
+        foods,
+        totalCalories,
+        totalProtein,
+        totalCarbs,
+        totalFat,
+        imageUrl: entries.find(e => e.image_url)?.image_url,
+        hasMealGroupId: !!firstEntry.meal_group_id,
+        logged_at: firstEntry.logged_at,
+        title,
+      };
+    }
+  );
+
+  // Sort by logged_at (most recent first)
+  return groupedMeals.sort((a, b) => {
+    const timeA = new Date(a.logged_at).getTime();
+    const timeB = new Date(b.logged_at).getTime();
+    return timeB - timeA;
+  });
+}
+
+/**
+ * Get today's meals for a user (raw entries - kept for backward compatibility)
+ */
+export async function getTodaysMealsRaw(userId: string): Promise<MealEntry[]> {
   const today = new Date().toISOString().split('T')[0];
 
   const { data, error } = await supabase
@@ -534,17 +679,29 @@ export async function getMealHistory(userId: string, daysBack: number = 30) {
     const historyData = (dailyLogs || []).map(dailyLog => {
       const dayMeals = mealsByDate[dailyLog.date] || [];
 
-      // Group meals by meal type for the day
-      const mealsByType: { [key: string]: any[] } = {};
+      // Group meals by meal_group_id first, then by meal_type for legacy entries
+      const mealGroups: { [key: string]: any[] } = {};
+
       dayMeals.forEach(meal => {
-        if (!mealsByType[meal.meal_type]) {
-          mealsByType[meal.meal_type] = [];
+        let groupKey: string;
+
+        if (meal.meal_group_id) {
+          // Use meal_group_id if available (new entries)
+          groupKey = meal.meal_group_id;
+        } else {
+          // Fallback to meal_type grouping for legacy entries
+          groupKey = `${dailyLog.date}-${meal.meal_type}`;
         }
-        mealsByType[meal.meal_type].push(meal);
+
+        if (!mealGroups[groupKey]) {
+          mealGroups[groupKey] = [];
+        }
+        mealGroups[groupKey].push(meal);
       });
 
-      // Create meal entries for each meal type
-      const meals = Object.entries(mealsByType).map(([mealType, entries]) => {
+      // Create meal entries for each group
+      const meals = Object.entries(mealGroups).map(([_groupKey, entries]) => {
+        const mealType = entries[0].meal_type;
         const foods = entries.map(entry => ({
           name: entry.food_items?.name || 'Unknown Food',
           calories: entry.calories || 0,
@@ -569,7 +726,20 @@ export async function getMealHistory(userId: string, daysBack: number = 30) {
 
         // Use the meal_group_id from the first entry if available
         const mealGroupId = entries[0]?.meal_group_id;
-        const syntheticId = `${dailyLog.date}-${mealType}`;
+        // Use timestamp to ensure uniqueness when multiple meals of same type exist
+        const syntheticId =
+          mealGroupId ||
+          `${dailyLog.date}-${mealType}-${entries[0]?.logged_at}`;
+
+        // Extract title from notes field if available
+        let title: string | undefined;
+        const firstEntry = entries[0];
+        if (firstEntry?.notes) {
+          const titleMatch = firstEntry.notes.match(/^([^-]+)(?:\s*-\s*)?/);
+          if (titleMatch) {
+            title = titleMatch[1].trim();
+          }
+        }
 
         return {
           id: syntheticId,
@@ -583,6 +753,7 @@ export async function getMealHistory(userId: string, daysBack: number = 30) {
           totalFat,
           imageUrl: entries.find(e => e.image_url)?.image_url,
           hasMealGroupId: !!mealGroupId, // Flag to indicate if this meal can be refined
+          title, // Add the extracted title
         };
       });
 
@@ -823,10 +994,8 @@ export async function getMealDetailsByDateAndType(
 
     // Transform meal entries into MealAnalysis format
     const foods: FoodItem[] = mealEntries.map(entry => ({
-      name: entry.food_items?.name || entry.notes || 'Unknown Food',
-      brand: entry.food_items?.brand,
-      quantity: Number(entry.quantity) || 1,
-      unit: entry.unit || 'serving',
+      name: entry.food_items?.name || entry.food_name || 'Unknown Food',
+      quantity: entry.unit || `${entry.quantity || 1} serving`,
       nutrition: {
         calories: Number(entry.calories) || 0,
         protein: Number(entry.protein) || 0,
@@ -842,6 +1011,7 @@ export async function getMealDetailsByDateAndType(
           ? Number(entry.food_items.sodium)
           : undefined,
       },
+      confidence: 0.95, // High confidence since this is from database
     }));
 
     // Calculate total nutrition

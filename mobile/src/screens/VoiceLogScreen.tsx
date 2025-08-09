@@ -1,25 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   SafeAreaView,
-  ActivityIndicator,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
   NativeStackNavigationProp,
   NativeStackScreenProps,
 } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import { Mic, StopCircle, ArrowLeft } from 'lucide-react-native';
+import { MotiView } from 'moti';
 import { AddMealStackParamList } from '../types/navigation';
-import { useNativeSpeech } from '../hooks/useNativeSpeech';
+import { useVoiceRecording } from '../hooks/useVoiceRecording';
 import { useAuth } from '../hooks/useAuth';
 import mealAIService, { aiMealToMealAnalysis } from '../services/mealAI';
+import { WaveformAnimation } from '../components/WaveformAnimation';
+import { Button } from '../components/ui/Button';
+import { LoadingIndicator } from '../components/ui/LoadingIndicator';
+import { hapticFeedback } from '../utils/haptics';
 
 type NavigationProp = NativeStackNavigationProp<
   AddMealStackParamList,
@@ -30,272 +32,303 @@ type VoiceLogScreenProps = NativeStackScreenProps<
   'VoiceLog'
 >;
 
+type UIState = 'idle' | 'recording' | 'processing' | 'complete' | 'error';
+
 export default function VoiceLogScreen({
   navigation,
   route,
 }: VoiceLogScreenProps) {
   const { user, session } = useAuth();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [uiState, setUIState] = useState<UIState>('idle');
+  const [isProcessingMeal, setIsProcessingMeal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const nativeSpeech = useNativeSpeech({
-    onSpeechEnd: async text => {
-      // Auto-submit when speech ends if there's text
-      if (text.trim()) {
-        await handleSubmit(text);
-      }
+  const {
+    state: recordingState,
+    transcription,
+    error: recordingError,
+    duration,
+    maxDuration,
+    meteringValue,
+    startRecording,
+    stopRecording,
+    reset,
+  } = useVoiceRecording({
+    maxDuration: 30,
+    onTranscriptionComplete: (text: string) => {
+      console.log('[VoiceLogScreen] Transcription complete:', text);
+      setUIState('complete');
     },
-    onError: err => {
-      console.error('[VoiceLogScreen] Speech error:', err);
-      setError(err.message);
+    onError: (err: Error) => {
+      console.error('[VoiceLogScreen] Recording error:', err);
+      setErrorMessage(err.message);
+      setUIState('error');
     },
   });
 
-  // Start listening immediately when screen loads
-  useEffect(() => {
-    const startListening = async () => {
-      // Small delay to let UI render
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      try {
-        await nativeSpeech.start();
-      } catch (err) {
-        console.error(
-          '[VoiceLogScreen] Failed to start speech recognition:',
-          err
-        );
-        // Don't show error immediately on iOS - it might just need permission
-        if (Platform.OS !== 'ios') {
-          setError('Speech recognition is not available on this device');
-        }
-      }
-    };
-
-    startListening();
-
-    // Cleanup on unmount
-    return () => {
-      nativeSpeech.cancel();
-    };
-  }, []);
-
-  const handleSubmit = async (text: string) => {
-    if (!text.trim() || isProcessing) return;
-
-    setIsProcessing(true);
-    setError(null);
-
-    try {
-      // Stop listening
-      await nativeSpeech.stop();
-
-      // Log the meal
-      const result = await mealAIService.logMeal(text.trim(), 'snack');
-
-      if (result.success && result.mealLogId && result.mealAnalysis) {
-        // Convert to meal analysis format
-        const analysisData = aiMealToMealAnalysis(result.mealAnalysis);
-
-        // Navigate to MealDetails
-        navigation.replace('MealDetails', {
-          mealId: result.mealLogId,
-          analysisData,
-        });
-      } else {
-        throw new Error('Failed to analyze meal');
-      }
-    } catch (err) {
-      console.error('[VoiceLogScreen] Submit error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to log meal');
-      setIsProcessing(false);
-
-      // Restart listening after error
-      setTimeout(() => {
-        nativeSpeech.reset();
-        nativeSpeech.start();
-      }, 1000);
-    }
-  };
-
-  const handleCancel = () => {
-    nativeSpeech.cancel();
+  // Handle back navigation
+  const handleBack = useCallback(() => {
+    hapticFeedback.selection();
     navigation.goBack();
+  }, [navigation]);
+
+  // Handle microphone button press
+  const handleMicrophonePress = useCallback(async () => {
+    hapticFeedback.impact();
+    
+    if (uiState === 'idle' || uiState === 'error') {
+      // Start recording
+      setErrorMessage(null);
+      setUIState('recording');
+      await startRecording();
+    } else if (uiState === 'recording') {
+      // Stop recording
+      setUIState('processing');
+      await stopRecording();
+    }
+  }, [uiState, startRecording, stopRecording]);
+
+  // Handle retry
+  const handleRetry = useCallback(() => {
+    hapticFeedback.selection();
+    reset();
+    setUIState('idle');
+    setErrorMessage(null);
+  }, [reset]);
+
+  // Handle continue (submit transcription)
+  const handleContinue = useCallback(async () => {
+    if (!transcription.trim() || isProcessingMeal) return;
+
+    hapticFeedback.success();
+    
+    // Navigate to analyzing screen which will handle the API call
+    navigation.navigate('AnalyzingScreen' as any, {
+      inputType: 'voice',
+      inputData: transcription.trim(),
+      mealType: 'snack', // Could be dynamic based on time of day or user selection
+    });
+  }, [transcription, isProcessingMeal, navigation]);
+
+  // Format time as MM:SS
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getStatusText = () => {
-    if (isProcessing) return 'Processing your meal...';
-    if (error) return error;
-
-    // Whisper recording mode status messages
-    if (nativeSpeech.state === 'listening') {
-      return 'Recording... Tap stop when done';
+  // Update UI state based on recording state
+  React.useEffect(() => {
+    if (recordingState === 'recording' && uiState !== 'recording') {
+      setUIState('recording');
+    } else if (recordingState === 'transcribing' && uiState !== 'processing') {
+      setUIState('processing');
+    } else if (recordingState === 'error' && uiState !== 'error') {
+      setUIState('error');
     }
-    if (nativeSpeech.state === 'processing') {
-      return 'Transcribing your recording...';
-    }
-    return 'Tap the microphone to start recording';
-  };
-
-  const canSubmit = nativeSpeech.text.trim().length > 0 && !isProcessing;
+  }, [recordingState, uiState]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
-          <Ionicons name="close" size={24} color="#666" />
+    <SafeAreaView className="flex-1 bg-white">
+      {/* Header with back button */}
+      <View className="flex-row items-center px-4 py-3">
+        <TouchableOpacity
+          onPress={handleBack}
+          className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+          activeOpacity={0.7}
+        >
+          <ArrowLeft size={20} color="#1F2937" />
         </TouchableOpacity>
+        <Text className="ml-4 text-2xl font-bold text-gray-900">
+          Voice Input
+        </Text>
+        <View className="flex-1" />
       </View>
 
-      <KeyboardAvoidingView
-        style={styles.content}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View style={styles.micContainer}>
-          {/* Recording mode: Show record/stop button */}
-          <TouchableOpacity
-            onPress={() => {
-              if (nativeSpeech.state === 'listening') {
-                nativeSpeech.stop();
-              } else if (nativeSpeech.state === 'idle') {
-                nativeSpeech.start();
-              }
+      <View className="flex-1 items-center justify-center px-6">
+        {/* Microphone Button */}
+        <TouchableOpacity
+          onPress={handleMicrophonePress}
+          activeOpacity={0.7}
+          disabled={uiState === 'processing' || uiState === 'complete' || isProcessingMeal}
+        >
+          <MotiView
+            animate={{
+              scale: uiState === 'recording' ? [1, 1.05, 1] : 1,
             }}
-            style={[
-              styles.recordButton,
-              nativeSpeech.state === 'listening' && styles.recordingButton,
-            ]}
-            disabled={nativeSpeech.state === 'processing' || isProcessing}
+            transition={{
+              type: 'timing',
+              duration: 1500,
+              loop: uiState === 'recording',
+            }}
+            className="w-40 h-40 rounded-full items-center justify-center"
+            style={{
+              backgroundColor: 'rgba(50, 13, 255, 0.1)',
+            }}
           >
-            <Ionicons
-              name={nativeSpeech.state === 'listening' ? 'stop' : 'mic'}
-              size={48}
-              color="#FFF"
+            {uiState === 'recording' ? (
+              <StopCircle size={60} color="#320DFF" />
+            ) : (
+              <Mic size={60} color="#320DFF" />
+            )}
+          </MotiView>
+        </TouchableOpacity>
+
+        {/* Waveform Animation */}
+        {(uiState === 'recording' || uiState === 'complete') && (
+          <View className="mt-8 mb-6 h-10">
+            <WaveformAnimation
+              isRecording={uiState === 'recording'}
+              meteringValue={meteringValue}
+              barCount={30}
+              baseHeight={5}
+              maxHeight={30}
+              barColor="#320DFF"
             />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.statusText}>{getStatusText()}</Text>
-
-        {/* Live transcript */}
-        {(nativeSpeech.text || nativeSpeech.partialText) && (
-          <ScrollView
-            style={styles.transcriptContainer}
-            contentContainerStyle={styles.transcriptContent}
-          >
-            <Text style={styles.transcriptText}>
-              {nativeSpeech.text || nativeSpeech.partialText}
-            </Text>
-          </ScrollView>
-        )}
-
-        {/* Submit button appears when there's text */}
-        {canSubmit && (
-          <TouchableOpacity
-            style={styles.submitButton}
-            onPress={() => handleSubmit(nativeSpeech.text)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="arrow-up-circle" size={64} color="#007AFF" />
-          </TouchableOpacity>
-        )}
-
-        {/* Processing indicator */}
-        {isProcessing && (
-          <View style={styles.processingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
           </View>
         )}
-      </KeyboardAvoidingView>
+
+        {/* Status Text */}
+        {uiState === 'idle' && (
+          <MotiView
+            from={{ opacity: 0, translateY: 10 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 300 }}
+            className="items-center mt-8"
+          >
+            <Text className="text-xl font-semibold text-gray-900 mb-2">
+              Describe Your Meal
+            </Text>
+            <Text className="text-gray-600 text-center">
+              Tap the microphone and tell us what you ate
+            </Text>
+            <Text className="text-sm text-gray-400 text-center mt-8">
+              Try saying: "I had a chicken salad with avocado"
+            </Text>
+          </MotiView>
+        )}
+
+        {uiState === 'recording' && (
+          <View className="items-center mt-6">
+            <Text className="text-lg font-medium" style={{ color: '#320DFF' }}>
+              Listening...
+            </Text>
+            <Text className="text-gray-500 mt-2">
+              {formatTime(duration)} / {formatTime(maxDuration)}
+            </Text>
+          </View>
+        )}
+
+        {uiState === 'processing' && (
+          <View className="items-center mt-8">
+            <LoadingIndicator size="large" />
+            <Text className="text-gray-600 mt-4">
+              {recordingState === 'transcribing' ? 'Transcribing...' : 'Processing...'}
+            </Text>
+          </View>
+        )}
+
+        {/* Transcript Display */}
+        {uiState === 'complete' && transcription && (
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ duration: 300 }}
+            className="w-full mt-8 mb-6"
+          >
+            <View className="bg-gray-50 rounded-xl p-4">
+              <ScrollView
+                style={{ maxHeight: 150 }}
+                showsVerticalScrollIndicator={false}
+              >
+                <Text className="text-gray-900 text-base leading-6">
+                  {transcription}
+                </Text>
+              </ScrollView>
+            </View>
+          </MotiView>
+        )}
+
+        {/* Error Display */}
+        {uiState === 'error' && errorMessage && (
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            className="w-full mt-8 mb-6"
+          >
+            <View className="bg-red-50 rounded-xl p-4">
+              <Text className="text-red-900 text-center">
+                {errorMessage}
+              </Text>
+            </View>
+          </MotiView>
+        )}
+
+        {/* Action Buttons */}
+        {uiState === 'complete' && !isProcessingMeal && (
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ duration: 300, delay: 200 }}
+            className="w-full flex-row gap-4"
+          >
+            <View className="flex-1">
+              <TouchableOpacity
+                onPress={handleRetry}
+                className="h-[58px] bg-gray-100 rounded-full items-center justify-center"
+                activeOpacity={0.7}
+              >
+                <Text className="text-gray-700 font-medium text-sm">
+                  Retry
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View className="flex-1">
+              <TouchableOpacity
+                onPress={handleContinue}
+                className="h-[58px] bg-primary rounded-full items-center justify-center"
+                activeOpacity={0.7}
+                style={{ backgroundColor: '#320DFF' }}
+              >
+                <Text className="text-white font-medium text-sm">
+                  Continue
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </MotiView>
+        )}
+
+        {/* Error Retry Button */}
+        {uiState === 'error' && (
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ duration: 300 }}
+            className="w-full mt-6"
+          >
+            <TouchableOpacity
+              onPress={handleRetry}
+              className="h-[58px] bg-primary rounded-full items-center justify-center"
+              activeOpacity={0.7}
+              style={{ backgroundColor: '#320DFF' }}
+            >
+              <Text className="text-white font-medium text-sm">
+                Try Again
+              </Text>
+            </TouchableOpacity>
+          </MotiView>
+        )}
+
+        {/* Processing Meal Indicator */}
+        {isProcessingMeal && (
+          <View className="absolute inset-0 bg-white/90 items-center justify-center">
+            <LoadingIndicator size="large" />
+            <Text className="text-gray-600 mt-4">
+              Analyzing your meal...
+            </Text>
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  cancelButton: {
-    padding: 8,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  micContainer: {
-    marginBottom: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 120,
-  },
-  recordButton: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#007AFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  recordingButton: {
-    backgroundColor: '#FF3B30',
-  },
-  listeningIndicator: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  volumeBar: {
-    width: 60,
-    backgroundColor: '#007AFF',
-    borderRadius: 1,
-    marginTop: 8,
-    opacity: 0.3,
-  },
-  statusText: {
-    fontSize: 18,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  transcriptContainer: {
-    maxHeight: 200,
-    width: '100%',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-  },
-  transcriptContent: {
-    flexGrow: 1,
-  },
-  transcriptText: {
-    fontSize: 16,
-    color: '#000',
-    lineHeight: 24,
-  },
-  submitButton: {
-    marginTop: 20,
-  },
-  processingContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, Text, View, ActivityIndicator } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { LoadingIndicator } from './LoadingIndicator';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -126,7 +127,7 @@ export const Button: React.FC<ButtonProps> = ({
     >
       {loading ? (
         <View className="flex-row items-center space-x-2">
-          <ActivityIndicator
+          <LoadingIndicator
             size="small"
             color={
               variant === 'primary' || variant === 'danger'

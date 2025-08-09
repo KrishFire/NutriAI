@@ -8,6 +8,7 @@ export { Card } from './Card';
 export { ElasticButton } from './ElasticButton';
 export { GlassMorphism } from './GlassMorphism';
 export { KineticTypography } from './KineticTypography';
+export { LoadingIndicator } from './LoadingIndicator';
 export { MealCard } from './MealCard';
 export { PageTransition } from './PageTransition';
 export { ParticleEffect } from './ParticleEffect';

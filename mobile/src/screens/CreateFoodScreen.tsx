@@ -7,12 +7,12 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ArrowLeft, Camera, Info } from 'lucide-react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { LoadingIndicator } from '../components/ui/LoadingIndicator';
 import { hapticFeedback } from '../utils/haptics';
 import tokens from '../utils/tokens';
 
@@ -339,7 +339,7 @@ export default function CreateFoodScreen() {
               className="bg-primary rounded-2xl py-4 px-6 mb-8"
             >
               {isSaving ? (
-                <ActivityIndicator color="white" />
+                <LoadingIndicator color="white" />
               ) : (
                 <Text className="text-white text-center font-semibold text-lg">
                   Create Food

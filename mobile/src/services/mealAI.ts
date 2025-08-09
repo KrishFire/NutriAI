@@ -19,6 +19,7 @@ export interface AIFoodItem {
   fiber?: number; // grams
   sugar?: number; // grams
   sodium?: number; // milligrams
+  ingredients?: AIFoodItem[]; // For hierarchical structure (sandwiches, salads, etc.)
 }
 
 export interface AIMealAnalysis {
@@ -29,6 +30,7 @@ export interface AIMealAnalysis {
   totalFat: number;
   confidence: number; // 0-1, how confident the AI is in the estimates
   notes?: string;
+  title?: string; // AI-generated meal title
 }
 
 export interface LogMealRequest {
@@ -54,6 +56,84 @@ class MealAIService {
     { data: AIMealAnalysis; timestamp: number }
   >();
   private readonly CACHE_TTL = 10 * 60 * 1000; // 10 minutes cache for meal descriptions
+
+  /**
+   * Save meal directly with existing analysis (no re-analysis)
+   */
+  public async saveMealDirectly(
+    analysis: AIMealAnalysis,
+    description: string,
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack' = 'snack',
+    date?: string
+  ): Promise<LogMealResponse> {
+    try {
+      // Get current user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return {
+          success: false,
+          error: 'Please log in to save meals',
+          mealAnalysis: analysis,
+        };
+      }
+
+      // Save to database via Edge Function with existing analysis
+      const requestPayload = {
+        description: description.trim(),
+        userId: user.id,
+        mealType,
+        date: date || new Date().toISOString().split('T')[0],
+        existingAnalysis: analysis, // Pass the existing analysis
+      };
+
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        return {
+          success: false,
+          error: 'Authentication required',
+          mealAnalysis: analysis,
+        };
+      }
+
+      const response = await fetch(
+        `${supabaseConfig.url}/functions/v1/log-meal-ai`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.session.access_token}`,
+          },
+          body: JSON.stringify(requestPayload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('[MealAI] Edge Function error:', errorData);
+        return {
+          success: false,
+          error: 'Failed to save meal. Please try again.',
+          mealAnalysis: analysis,
+        };
+      }
+
+      const result: LogMealResponse = await response.json();
+
+      console.log('[MealAI] Meal saved successfully:', result.mealLogId);
+      return result;
+    } catch (error) {
+      console.error('[MealAI] Error saving meal:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save meal',
+        mealAnalysis: analysis,
+      };
+    }
+  }
 
   /**
    * Analyze meal description using AI and save to database
@@ -187,11 +267,30 @@ class MealAIService {
   }
 
   /**
+   * Preprocess description to help AI understand multiple items
+   */
+  private preprocessDescription(description: string): string {
+    // Count "and"s to help AI understand how many items to extract
+    const andMatches = description.toLowerCase().match(/\b(and|&)\b/g);
+    const andCount = andMatches ? andMatches.length : 0;
+    
+    if (andCount >= 2) {
+      // Multiple "and"s detected - add hint for AI
+      return `${description} (Note: This contains ${andCount + 1} separate items)`;
+    }
+    
+    return description;
+  }
+
+  /**
    * Private method to call AI for meal analysis
    */
   private async analyzeMealWithAI(
     description: string
   ): Promise<AIMealAnalysis> {
+    // Preprocess description for better AI understanding
+    const processedDescription = this.preprocessDescription(description);
+    
     // Call the actual Edge Function for real AI analysis
     try {
       const { data: session } = await supabase.auth.getSession();
@@ -208,7 +307,7 @@ class MealAIService {
             Authorization: `Bearer ${session.session.access_token}`,
           },
           body: JSON.stringify({
-            description: description.trim(),
+            description: processedDescription,
             userId: 'preview', // Special preview mode
             mealType: 'snack',
             date: new Date().toISOString().split('T')[0],
@@ -399,24 +498,61 @@ class MealAIService {
 }
 
 /**
+ * Clean unit string to remove any "undefined" text
+ */
+function cleanUnit(unit: string | undefined): string {
+  if (!unit || unit === '' || unit === 'undefined' || unit === 'null') {
+    return 'serving';
+  }
+  // Remove the word "undefined" from unit strings
+  const cleaned = unit.replace(/\bundefined\b/gi, '').trim();
+  return cleaned || 'serving';
+}
+
+/**
  * Convert AI meal analysis to the MealAnalysis format expected by MealDetailsScreen
  */
 export function aiMealToMealAnalysis(aiMeal: AIMealAnalysis): any {
   return {
-    foods: aiMeal.foods.map(food => ({
-      name: food.name,
-      quantity: `${food.quantity} ${food.unit}`,
-      nutrition: {
-        calories: food.calories,
-        protein: food.protein,
-        carbs: food.carbs,
-        fat: food.fat,
-        fiber: food.fiber || 0,
-        sugar: food.sugar || 0,
-        sodium: food.sodium || 0,
-      },
-      confidence: aiMeal.confidence,
-    })),
+    foods: aiMeal.foods.map(food => {
+      // Clean the unit to ensure no "undefined" appears
+      const cleanedUnit = cleanUnit(food.unit);
+      const quantityStr = cleanedUnit ? `${food.quantity} ${cleanedUnit}` : `${food.quantity}`;
+      
+      return {
+        name: food.name,
+        quantity: quantityStr,
+        nutrition: {
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          fat: food.fat,
+          fiber: food.fiber || 0,
+          sugar: food.sugar || 0,
+          sodium: food.sodium || 0,
+        },
+        confidence: aiMeal.confidence,
+        // Include ingredients for hierarchical structure
+        ingredients: food.ingredients ? food.ingredients.map(ingredient => {
+          const cleanedIngredientUnit = cleanUnit(ingredient.unit);
+          const ingredientQuantityStr = cleanedIngredientUnit ? `${ingredient.quantity} ${cleanedIngredientUnit}` : `${ingredient.quantity}`;
+          
+          return {
+            name: ingredient.name,
+            quantity: ingredientQuantityStr,
+            nutrition: {
+              calories: ingredient.calories,
+              protein: ingredient.protein,
+              carbs: ingredient.carbs,
+              fat: ingredient.fat,
+              fiber: ingredient.fiber || 0,
+              sugar: ingredient.sugar || 0,
+              sodium: ingredient.sodium || 0,
+            },
+          };
+        }) : undefined,
+      };
+    }),
     totalNutrition: {
       calories: aiMeal.totalCalories,
       protein: aiMeal.totalProtein,
@@ -428,6 +564,7 @@ export function aiMealToMealAnalysis(aiMeal: AIMealAnalysis): any {
     },
     confidence: aiMeal.confidence,
     notes: aiMeal.notes || 'AI-powered meal analysis',
+    title: aiMeal.title || 'Meal', // ADD THIS LINE to preserve the AI-generated title
   };
 }
 

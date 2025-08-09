@@ -71,7 +71,7 @@ export default function LogScreen() {
         navigation.navigate('CameraInput' as any);
         break;
       case 'voice':
-        navigation.navigate('VoiceInput' as any);
+        navigation.navigate('VoiceLog' as any);
         break;
       case 'barcode':
         navigation.navigate('BarcodeInput' as any);

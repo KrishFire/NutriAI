@@ -38,6 +38,17 @@ export type RootStackParamList = {
   MealSaved: {
     meal: any;
   };
+  FoodResultsScreen: {
+    analysisData?: any;
+    mealId?: string;
+    description?: string;
+    refinedAnalysisData?: any; // For returning from RefineWithAIScreen
+  };
+  RefineWithAIScreen: {
+    analysisData?: any;
+    mealId?: string;
+    description?: string;
+  };
   SearchResults: {
     query?: string;
     mealType?: string;
@@ -53,6 +64,16 @@ export type RootStackParamList = {
   };
   CreateFood: {
     searchQuery?: string;
+  };
+  // Food Input Screens
+  TextInput: undefined;
+  VoiceLog: undefined;
+  CameraInput: undefined;
+  BarcodeInput: undefined;
+  AnalyzingScreen: {
+    inputType: 'text' | 'voice' | 'camera' | 'barcode';
+    inputData: string | { imageUri?: string; barcode?: string };
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   };
 };
 

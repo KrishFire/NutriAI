@@ -32,12 +32,12 @@ export const colors = {
 export const typography = {
   // Headers
   screenTitle: {
-    fontSize: 20, // Rounded from 20.4
+    fontSize: 28, // Increased for more prominent headers
     fontWeight: 'bold',
     color: colors.text,
   },
   screenSubtitle: {
-    fontSize: 14, // Rounded from 13.6
+    fontSize: 16, // Increased proportionally
     color: colors.textSecondary,
   },
   

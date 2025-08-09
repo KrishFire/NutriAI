@@ -5,11 +5,11 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LoadingIndicator } from '../components/ui/LoadingIndicator';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -824,7 +824,7 @@ export default function EditMealScreen() {
             className="bg-primary rounded-2xl p-4 mb-6"
           >
             {isLoading ? (
-              <ActivityIndicator color="white" />
+              <LoadingIndicator color="white" />
             ) : (
               <Text className="text-white text-center font-semibold text-lg">
                 Save Changes

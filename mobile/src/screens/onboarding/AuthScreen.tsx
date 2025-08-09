@@ -7,12 +7,12 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   StyleSheet,
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
+import { LoadingIndicator } from '../../components/ui/LoadingIndicator';
 import { MotiView } from 'moti';
 import * as Haptics from 'expo-haptics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
@@ -311,7 +311,7 @@ const AuthScreen = ({ mode: initialMode = 'signup' }: AuthScreenProps) => {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="white" />
+                <LoadingIndicator color="white" />
               ) : (
                 <Text style={styles.submitButtonText}>
                   {isSignUp ? 'Create Account' : 'Sign In'}
