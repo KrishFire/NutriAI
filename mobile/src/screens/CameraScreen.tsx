@@ -50,7 +50,7 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
   const [textDescription, setTextDescription] = useState('');
 
   // Check if we're in add mode
-  const { addToMeal } = route.params || {};
+  const { addToMeal, returnToAddMore, existingMealData, description, mealId } = route.params || {};
 
   // Bottom sheet snap points
   const snapPoints = useMemo(() => ['25%', '50%'], []);
@@ -223,49 +223,35 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
         return;
       }
 
-      // Use conditional analysis based on whether text description is provided
-      const analysisData = textDescription.trim()
-        ? await analyzeWithVoiceContext(capturedImage, textDescription.trim())
-        : await analyzeMealImage(capturedImage);
-
-      console.log('[CameraScreen] Analysis complete:', analysisData);
-
-      if (addToMeal) {
-        // Add mode: Return the analyzed food items to the existing meal
-        console.log(
-          '[CameraScreen] Add mode: Returning food items to existing meal'
-        );
-
-        navigation.navigate('MealDetails', {
-          mealId: addToMeal.mealId,
+      // Navigate to AnalyzingScreen with proper parameters
+      if (returnToAddMore) {
+        // Add More flow: Navigate to AnalyzingScreen with returnToAddMore flag
+        navigation.navigate('AnalyzingScreen', {
           imageUri: capturedImage,
-          analysisData: addToMeal.existingAnalysis,
           uploadedImageUrl,
-          newFoodItems: analysisData.foods,
-          isAddingToExisting: true,
+          description: textDescription.trim() || 'Photo-based meal analysis',
+          returnToAddMore: true,
+          existingMealData,
+          existingDescription: description,
+          existingMealId: mealId,
+        });
+      } else if (addToMeal) {
+        // Legacy add mode: Navigate to AnalyzingScreen for compatibility
+        navigation.navigate('AnalyzingScreen', {
+          imageUri: capturedImage,
+          uploadedImageUrl,
+          description: textDescription.trim() || 'Photo-based meal analysis',
+          addToMeal: {
+            mealId: addToMeal.mealId,
+            existingAnalysis: addToMeal.existingAnalysis,
+          },
         });
       } else {
-        // Normal mode: Create new meal
-        const mealDescription = textDescription.trim()
-          ? `Photo analysis with context: ${textDescription}`
-          : 'Photo-based meal analysis';
-
-        // Auto-save meal using mealAI service (enables corrections in MealDetailsScreen)
-        const logResult = await mealAIService.logMeal(mealDescription, 'snack');
-
-        if (logResult.success) {
-          console.log(
-            '[CameraScreen] Meal auto-saved with ID:',
-            logResult.mealLogId
-          );
-        }
-
-        // Navigate directly to MealDetailsScreen (like ManualEntryScreen does)
-        navigation.navigate('MealDetails', {
+        // Normal mode: Navigate to AnalyzingScreen
+        navigation.navigate('AnalyzingScreen', {
           imageUri: capturedImage,
-          analysisData,
           uploadedImageUrl,
-          mealId: logResult.mealLogId,
+          description: textDescription.trim() || 'Photo-based meal analysis',
         });
       }
 

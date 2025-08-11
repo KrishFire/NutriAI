@@ -19,6 +19,45 @@ import { useAuth } from '../../hooks/useAuth';
 
 const { width: screenWidth } = Dimensions.get('window');
 
+// Helper function to merge analysis data when adding more items
+const mergeAnalysisData = (existingData: any, newData: any): any => {
+  if (!existingData || !newData) return existingData || newData;
+  
+  // Combine foods arrays
+  const combinedFoods = [
+    ...(existingData.foods || []),
+    ...(newData.foods || [])
+  ];
+  
+  // Recalculate totals
+  const totalCalories = combinedFoods.reduce((sum: number, food: any) => 
+    sum + (food.nutrition?.calories || food.calories || 0), 0);
+  const totalProtein = combinedFoods.reduce((sum: number, food: any) => 
+    sum + (food.nutrition?.protein || food.protein || 0), 0);
+  const totalCarbs = combinedFoods.reduce((sum: number, food: any) => 
+    sum + (food.nutrition?.carbs || food.carbs || 0), 0);
+  const totalFat = combinedFoods.reduce((sum: number, food: any) => 
+    sum + (food.nutrition?.fat || food.fat || 0), 0);
+  
+  return {
+    ...existingData,
+    foods: combinedFoods,
+    totalCalories,
+    totalProtein,
+    totalCarbs,
+    totalFat,
+    // Update title if needed
+    title: newData.title || existingData.title || 'Combined Meal',
+  };
+};
+
+// Helper function to combine descriptions
+const combineDescriptions = (existing: string | undefined, newDesc: string | undefined): string => {
+  if (!existing) return newDesc || '';
+  if (!newDesc) return existing;
+  return `${existing}, ${newDesc}`;
+};
+
 type AnalyzingScreenRouteProp = RouteProp<RootStackParamList, 'AnalyzingScreen'>;
 type AnalyzingScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -29,6 +68,10 @@ interface RouteParams {
   inputType: 'text' | 'voice' | 'camera' | 'barcode';
   inputData: string | { imageUri?: string; barcode?: string };
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  returnToAddMore?: boolean;
+  existingMealData?: any;
+  description?: string;
+  mealId?: string;
 }
 
 export default function AnalyzingScreen() {
@@ -36,7 +79,15 @@ export default function AnalyzingScreen() {
   const route = useRoute<AnalyzingScreenRouteProp>();
   const { user, session } = useAuth();
   
-  const { inputType, inputData, mealType = 'snack' } = route.params as RouteParams;
+  const { 
+    inputType, 
+    inputData, 
+    mealType = 'snack',
+    returnToAddMore,
+    existingMealData,
+    description: existingDescription,
+    mealId
+  } = route.params as RouteParams;
   
   const [progress, setProgress] = useState(0);
   const [apiComplete, setApiComplete] = useState(false);
@@ -96,8 +147,27 @@ export default function AnalyzingScreen() {
             description: inputData, // Pass the description for later saving
             mealType,
           };
+        } else if (inputType === 'barcode' && route.params.analysisData) {
+          // Handle barcode input - data is already analyzed
+          console.log('[AnalyzingScreen] Processing barcode input');
+          
+          result = {
+            analysisData: route.params.analysisData,
+            description: route.params.existingDescription || `Scanned product: ${route.params.productData?.name || 'Unknown'}`,
+            mealType,
+          };
+        } else if (imageUri) {
+          // Handle camera input
+          console.log('[AnalyzingScreen] Processing camera input');
+          
+          result = {
+            analysisData: route.params.analysisData,
+            description: route.params.description || 'Photo-based meal analysis',
+            mealType,
+            imageUri,
+            uploadedImageUrl,
+          };
         } else {
-          // TODO: Handle camera and barcode inputs
           throw new Error(`Input type ${inputType} not yet implemented`);
         }
         
@@ -168,8 +238,24 @@ export default function AnalyzingScreen() {
       // Use InteractionManager for smooth transition
       InteractionManager.runAfterInteractions(() => {
         if (isMountedRef.current) {
-          console.log('[AnalyzingScreen] Navigating to FoodResultsScreen with:', analysisResult);
-          navigation.replace('FoodResultsScreen' as any, analysisResult);
+          // Handle "Add More" flow - merge new items with existing meal
+          if (returnToAddMore && existingMealData) {
+            console.log('[AnalyzingScreen] Merging with existing meal data');
+            
+            // Merge the new analysis with existing meal data
+            const mergedData = mergeAnalysisData(existingMealData, analysisResult.analysisData);
+            
+            // Navigate back to FoodResultsScreen with merged data
+            navigation.navigate('FoodResultsScreen' as any, {
+              analysisData: mergedData,
+              description: combineDescriptions(existingDescription, analysisResult.description),
+              mealId,
+            });
+          } else {
+            // Normal flow - navigate with just the new analysis
+            console.log('[AnalyzingScreen] Navigating to FoodResultsScreen with:', analysisResult);
+            navigation.replace('FoodResultsScreen' as any, analysisResult);
+          }
         }
       });
     } else if (progress === 100 && error) {

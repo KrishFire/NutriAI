@@ -36,7 +36,7 @@ export default function BarcodeScannerScreen({
   const [scannedData, setScannedData] = useState<string | null>(null);
 
   // Check if we're in add mode
-  const { addToMeal } = route.params || {};
+  const { addToMeal, returnToAddMore, existingMealData, description, mealId } = route.params || {};
 
   const handleBarCodeScanned = async ({
     type,
@@ -90,8 +90,20 @@ export default function BarcodeScannerScreen({
         return;
       }
 
-      if (addToMeal) {
-        // Add mode: Return the scanned product to the existing meal
+      if (returnToAddMore) {
+        // Add More flow: Navigate to AnalyzingScreen with returnToAddMore flag
+        navigation.navigate('AnalyzingScreen', {
+          inputType: 'barcode',
+          barcodeData: data,
+          productData: lookupResult.data,
+          analysisData,
+          returnToAddMore: true,
+          existingMealData,
+          existingDescription: description,
+          existingMealId: mealId,
+        });
+      } else if (addToMeal) {
+        // Legacy add mode: Return the scanned product to the existing meal
         navigation.navigate('MealDetails', {
           mealId: addToMeal.mealId,
           analysisData: addToMeal.existingAnalysis,

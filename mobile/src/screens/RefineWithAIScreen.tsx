@@ -34,7 +34,9 @@ export default function RefineWithAIScreen() {
   const [refinementText, setRefinementText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [inputLayout, setInputLayout] = useState({ y: 0 });
   const textInputRef = useRef<TextInput>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Generate relevant suggestions based on meal items
   useEffect(() => {
@@ -136,12 +138,12 @@ export default function RefineWithAIScreen() {
       return { calories: 0, protein: 0, carbs: 0, fat: 0 };
     }
     
-    // Sum up macros from all food items
+    // Sum up macros from all food items - access nutrition property
     return analysisData.foods.reduce((acc: any, food: any) => ({
-      calories: acc.calories + (food.calories || 0),
-      protein: acc.protein + (food.protein || 0),
-      carbs: acc.carbs + (food.carbs || 0),
-      fat: acc.fat + (food.fat || 0),
+      calories: acc.calories + (food.nutrition?.calories || 0),
+      protein: acc.protein + (food.nutrition?.protein || 0),
+      carbs: acc.carbs + (food.nutrition?.carbs || 0),
+      fat: acc.fat + (food.nutrition?.fat || 0),
     }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
   };
 
@@ -171,6 +173,7 @@ export default function RefineWithAIScreen() {
         </View>
 
         <ScrollView 
+          ref={scrollViewRef}
           style={styles.scrollView} 
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -226,6 +229,10 @@ export default function RefineWithAIScreen() {
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ delay: 400 }}
             style={styles.refinementSection}
+            onLayout={(event) => {
+              const { y } = event.nativeEvent.layout;
+              setInputLayout({ y });
+            }}
           >
             <Text style={styles.sectionTitle}>Your Refinement</Text>
             <View style={styles.inputContainer}>
@@ -240,6 +247,18 @@ export default function RefineWithAIScreen() {
                 numberOfLines={4}
                 textAlignVertical="top"
                 editable={!isSubmitting}
+                onFocus={() => {
+                  // Scroll to the text input position when keyboard appears
+                  if (inputLayout.y > 0) {
+                    setTimeout(() => {
+                      // Scroll to position with some offset for better visibility
+                      scrollViewRef.current?.scrollTo({ 
+                        y: Math.max(0, inputLayout.y - 100), 
+                        animated: true 
+                      });
+                    }, 300);
+                  }
+                }}
               />
             </View>
           </MotiView>
@@ -262,37 +281,37 @@ export default function RefineWithAIScreen() {
             </View>
           </MotiView>
 
-          {/* Submit Button */}
-          <MotiView
-            from={{ opacity: 0, translateY: 20 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: 600 }}
-            style={styles.submitSection}
-          >
-            <TouchableOpacity
-              style={[
-                styles.submitButton,
-                (!refinementText.trim() || isSubmitting) && styles.submitButtonDisabled
-              ]}
-              onPress={handleSubmitRefinement}
-              disabled={!refinementText.trim() || isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                  <Text style={styles.submitButtonText}>Refining...</Text>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.submitButtonText}>Submit Refinement</Text>
-                  <Send size={16} color="#FFFFFF" strokeWidth={2.5} />
-                </>
-              )}
-            </TouchableOpacity>
-          </MotiView>
-
-          <View style={{ height: 40 }} />
+          <View style={{ height: 20 }} />
         </ScrollView>
+
+        {/* Submit Button - Outside ScrollView, always visible */}
+        <MotiView
+          from={{ opacity: 0, translateY: 20 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ delay: 600 }}
+          style={styles.submitSection}
+        >
+          <TouchableOpacity
+            style={[
+              styles.submitButton,
+              (!refinementText.trim() || isSubmitting) && styles.submitButtonDisabled
+            ]}
+            onPress={handleSubmitRefinement}
+            disabled={!refinementText.trim() || isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text style={styles.submitButtonText}>Refining...</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.submitButtonText}>Submit Refinement</Text>
+                <Send size={16} color="#FFFFFF" strokeWidth={2.5} />
+              </>
+            )}
+          </TouchableOpacity>
+        </MotiView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -372,14 +391,15 @@ const styles = StyleSheet.create({
   },
   suggestionPill: {
     backgroundColor: '#F3F4F6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
     borderRadius: 999,
     marginRight: 8,
     marginBottom: 8,
   },
   suggestionText: {
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '500',
     color: '#4B5563',
   },
   refinementSection: {
@@ -421,7 +441,11 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   submitSection: {
-    marginTop: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
   submitButton: {
     backgroundColor: '#320DFF',

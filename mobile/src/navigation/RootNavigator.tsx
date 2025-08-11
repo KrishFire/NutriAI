@@ -45,6 +45,7 @@ import PaywallScreen from '../screens/premium/PaywallScreen';
 import FoodResultsScreen from '../screens/food-input/FoodResultsScreen';
 import MealSavedScreen from '../screens/MealSavedScreen';
 import RefineWithAIScreen from '../screens/RefineWithAIScreen';
+import AddMoreScreen from '../screens/AddMoreScreen';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -345,6 +346,15 @@ function AppStack() {
       <RootStack.Screen
         name="RefineWithAIScreen"
         component={RefineWithAIScreen}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          presentation: 'card',
+        }}
+      />
+      <RootStack.Screen
+        name="AddMoreScreen"
+        component={AddMoreScreen}
         options={{
           headerShown: false,
           animation: 'slide_from_right',

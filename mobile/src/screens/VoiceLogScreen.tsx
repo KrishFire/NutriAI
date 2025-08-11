@@ -43,6 +43,9 @@ export default function VoiceLogScreen({
   const [isProcessingMeal, setIsProcessingMeal] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Extract Add More parameters
+  const { returnToAddMore, existingMealData, description, mealId } = route.params || {};
+
   const {
     state: recordingState,
     transcription,
@@ -103,12 +106,26 @@ export default function VoiceLogScreen({
     hapticFeedback.success();
     
     // Navigate to analyzing screen which will handle the API call
-    navigation.navigate('AnalyzingScreen' as any, {
-      inputType: 'voice',
-      inputData: transcription.trim(),
-      mealType: 'snack', // Could be dynamic based on time of day or user selection
-    });
-  }, [transcription, isProcessingMeal, navigation]);
+    if (returnToAddMore) {
+      // Add More flow: Navigate to AnalyzingScreen with returnToAddMore flag
+      navigation.navigate('AnalyzingScreen' as any, {
+        inputType: 'voice',
+        inputData: transcription.trim(),
+        mealType: 'snack',
+        returnToAddMore: true,
+        existingMealData,
+        existingDescription: description,
+        existingMealId: mealId,
+      });
+    } else {
+      // Normal flow
+      navigation.navigate('AnalyzingScreen' as any, {
+        inputType: 'voice',
+        inputData: transcription.trim(),
+        mealType: 'snack',
+      });
+    }
+  }, [transcription, isProcessingMeal, navigation, returnToAddMore, existingMealData, description, mealId]);
 
   // Format time as MM:SS
   const formatTime = (seconds: number): string => {

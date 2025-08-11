@@ -234,7 +234,10 @@ export default function FoodResultsScreen() {
   const { user } = useAuth();
   
   // Parse the analyzed data from route params
-  const { analysisData, description } = route.params || {};
+  // Use refinedAnalysisData if available (from refinement), otherwise use analysisData
+  const rawParams = route.params || {};
+  const analysisData = rawParams.refinedAnalysisData || rawParams.analysisData;
+  const description = rawParams.description;
   
   // Auto-assigned meal type (not in state since it's not user-selectable)
   const autoMealType = getAutoMealType();
@@ -342,22 +345,23 @@ export default function FoodResultsScreen() {
       foods.forEach((food: any, index: number) => {
         const hasIngredients = food.ingredients && food.ingredients.length > 0;
         
+        // Initialize with zero nutrition if has ingredients (will be calculated from ingredients)
+        // Otherwise use the provided nutrition values
+        const initialNutrition = hasIngredients ? 
+          { calories: 0, protein: 0, carbs: 0, fat: 0 } :
+          {
+            calories: Math.round(food.nutrition?.calories || food.calories || 0),
+            protein: Math.round(food.nutrition?.protein || food.protein || 0),
+            carbs: Math.round(food.nutrition?.carbs || food.carbs || 0),
+            fat: Math.round(food.nutrition?.fat || food.fat || 0),
+          };
+        
         const foodGroup: FoodGroup = {
           id: `food_${index}`,
           name: food.name || 'Unknown Item',
           isParent: hasIngredients,
-          baseNutrition: {
-            calories: Math.round(food.nutrition?.calories || food.calories || 0),
-            protein: Math.round(food.nutrition?.protein || food.protein || 0),
-            carbs: Math.round(food.nutrition?.carbs || food.carbs || 0),
-            fat: Math.round(food.nutrition?.fat || food.fat || 0),
-          },
-          nutrition: {
-            calories: Math.round(food.nutrition?.calories || food.calories || 0),
-            protein: Math.round(food.nutrition?.protein || food.protein || 0),
-            carbs: Math.round(food.nutrition?.carbs || food.carbs || 0),
-            fat: Math.round(food.nutrition?.fat || food.fat || 0),
-          },
+          baseNutrition: initialNutrition,
+          nutrition: initialNutrition,
           servingMultiplier: 1,
           expanded: false,
           isFavorite: false,
@@ -377,6 +381,17 @@ export default function FoodResultsScreen() {
             },
             isFavorite: false,
           }));
+          
+          // Recalculate parent nutrition as sum of ingredients
+          const totalNutrition = foodGroup.ingredients.reduce((acc, ingredient) => ({
+            calories: acc.calories + ingredient.nutrition.calories,
+            protein: acc.protein + ingredient.nutrition.protein,
+            carbs: acc.carbs + ingredient.nutrition.carbs,
+            fat: acc.fat + ingredient.nutrition.fat,
+          }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+          
+          foodGroup.baseNutrition = totalNutrition;
+          foodGroup.nutrition = totalNutrition;
         }
         
         groups.push(foodGroup);
@@ -500,6 +515,47 @@ export default function FoodResultsScreen() {
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
   
+  // Transform foodGroups back to AIMealAnalysis format with updated nutrition
+  const createUpdatedAnalysis = (): any => {
+    // Transform foodGroups to foods array
+    const foods = state.foodGroups.map(group => {
+      const food: any = {
+        name: group.name,
+        quantity: 1,
+        unit: 'serving',
+        calories: group.nutrition.calories,
+        protein: group.nutrition.protein,
+        carbs: group.nutrition.carbs,
+        fat: group.nutrition.fat,
+      };
+      
+      // Add ingredients if it's a parent food
+      if (group.isParent && group.ingredients.length > 0) {
+        food.ingredients = group.ingredients.map(ingredient => ({
+          name: ingredient.name,
+          quantity: 1,
+          unit: 'serving',
+          calories: ingredient.nutrition.calories,
+          protein: ingredient.nutrition.protein,
+          carbs: ingredient.nutrition.carbs,
+          fat: ingredient.nutrition.fat,
+        }));
+      }
+      
+      return food;
+    });
+    
+    // Return updated analysis with current totals
+    return {
+      ...analysisData,
+      foods,
+      totalCalories: totalNutrition.calories,
+      totalProtein: totalNutrition.protein,
+      totalCarbs: totalNutrition.carbs,
+      totalFat: totalNutrition.fat,
+    };
+  };
+  
   // Handle save meal
   const handleSaveMeal = async () => {
     if (!user || isSaving || !description || !analysisData) return;
@@ -508,9 +564,12 @@ export default function FoodResultsScreen() {
       setIsSaving(true);
       hapticFeedback.selection();
       
-      // Save the meal to database with existing analysis
+      // Create updated analysis with current nutrition values from state
+      const updatedAnalysis = createUpdatedAnalysis();
+      
+      // Save the meal to database with updated analysis
       const logResult = await mealAIService.saveMealDirectly(
-        analysisData,
+        updatedAnalysis,
         description,
         autoMealType,
         new Date().toISOString().split('T')[0]
@@ -546,17 +605,25 @@ export default function FoodResultsScreen() {
   // Handle add more
   const handleAddMore = () => {
     hapticFeedback.selection();
-    // This will be implemented later
-    Alert.alert('Coming Soon', 'Add more items feature coming soon!');
+    
+    // Navigate to AddMoreScreen with current meal data
+    navigation.navigate('AddMoreScreen' as any, {
+      currentMealData: createUpdatedAnalysis(), // Pass the current state as analysis
+      description,
+      mealId: route.params?.mealId,
+    });
   };
   
   // Handle refine with AI
   const handleRefineWithAI = () => {
     hapticFeedback.selection();
     
-    // Navigate to RefineWithAIScreen with current analysis
+    // Create updated analysis with current state (includes Add More items)
+    const updatedAnalysis = createUpdatedAnalysis();
+    
+    // Navigate to RefineWithAIScreen with complete current analysis
     navigation.navigate('RefineWithAIScreen', {
-      analysisData,
+      analysisData: updatedAnalysis,
       mealId: route.params?.mealId,
       description,
     });
