@@ -398,7 +398,7 @@ Deno.serve(async (req) => {
     };
 
     const openAIPayload = {
-      model: 'gpt-4o',
+      model: 'gpt-4.1-mini',
       messages: [
         {
           role: 'user',

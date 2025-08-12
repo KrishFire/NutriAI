@@ -46,6 +46,7 @@ import FoodResultsScreen from '../screens/food-input/FoodResultsScreen';
 import MealSavedScreen from '../screens/MealSavedScreen';
 import RefineWithAIScreen from '../screens/RefineWithAIScreen';
 import AddMoreScreen from '../screens/AddMoreScreen';
+import MealViewScreen from '../screens/MealViewScreen';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -286,6 +287,15 @@ function AppStack() {
           title: 'Meal Details',
           headerShown: true,
           animation: 'slide_from_right',
+        }}
+      />
+      <RootStack.Screen
+        name="MealViewScreen"
+        component={MealViewScreen}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          presentation: 'card',
         }}
       />
       {/* Food Input Screens */}

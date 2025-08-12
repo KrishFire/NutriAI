@@ -204,7 +204,8 @@ const FoodItemSchema = z.object({
   fiber: z.coerce.number().min(0).optional(),
   sugar: z.coerce.number().min(0).optional(),
   sodium: z.coerce.number().min(0).optional(),
-  ingredients: z.array(z.lazy(() => FoodItemSchema)).optional()
+  ingredients: z.array(z.lazy(() => FoodItemSchema)).optional(),
+  isBranded: z.boolean().optional()
 });
 
 const MealAnalysisSchema = z.object({
@@ -235,6 +236,170 @@ interface LogMealResponse {
 }
 
 /**
+ * Detect if a food item is a composite that should have ingredients
+ */
+function isCompositeFoodWithoutIngredients(food: FoodItem): boolean {
+  const compositeIndicators = [
+    'sandwich', 'burger', 'salad', 'bowl', 'wrap', 
+    'burrito', 'taco', 'pizza', 'sub', 'hoagie',
+    'panini', 'quesadilla', 'double double', 'big mac',
+    'whopper', 'baconator', 'combo', 'meal',
+    'casserole', 'omelette', 'omelet', 'stir-fry', 'stir fry',
+    'parfait', 'smoothie', 'sushi roll', 'poke bowl'
+  ];
+  
+  const foodNameLower = food.name.toLowerCase();
+  const isComposite = compositeIndicators.some(indicator => 
+    foodNameLower.includes(indicator)
+  );
+  
+  const hasNoIngredients = !food.ingredients || food.ingredients.length === 0;
+  
+  return isComposite && hasNoIngredients;
+}
+
+/**
+ * Enforce branded item totals to preserve known nutrition values
+ * Detects branded restaurant items and ensures their nutrition isn't recalculated
+ */
+function enforceBrandedItemTotals(description: string, foods: FoodItem[]): FoodItem[] {
+  const descLower = description.toLowerCase();
+  
+  // Patterns for detecting branded items
+  const brandedPatterns = [
+    { pattern: /in[\s-]?n[\s-]?out.*double.*double.*animal.*style/i, isBranded: true },
+    { pattern: /in[\s-]?n[\s-]?out.*double.*double/i, isBranded: true },
+    { pattern: /\bdouble\s+double\b(?!\s+coffee)/i, isBranded: true }, // Standalone double double (excludes coffee)
+    { pattern: /mcdonald['']?s|big\s+mac|mcflurry|mcnugget|quarter\s+pounder/i, isBranded: true },
+    { pattern: /burger\s+king|whopper|impossible\s+whopper/i, isBranded: true },
+    { pattern: /wendy['']?s|baconator|frosty/i, isBranded: true },
+    { pattern: /chick[\s-]?fil[\s-]?a|spicy\s+deluxe/i, isBranded: true },
+    { pattern: /taco\s+bell|crunchwrap|chalupa|gordita/i, isBranded: true },
+    { pattern: /chipotle.*bowl|chipotle.*burrito/i, isBranded: true },
+    { pattern: /subway|footlong|six[\s-]?inch/i, isBranded: true },
+    { pattern: /starbucks|frappuccino|venti|grande|tall/i, isBranded: true },
+    { pattern: /kfc|kentucky\s+fried/i, isBranded: true },
+    { pattern: /five\s+guys/i, isBranded: true },
+    { pattern: /shake\s+shack/i, isBranded: true },
+    { pattern: /panera/i, isBranded: true },
+    { pattern: /domino['']?s|pizza\s+hut|papa\s+john['']?s/i, isBranded: true }
+  ];
+  
+  // Check each food item and mark if branded
+  const processedFoods = foods.map(food => {
+    const foodNameLower = food.name.toLowerCase();
+    
+    // Check if this food item is branded
+    let isBranded = false;
+    
+    // Check against description
+    for (const { pattern } of brandedPatterns) {
+      if (pattern.test(descLower) || pattern.test(foodNameLower)) {
+        isBranded = true;
+        break;
+      }
+    }
+    
+    // If it's branded and has ingredients, don't let client recalculate
+    if (isBranded) {
+      return {
+        ...food,
+        isBranded: true
+      };
+    }
+    
+    return food;
+  });
+  
+  return processedFoods;
+}
+
+/**
+ * Make a targeted API call to break down a composite food into ingredients
+ */
+async function getIngredientBreakdown(foodName: string, calories: number): Promise<FoodItem[]> {
+  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+  if (!OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured');
+  }
+
+  const focusedPrompt = `You are an expert at breaking down composite foods into ingredients.
+
+CRITICAL: Check if "${foodName}" is a RECOGNIZED BRANDED ITEM:
+- If YES (e.g., "Double Double Animal Style", "Big Mac", "Whopper"):
+  * You KNOW the correct total is ${calories} calories
+  * This is the ACTUAL value from your training data
+  * Make the ingredient breakdown match these KNOWN totals EXACTLY
+  * Do NOT recalculate new totals - use the known value
+
+- If NO (generic/homemade item):
+  * Calculate reasonable ingredient values that sum to approximately ${calories}
+
+EXAMPLE for BRANDED "In-N-Out Double Double Animal Style" (670 calories):
+[
+  {"name": "Beef Patty", "quantity": 2, "unit": "patties", "calories": 300, "protein": 24, "carbs": 0, "fat": 22},
+  {"name": "American Cheese", "quantity": 2, "unit": "slices", "calories": 140, "protein": 8, "carbs": 2, "fat": 11},
+  {"name": "Bun", "quantity": 1, "unit": "serving", "calories": 150, "protein": 5, "carbs": 28, "fat": 3},
+  {"name": "Spread", "quantity": 2, "unit": "tablespoons", "calories": 40, "protein": 0, "carbs": 2, "fat": 3},
+  {"name": "Onion", "quantity": 1, "unit": "slice", "calories": 10, "protein": 0, "carbs": 2, "fat": 0},
+  {"name": "Lettuce", "quantity": 1, "unit": "leaf", "calories": 5, "protein": 0, "carbs": 1, "fat": 0},
+  {"name": "Tomato", "quantity": 1, "unit": "slice", "calories": 5, "protein": 0, "carbs": 1, "fat": 0},
+  {"name": "Pickles", "quantity": 2, "unit": "slices", "calories": 20, "protein": 0, "carbs": 3, "fat": 2}
+]
+
+EXAMPLE for HOMEMADE "Turkey Sandwich":
+[
+  {"name": "Whole Wheat Bread", "quantity": 2, "unit": "slices", "calories": 140, "protein": 6, "carbs": 24, "fat": 2},
+  {"name": "Turkey Breast", "quantity": 3, "unit": "oz", "calories": 90, "protein": 19, "carbs": 0, "fat": 1},
+  {"name": "Lettuce", "quantity": 0.5, "unit": "cup", "calories": 4, "protein": 0, "carbs": 1, "fat": 0},
+  {"name": "Tomato", "quantity": 2, "unit": "slices", "calories": 5, "protein": 0, "carbs": 1, "fat": 0},
+  {"name": "Mayonnaise", "quantity": 1, "unit": "tablespoon", "calories": 90, "protein": 0, "carbs": 0, "fat": 10}
+]
+
+Ingredients MUST sum to ${calories} calories for branded items, approximately for homemade.
+Return a JSON object with an "ingredients" key containing an array of ingredients:
+{ "ingredients": [...] }`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1-mini',
+        messages: [
+          { role: 'system', content: focusedPrompt },
+          { role: 'user', content: `Break down "${foodName}" into its ingredients.` }
+        ],
+        temperature: 0.1,
+        max_tokens: 1000,
+        response_format: { type: "json_object" }
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content;
+      if (content) {
+        // Parse the response and validate it's an array
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        } else if (parsed.ingredients && Array.isArray(parsed.ingredients)) {
+          return parsed.ingredients;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to get ingredient breakdown:', error);
+  }
+  
+  return [];
+}
+
+/**
  * Analyze meal description using OpenAI GPT-4o-mini with standard completions
  * Returns structured nutrition data with hierarchical parent-child relationships
  */
@@ -244,7 +409,30 @@ async function analyzeMealWithAI(description: string, mealType?: string, date?: 
     throw new Error('OpenAI API key not configured');
   }
 
-  const systemPrompt = `You are a nutrition analysis assistant. Return ONLY valid JSON.
+  const systemPrompt = `You are a nutrition analysis assistant with extensive knowledge of food composition and restaurant menu items.
+
+🚨 CRITICAL RULE #1 - BRANDED VS HOMEMADE RECOGNITION 🚨
+BEFORE analyzing, determine if this is a BRANDED restaurant item or HOMEMADE food:
+
+BRANDED ITEMS (use your trained knowledge):
+- If you recognize this as a specific menu item from a restaurant/brand (e.g., "Big Mac", "Double Double Animal Style", "Whopper", "Chick-fil-A Spicy Deluxe")
+- Use your TRAINED KNOWLEDGE of the ACTUAL nutrition values for that item
+- Do NOT recalculate from ingredients - use the known values
+- When providing ingredient breakdown, ensure totals match the known values
+- Example: "In-N-Out Double Double Animal Style" = 670 cal, 39g carbs, 37g protein, 41g fat (use these, don't recalculate)
+
+HOMEMADE ITEMS (calculate from ingredients):
+- Generic descriptions like "turkey sandwich", "homemade burger", "chicken salad"
+- Calculate nutrition by summing individual ingredients
+
+🚨 CRITICAL RULE #2 - MANDATORY INGREDIENT BREAKDOWN 🚨
+For ANY composite food item (sandwich, burger, salad, bowl, wrap, burrito, taco, pizza, etc.), you MUST:
+1. Break it down into ALL individual ingredients
+2. For BRANDED items: ensure ingredients sum to match known totals
+3. For HOMEMADE items: calculate totals from ingredients
+4. Include the ingredients array with complete breakdown
+
+NEVER return a composite food without its ingredient breakdown. This is NON-NEGOTIABLE.
 
 IMPORTANT GUIDELINES:
 1. Common dish names containing "and" are single items (e.g., "mac and cheese", "fish and chips")
@@ -417,7 +605,51 @@ Output:
   "confidence": 0.9,
   "notes": "Turkey sandwich with chips and pickle as sides",
   "title": "Turkey Sandwich & Chips"
-}`;
+}
+
+Input: "in n out double double animal style"
+Output:
+{
+  "foods": [
+    {
+      "name": "Double Double Animal Style",
+      "quantity": 1,
+      "unit": "burger",
+      "calories": 670,
+      "protein": 37,
+      "carbs": 39,
+      "fat": 41,
+      "ingredients": [
+        {"name": "Beef Patty", "quantity": 2, "unit": "patties", "calories": 300, "protein": 24, "carbs": 0, "fat": 22},
+        {"name": "American Cheese", "quantity": 2, "unit": "slices", "calories": 140, "protein": 8, "carbs": 2, "fat": 11},
+        {"name": "Bun", "quantity": 1, "unit": "serving", "calories": 150, "protein": 5, "carbs": 28, "fat": 3},
+        {"name": "Spread", "quantity": 2, "unit": "tablespoons", "calories": 40, "protein": 0, "carbs": 4, "fat": 3},
+        {"name": "Grilled Onions", "quantity": 1, "unit": "serving", "calories": 15, "protein": 0, "carbs": 3, "fat": 0},
+        {"name": "Lettuce", "quantity": 1, "unit": "leaf", "calories": 5, "protein": 0, "carbs": 1, "fat": 0},
+        {"name": "Tomato", "quantity": 1, "unit": "slice", "calories": 5, "protein": 0, "carbs": 1, "fat": 0},
+        {"name": "Pickles", "quantity": 2, "unit": "slices", "calories": 15, "protein": 0, "carbs": 0, "fat": 2}
+      ]
+    }
+  ],
+  "confidence": 0.95,
+  "notes": "In-N-Out Double Double Animal Style - using known nutrition values",
+  "title": "Double Double Animal Style"
+}
+
+🔴 FINAL CRITICAL REMINDER 🔴
+Before returning your response, CHECK:
+- Did you identify if this is a BRANDED item (use known values) or HOMEMADE (calculate)?
+- For BRANDED items: Are you using the ACTUAL known nutrition values from your training?
+- For BRANDED items: Do ingredients sum to match the known totals?
+- Does EVERY composite food (sandwich, burger, salad, etc.) have an ingredients array?
+- Are ALL ingredients listed with their individual nutrition values?
+- If you're about to return a sandwich/burger/wrap WITHOUT ingredients, STOP and add them!
+
+REMEMBER: 
+- "In-N-Out Double Double Animal Style" = 670 cal (BRANDED - use this exact value)
+- "Big Mac" = 563 cal (BRANDED - use this exact value)
+- "turkey sandwich" = calculate from ingredients (HOMEMADE)
+- "double double" MUST include beef patties, cheese, bun, spread, onions, etc. as separate ingredients.`;
 
   // Get current time context for title generation
   const now = new Date();
@@ -475,7 +707,7 @@ Return ONLY valid JSON matching the structure shown in examples.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -507,8 +739,32 @@ Return ONLY valid JSON matching the structure shown in examples.`;
       const rawAnalysis = JSON.parse(content);
       const validatedAnalysis = MealAnalysisSchema.parse(rawAnalysis);
       
+      // Check for composite foods without ingredients and fix them
+      console.log('[AI Analysis] Checking for composite foods needing ingredient breakdown...');
+      for (let i = 0; i < validatedAnalysis.foods.length; i++) {
+        const food = validatedAnalysis.foods[i];
+        if (isCompositeFoodWithoutIngredients(food)) {
+          console.log(`[AI Analysis] Found composite food without ingredients: ${food.name}`);
+          console.log('[AI Analysis] Making targeted API call for ingredient breakdown...');
+          
+          const ingredients = await getIngredientBreakdown(food.name, food.calories);
+          if (ingredients.length > 0) {
+            console.log(`[AI Analysis] Successfully retrieved ${ingredients.length} ingredients for ${food.name}`);
+            // Log fallback usage for monitoring
+            console.log(`[FALLBACK_METRIC] Food: "${food.name}", Ingredients: ${ingredients.length}, Timestamp: ${new Date().toISOString()}`);
+            validatedAnalysis.foods[i].ingredients = ingredients;
+          } else {
+            console.log(`[AI Analysis] Failed to retrieve ingredients for ${food.name}`);
+          }
+        }
+      }
+      
       // Validate and fix title if it contains problematic words
       const fixedTitle = validateAndFixTitle(validatedAnalysis.title, validatedAnalysis.foods);
+      
+      // Apply branded item enforcement to preserve known nutrition values
+      const foodsWithBrandedFlags = enforceBrandedItemTotals(description, validatedAnalysis.foods);
+      validatedAnalysis.foods = foodsWithBrandedFlags;
       
       // Calculate totals from top-level foods only (not ingredients)
       const totalCalories = validatedAnalysis.foods.reduce((sum, food) => sum + food.calories, 0);
@@ -624,8 +880,54 @@ Return this EXACT JSON structure (no other text):
   "title": "ACTUAL FOOD NAMES HERE"
 }
 
-For composite foods (sandwiches, salads), include ingredients array.
-For simple foods (chips, drinks), use empty ingredients array.
+IMPORTANT: For composite foods (sandwiches, salads, bowls, wraps), include a detailed ingredients array.
+For simple foods (chips, drinks, fruits), use empty ingredients array.
+
+EXAMPLE for "turkey sandwich":
+{
+  "name": "Turkey Sandwich",
+  "quantity": 1,
+  "unit": "sandwich",
+  "calories": 380,
+  "protein": 25,
+  "carbs": 45,
+  "fat": 12,
+  "fiber": 4,
+  "sugar": 5,
+  "sodium": 890,
+  "ingredients": [
+    {"name": "Whole Wheat Bread", "quantity": 2, "unit": "slices", "calories": 140, "protein": 6, "carbs": 24, "fat": 2, "fiber": 3, "sugar": 2, "sodium": 280},
+    {"name": "Turkey Breast", "quantity": 3, "unit": "oz", "calories": 90, "protein": 19, "carbs": 0, "fat": 1, "fiber": 0, "sugar": 0, "sodium": 450},
+    {"name": "Lettuce", "quantity": 0.5, "unit": "cup", "calories": 4, "protein": 0, "carbs": 1, "fat": 0, "fiber": 0.5, "sugar": 0.5, "sodium": 5},
+    {"name": "Tomato", "quantity": 2, "unit": "slices", "calories": 5, "protein": 0, "carbs": 1, "fat": 0, "fiber": 0.3, "sugar": 1, "sodium": 2},
+    {"name": "Mayonnaise", "quantity": 1, "unit": "tablespoon", "calories": 90, "protein": 0, "carbs": 0, "fat": 10, "fiber": 0, "sugar": 0, "sodium": 88},
+    {"name": "Mustard", "quantity": 1, "unit": "teaspoon", "calories": 3, "protein": 0, "carbs": 0.3, "fat": 0.2, "fiber": 0.2, "sugar": 0.1, "sodium": 65}
+  ]
+}
+
+EXAMPLE for "in n out double double animal style":
+{
+  "name": "Double Double Animal Style",
+  "quantity": 1,
+  "unit": "burger",
+  "calories": 670,
+  "protein": 37,
+  "carbs": 39,
+  "fat": 40,
+  "fiber": 3,
+  "sugar": 10,
+  "sodium": 1440,
+  "ingredients": [
+    {"name": "Beef Patties", "quantity": 2, "unit": "patties", "calories": 320, "protein": 28, "carbs": 0, "fat": 22, "fiber": 0, "sugar": 0, "sodium": 370},
+    {"name": "American Cheese", "quantity": 2, "unit": "slices", "calories": 140, "protein": 8, "carbs": 2, "fat": 11, "fiber": 0, "sugar": 1, "sodium": 420},
+    {"name": "Hamburger Bun", "quantity": 1, "unit": "bun", "calories": 120, "protein": 4, "carbs": 21, "fat": 2, "fiber": 1, "sugar": 4, "sodium": 230},
+    {"name": "Spread Sauce", "quantity": 2, "unit": "tablespoons", "calories": 80, "protein": 0, "carbs": 2, "fat": 8, "fiber": 0, "sugar": 1, "sodium": 160},
+    {"name": "Grilled Onions", "quantity": 0.25, "unit": "cup", "calories": 15, "protein": 0.5, "carbs": 3, "fat": 0, "fiber": 0.5, "sugar": 2, "sodium": 5},
+    {"name": "Lettuce", "quantity": 0.5, "unit": "cup", "calories": 5, "protein": 0.3, "carbs": 1, "fat": 0, "fiber": 0.5, "sugar": 0.5, "sodium": 5},
+    {"name": "Tomato", "quantity": 2, "unit": "slices", "calories": 5, "protein": 0.2, "carbs": 1, "fat": 0, "fiber": 0.3, "sugar": 1, "sodium": 2},
+    {"name": "Pickles", "quantity": 2, "unit": "slices", "calories": 2, "protein": 0, "carbs": 0.5, "fat": 0, "fiber": 0.2, "sugar": 0.2, "sodium": 220}
+  ]
+}
 Title MUST be actual food names, not generic descriptions.`;
 
   try {
@@ -636,11 +938,11 @@ Title MUST be actual food names, not generic descriptions.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-mini',
         messages: [
           {
             role: 'system',
-            content: 'You are a JSON-only nutrition analyzer. Return ONLY valid JSON, no other text.'
+            content: 'You are a JSON-only nutrition analyzer with extensive knowledge of food composition. ALWAYS break down composite foods (sandwiches, salads, bowls, wraps, burgers) into their individual ingredients with nutrition values. Return ONLY valid JSON, no other text.'
           },
           {
             role: 'user',
@@ -672,17 +974,35 @@ Title MUST be actual food names, not generic descriptions.`;
       // Post-process to ensure "and" items are separated if needed
       const processedFoods = postProcessFoods(validatedAnalysis.foods, description);
       
+      // Check for composite foods without ingredients and fix them (fallback too)
+      for (let i = 0; i < processedFoods.length; i++) {
+        const food = processedFoods[i];
+        if (isCompositeFoodWithoutIngredients(food)) {
+          console.log(`[Fallback Analysis] Found composite food without ingredients: ${food.name}`);
+          const ingredients = await getIngredientBreakdown(food.name, food.calories);
+          if (ingredients.length > 0) {
+            console.log(`[Fallback Analysis] Retrieved ${ingredients.length} ingredients for ${food.name}`);
+            // Log fallback usage for monitoring
+            console.log(`[FALLBACK_METRIC] Food: "${food.name}", Ingredients: ${ingredients.length}, Timestamp: ${new Date().toISOString()}`);
+            processedFoods[i].ingredients = ingredients;
+          }
+        }
+      }
+      
       // Validate and fix title if it contains problematic words
       const fixedTitle = validateAndFixTitle(validatedAnalysis.title, processedFoods);
       
+      // Apply branded item enforcement to preserve known nutrition values
+      const foodsWithBrandedFlags = enforceBrandedItemTotals(description, processedFoods);
+      
       // Calculate totals
-      const totalCalories = processedFoods.reduce((sum, food) => sum + food.calories, 0);
-      const totalProtein = processedFoods.reduce((sum, food) => sum + food.protein, 0);
-      const totalCarbs = processedFoods.reduce((sum, food) => sum + food.carbs, 0);
-      const totalFat = processedFoods.reduce((sum, food) => sum + food.fat, 0);
+      const totalCalories = foodsWithBrandedFlags.reduce((sum, food) => sum + food.calories, 0);
+      const totalProtein = foodsWithBrandedFlags.reduce((sum, food) => sum + food.protein, 0);
+      const totalCarbs = foodsWithBrandedFlags.reduce((sum, food) => sum + food.carbs, 0);
+      const totalFat = foodsWithBrandedFlags.reduce((sum, food) => sum + food.fat, 0);
 
       return {
-        foods: processedFoods,
+        foods: foodsWithBrandedFlags,
         title: fixedTitle,
         totalCalories,
         totalProtein,

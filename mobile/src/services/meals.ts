@@ -1061,6 +1061,134 @@ export async function getMealDetailsByDateAndType(
 }
 
 /**
+ * Fetches meal details by meal_group_id (UUID)
+ * This is used when viewing a specific meal from history or home screen
+ */
+export async function getMealDetailsByGroupId(
+  groupId: string,
+  userId: string
+): Promise<{
+  success: boolean;
+  data?: MealAnalysis;
+  imageUrl?: string;
+  error?: string;
+}> {
+  try {
+    // Validate UUID format
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(groupId)) {
+      return {
+        success: false,
+        error: 'Invalid meal ID format',
+      };
+    }
+
+    // Query all meal entries for this meal group
+    const { data: mealEntries, error } = await supabase
+      .from('meal_entries')
+      .select(
+        `
+        *,
+        food_items (
+          id,
+          name,
+          brand,
+          serving_size,
+          serving_unit,
+          calories,
+          protein,
+          carbs,
+          fat,
+          fiber,
+          sugar,
+          sodium
+        )
+      `
+      )
+      .eq('meal_group_id', groupId)
+      .eq('user_id', userId) // Security: ensure user owns this meal
+      .order('logged_at', { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch meal entries: ${error.message}`);
+    }
+
+    if (!mealEntries || mealEntries.length === 0) {
+      return {
+        success: false,
+        error: 'Meal not found',
+      };
+    }
+
+    // Transform meal entries into MealAnalysis format
+    const foods: FoodItem[] = mealEntries.map(entry => ({
+      name: entry.food_items?.name || entry.food_name || 'Unknown Food',
+      quantity: entry.unit || `${entry.quantity || 1} serving`,
+      nutrition: {
+        calories: Number(entry.calories) || 0,
+        protein: Number(entry.protein) || 0,
+        carbs: Number(entry.carbs) || 0,
+        fat: Number(entry.fat) || 0,
+        fiber: entry.food_items?.fiber
+          ? Number(entry.food_items.fiber)
+          : undefined,
+        sugar: entry.food_items?.sugar
+          ? Number(entry.food_items.sugar)
+          : undefined,
+        sodium: entry.food_items?.sodium
+          ? Number(entry.food_items.sodium)
+          : undefined,
+      },
+      confidence: 0.95, // High confidence since this is from database
+    }));
+
+    // Calculate total nutrition
+    const totalNutrition = foods.reduce(
+      (total, food) => ({
+        calories: total.calories + (food.nutrition.calories || 0),
+        protein: total.protein + (food.nutrition.protein || 0),
+        carbs: total.carbs + (food.nutrition.carbs || 0),
+        fat: total.fat + (food.nutrition.fat || 0),
+        fiber: (total.fiber || 0) + (food.nutrition.fiber || 0),
+        sugar: (total.sugar || 0) + (food.nutrition.sugar || 0),
+        sodium: (total.sodium || 0) + (food.nutrition.sodium || 0),
+      }),
+      {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        fiber: 0,
+        sugar: 0,
+        sodium: 0,
+      }
+    );
+
+    // Get the image URL if available
+    const imageUrl = mealEntries[0]?.image_url || undefined;
+
+    const mealAnalysis: MealAnalysis = {
+      foods,
+      totalNutrition,
+      confidence: 0.95, // High confidence since this is from database
+    };
+
+    return {
+      success: true,
+      data: mealAnalysis,
+      imageUrl,
+    };
+  } catch (error) {
+    console.error('Error fetching meal details by group ID:', error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : 'Failed to fetch meal details',
+    };
+  }
+}
+
+/**
  * Update a meal entry
  */
 export async function updateMealEntry(

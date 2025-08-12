@@ -27,6 +27,20 @@ interface RefineMealResponse {
  */
 const REFINEMENT_SYSTEM_PROMPT = `You are an expert nutrition analysis assistant. You will be given a conversation history. The history contains previous analyses you have provided (as stringified JSON) and user corrections. Your task is to provide a new, complete, and corrected meal analysis based on the entire conversation.
 
+🚨 CRITICAL RULE #1 - BRANDED VS HOMEMADE RECOGNITION 🚨
+BEFORE analyzing refinements, determine if items are BRANDED restaurant items or HOMEMADE food:
+
+BRANDED ITEMS (use your trained knowledge):
+- If you recognize this as a specific menu item from a restaurant/brand (e.g., "Big Mac", "Double Double Animal Style", "Whopper", "Chick-fil-A Spicy Deluxe")
+- Use your TRAINED KNOWLEDGE of the ACTUAL nutrition values for that item
+- Do NOT recalculate from ingredients - use the known values
+- When providing ingredient breakdown, ensure totals match the known values
+- Example: "In-N-Out Double Double Animal Style" = 670 cal, 39g carbs, 37g protein, 41g fat (use these, don't recalculate)
+
+HOMEMADE ITEMS (calculate from ingredients):
+- Generic descriptions like "turkey sandwich", "homemade burger"
+- Calculate nutrition by summing individual ingredients
+
 CRITICAL INSTRUCTIONS:
 1. Your response MUST be a single, valid, stringified JSON object and nothing else.
 2. The JSON object must represent the complete, updated list of food items for the meal, reflecting all user corrections.
@@ -35,6 +49,23 @@ CRITICAL INSTRUCTIONS:
 5. Base your response on the full history provided. The final user message is the most recent correction to apply.
 6. Use natural, user-friendly units (1 burger, 1 slice, 2 tablespoons, 1 cup, etc.)
 7. When foods are corrected or added, break them down into individual components if they are complex items.
+8. For BRANDED items, preserve their known nutrition values and never recalculate from ingredients.
+
+REFINEMENT RULES:
+- MODIFY/REPLACE existing items based on refinements - DO NOT create duplicates
+- If the refinement changes an item (e.g., "shake was blueberry not strawberry"), REPLACE the original item entirely
+- Return the COMPLETE updated meal list with ALL items (both modified and unmodified)
+- For replacements: Remove the old item and add the corrected one
+- Keep all other unmentioned items exactly as they are
+- Example: If meal has "strawberry protein shake" and refinement is "shake was blueberry", return "blueberry protein shake" INSTEAD OF "strawberry protein shake", not both.
+
+PRESERVATION RULE FOR SIMPLE SUBSTITUTIONS:
+- For simple substitutions (e.g., "X was Y not Z"), preserve ALL other ingredients, quantities, and nutritional values EXACTLY as they were
+- Only change the specific item mentioned in the refinement
+- If user says "shake was blueberry not strawberry", ONLY replace strawberry with blueberry
+- Keep the same protein scoops, milk type, and all other ingredients unchanged
+- Do NOT add typical ingredients or "improve" the recipe unless explicitly requested
+- Example: If shake has 2 scoops protein, milk, and strawberries, and user says "shake was blueberry", keep the 2 scoops and milk exactly the same, only swap strawberries for blueberries.
 
 Example expected JSON structure:
 {
@@ -77,7 +108,7 @@ async function refineMealWithAI(messages: ChatMessage[]): Promise<any> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini', // Text-only refinement, no image needed
+        model: 'gpt-4.1-mini', // Text-only refinement, no image needed
         messages: [
           {
             role: 'system',

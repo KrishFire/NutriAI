@@ -21,6 +21,7 @@ import { RootStackParamList } from '../types/navigation';
 import { mealCorrectionService } from '../services/mealCorrection';
 import mealAIService, { aiMealToMealAnalysis } from '../services/mealAI';
 import { getRelevantSuggestions } from '../constants/refinementSuggestions';
+// Removed merge utilities - refinements use AI response directly
 
 type RouteParams = RouteProp<RootStackParamList, 'RefineWithAIScreen'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'RefineWithAIScreen'>;
@@ -63,6 +64,13 @@ export default function RefineWithAIScreen() {
   };
 
   const handleSubmitRefinement = async () => {
+    // DEBUG: Log current analysis data before refinement
+    console.log(
+      '🔍 DEBUG [RefineWithAI] Current analysis BEFORE refinement:',
+      JSON.stringify(analysisData, null, 2)
+    );
+    console.log('🔍 DEBUG [RefineWithAI] Total macros:', getTotalMacros());
+    
     if (!refinementText.trim()) {
       Alert.alert('Error', 'Please enter a refinement message');
       return;
@@ -74,10 +82,21 @@ export default function RefineWithAIScreen() {
     try {
       // If we have a mealId, use the correction service (for already saved meals)
       if (mealId) {
+        console.log('🔍 DEBUG [RefineWithAI] Calling mealCorrectionService with:', {
+          mealId,
+          refinementText: refinementText.trim(),
+          currentAnalysisCalories: analysisData?.foods?.map((f: any) => ({
+            name: f.name,
+            calories: f.nutrition?.calories || f.calories,
+          })),
+        });
+        
         const result = await mealCorrectionService.submitCorrection(
           mealId,
           refinementText.trim()
         );
+        
+        console.log('🔍 DEBUG [RefineWithAI] Service response:', JSON.stringify(result, null, 2));
 
         if (!result.success) {
           Alert.alert(
@@ -94,35 +113,89 @@ export default function RefineWithAIScreen() {
 
         hapticFeedback.success();
         
-        // Navigate back to FoodResultsScreen with updated analysis
-        navigation.navigate('FoodResultsScreen', {
-          analysisData: result.newAnalysis,
-          mealId,
-          description,
+        // Reset navigation to clear refine screen from stack
+        navigation.reset({
+          index: 1,
+          routes: [
+            { name: 'Main' as any }, // Keep Main in stack so back button works
+            {
+              name: 'FoodResultsScreen',
+              params: {
+                analysisData: result.newAnalysis,
+                mealId,
+                description,
+              },
+            },
+          ],
         });
       } else {
-        // Pre-save refinement: analyze the combined description + refinement
-        const combinedDescription = `${description}. ${refinementText.trim()}`;
-        console.log('[RefineWithAI] Analyzing with refinement:', combinedDescription);
+        // Pre-save refinement: analyze ONLY the refinement text to get changes
+        console.log('[RefineWithAI] Analyzing refinement:', refinementText.trim());
+        console.log('🔍 DEBUG [RefineWithAI] Current data BEFORE refinement:', {
+          totalCalories: getTotalMacros().calories,
+          foods: analysisData?.foods?.map((f: any) => ({
+            name: f.name,
+            calories: f.nutrition?.calories || f.calories,
+          })),
+        });
         
-        const analysis = await mealAIService.analyzeMeal(combinedDescription);
+        // Call refineMeal with existing foods for context-aware refinement
+        const refinementAnalysis = await mealAIService.refineMeal(
+          analysisData?.foods || [],
+          refinementText.trim()
+        );
         
-        if (!analysis) {
+        console.log('🔍 DEBUG [RefineWithAI] Refinement AI response raw:', JSON.stringify(refinementAnalysis, null, 2));
+        
+        if (!refinementAnalysis) {
           Alert.alert('Error', 'Failed to process refinement. Please try again.');
           return;
         }
         
-        // Convert to the format expected by FoodResultsScreen
-        const analysisData = aiMealToMealAnalysis(analysis);
+        // Convert refinement to the expected format
+        const refinedData = aiMealToMealAnalysis(refinementAnalysis);
+        
+        console.log('🔍 DEBUG [RefineWithAI] Refinement data:', {
+          foods: refinedData?.foods?.map((f: any) => ({
+            name: f.name,
+            calories: f.nutrition?.calories || f.calories,
+          })),
+        });
+        
+        // For refinements, use the AI response directly (it's authoritative)
+        // The AI already returns the complete meal with all items properly updated
+        console.log('🔍 DEBUG [RefineWithAI] Using AI response directly (no merge needed)');
+        
+        // Use the refined data directly - it already has the complete meal
+        const finalAnalysisData = refinedData;
+        
+        console.log('🔍 DEBUG [RefineWithAI] Final refined data:', {
+          totalCalories: finalAnalysisData.totalCalories || finalAnalysisData.totalNutrition?.calories,
+          title: finalAnalysisData.title,
+          foods: finalAnalysisData.foods?.map((f: any) => ({
+            name: f.name,
+            calories: f.nutrition?.calories || f.calories,
+          })),
+        });
         
         hapticFeedback.success();
         
-        // Navigate back to FoodResultsScreen with updated analysis
-        // Use a special param to indicate this is refined data
-        navigation.navigate('FoodResultsScreen', {
-          refinedAnalysisData: analysisData,
-          description: combinedDescription, // Update description with refinement
-        } as any);
+        // Reset navigation to clear refine screen from stack
+        // Combine description for context
+        const combinedDescription = `${description}. ${refinementText.trim()}`;
+        navigation.reset({
+          index: 1,
+          routes: [
+            { name: 'Main' as any }, // Keep Main in stack so back button works
+            {
+              name: 'FoodResultsScreen',
+              params: {
+                refinedAnalysisData: finalAnalysisData,
+                description: combinedDescription,
+              } as any,
+            },
+          ],
+        });
       }
     } catch (error) {
       console.error('[RefineWithAI] Error:', error);

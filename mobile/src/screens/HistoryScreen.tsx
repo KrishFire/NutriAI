@@ -280,7 +280,7 @@ export default function HistoryScreen() {
 
   const handleViewMeal = (meal: MealData) => {
     hapticFeedback.selection();
-    navigation.navigate('MealDetails', {
+    navigation.navigate('MealViewScreen' as any, {
       mealId: meal.id,
       mealGroupId: meal.mealGroupId,
     });

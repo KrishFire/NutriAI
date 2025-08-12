@@ -46,8 +46,10 @@ const mergeAnalysisData = (existingData: any, newData: any): any => {
     totalProtein,
     totalCarbs,
     totalFat,
-    // Update title if needed
-    title: newData.title || existingData.title || 'Combined Meal',
+    // Preserve existing title if non-generic, otherwise use new
+    title: existingData.title && existingData.title !== 'Meal' 
+      ? existingData.title 
+      : (newData.title || existingData.title || 'Meal'),
   };
 };
 
@@ -55,6 +57,8 @@ const mergeAnalysisData = (existingData: any, newData: any): any => {
 const combineDescriptions = (existing: string | undefined, newDesc: string | undefined): string => {
   if (!existing) return newDesc || '';
   if (!newDesc) return existing;
+  // Don't duplicate if already contains
+  if (existing.toLowerCase().includes(newDesc.toLowerCase())) return existing;
   return `${existing}, ${newDesc}`;
 };
 
@@ -245,16 +249,35 @@ export default function AnalyzingScreen() {
             // Merge the new analysis with existing meal data
             const mergedData = mergeAnalysisData(existingMealData, analysisResult.analysisData);
             
-            // Navigate back to FoodResultsScreen with merged data
-            navigation.navigate('FoodResultsScreen' as any, {
-              analysisData: mergedData,
-              description: combineDescriptions(existingDescription, analysisResult.description),
-              mealId,
+            // Reset navigation to clear intermediate screens
+            // Keep only the main screen and FoodResultsScreen in stack
+            navigation.reset({
+              index: 1,
+              routes: [
+                { name: 'Main' as any }, // Keep Main in stack so back button works
+                {
+                  name: 'FoodResultsScreen' as any,
+                  params: {
+                    analysisData: mergedData,
+                    description: combineDescriptions(existingDescription, analysisResult.description),
+                    mealId,
+                  },
+                },
+              ],
             });
           } else {
-            // Normal flow - navigate with just the new analysis
+            // Normal flow - reset navigation to clear intermediate screens
             console.log('[AnalyzingScreen] Navigating to FoodResultsScreen with:', analysisResult);
-            navigation.replace('FoodResultsScreen' as any, analysisResult);
+            navigation.reset({
+              index: 1,
+              routes: [
+                { name: 'Main' as any }, // Keep Main in stack so back button works
+                {
+                  name: 'FoodResultsScreen' as any,
+                  params: analysisResult,
+                },
+              ],
+            });
           }
         }
       });

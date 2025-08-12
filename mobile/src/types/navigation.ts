@@ -54,6 +54,10 @@ export type RootStackParamList = {
     description?: string;
     mealId?: string;
   };
+  MealViewScreen: {
+    mealId?: string;
+    mealGroupId?: string;
+  };
   SearchResults: {
     query?: string;
     mealType?: string;

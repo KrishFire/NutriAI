@@ -20,6 +20,7 @@ export interface AIFoodItem {
   sugar?: number; // grams
   sodium?: number; // milligrams
   ingredients?: AIFoodItem[]; // For hierarchical structure (sandwiches, salads, etc.)
+  isBranded?: boolean; // Flag to indicate if this is a branded restaurant item
 }
 
 export interface AIMealAnalysis {
@@ -246,6 +247,46 @@ class MealAIService {
   }
 
   /**
+   * Refine existing meal with additional context
+   */
+  public async refineMeal(
+    existingFoods: any[],
+    refinementText: string
+  ): Promise<AIMealAnalysis> {
+    // Build context with FULL food details including ingredients
+    const existingFoodsDetails = JSON.stringify(existingFoods, null, 2);
+    
+    // Create a contextual prompt that tells AI to modify existing items
+    const contextualPrompt = `Current meal (with full details):
+${existingFoodsDetails}
+
+User's refinement request: ${refinementText}
+    
+CRITICAL INSTRUCTIONS:
+1. MODIFY/REPLACE existing items based on the refinement - DO NOT create duplicates
+2. If the refinement changes an item (e.g., "shake was blueberry not strawberry"), REPLACE the original item entirely
+3. If adding ingredients to an existing item, update that item with all ingredients
+4. Return the COMPLETE updated meal list with ALL items (both modified and unmodified)
+5. For replacements: Remove the old item and add the corrected one
+
+PRESERVATION RULE:
+For simple substitutions (e.g., "X was Y not Z"), preserve ALL other ingredients, quantities, and nutritional values EXACTLY as they were. Only change the specific item mentioned.
+- If user says "shake was blueberry not strawberry", ONLY replace strawberry with blueberry
+- Keep the same protein scoops, milk type, and all other ingredients unchanged
+- Do NOT add typical ingredients or "improve" the recipe unless explicitly requested
+
+Example: If shake has 2 scoops protein, milk, and strawberries, and user says "shake was blueberry", 
+keep the 2 scoops and milk exactly the same, only swap strawberries for blueberries.`;
+    
+    console.log('[MealAI] Refining meal with full context');
+    
+    // Call the AI with full context
+    const analysis = await this.analyzeMealWithAI(contextualPrompt);
+    
+    return analysis;
+  }
+
+  /**
    * Analyze meal description without saving (for preview)
    */
   public async analyzeMeal(description: string): Promise<AIMealAnalysis> {
@@ -267,19 +308,40 @@ class MealAIService {
   }
 
   /**
-   * Preprocess description to help AI understand multiple items
+   * Preprocess description to help AI understand multiple items and composite foods
    */
   private preprocessDescription(description: string): string {
+    const descLower = description.toLowerCase();
+    
+    // Check for composite foods that need ingredient breakdown
+    const compositeKeywords = [
+      'sandwich', 'burger', 'salad', 'bowl', 'wrap',
+      'burrito', 'taco', 'pizza', 'sub', 'hoagie',
+      'panini', 'quesadilla', 'double double', 'big mac',
+      'whopper', 'baconator'
+    ];
+    
+    const hasComposite = compositeKeywords.some(keyword => 
+      descLower.includes(keyword)
+    );
+    
     // Count "and"s to help AI understand how many items to extract
-    const andMatches = description.toLowerCase().match(/\b(and|&)\b/g);
+    const andMatches = descLower.match(/\b(and|&)\b/g);
     const andCount = andMatches ? andMatches.length : 0;
+    
+    let processedDesc = description;
+    
+    // Add hints for the AI
+    if (hasComposite) {
+      processedDesc += ' (IMPORTANT: Break down all composite foods into their individual ingredients with nutrition values)';
+    }
     
     if (andCount >= 2) {
       // Multiple "and"s detected - add hint for AI
-      return `${description} (Note: This contains ${andCount + 1} separate items)`;
+      processedDesc += ` (Note: This contains ${andCount + 1} separate items)`;
     }
     
-    return description;
+    return processedDesc;
   }
 
   /**
@@ -532,6 +594,7 @@ export function aiMealToMealAnalysis(aiMeal: AIMealAnalysis): any {
           sodium: food.sodium || 0,
         },
         confidence: aiMeal.confidence,
+        isBranded: food.isBranded, // Preserve the branded flag
         // Include ingredients for hierarchical structure
         ingredients: food.ingredients ? food.ingredients.map(ingredient => {
           const cleanedIngredientUnit = cleanUnit(ingredient.unit);

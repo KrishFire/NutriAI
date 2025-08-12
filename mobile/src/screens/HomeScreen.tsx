@@ -504,7 +504,16 @@ export default function HomeScreen() {
                       transition={{ delay: 1300 + index * 100, duration: 400 }}
                       className={index > 0 ? 'mt-3' : ''}
                     >
-                      <MealCard meal={meal} />
+                      <MealCard 
+                        meal={meal} 
+                        onPress={() => {
+                          hapticFeedback.selection();
+                          navigation.navigate('MealViewScreen' as any, {
+                            mealId: meal.id,
+                            mealGroupId: meal.mealGroupId,
+                          });
+                        }}
+                      />
                     </MotiView>
                   ))}
                 </AnimatePresence>

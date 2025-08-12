@@ -1,6 +1,23 @@
 import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  SafeAreaView,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
+  Keyboard,
+} from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ArrowLeft, Type, Send } from 'lucide-react-native';
+import { MotiView } from 'moti';
+import { hapticFeedback } from '../../utils/haptics';
 import { RootStackParamList, AddMealStackParamList } from '../../types/navigation';
-import { useRoute, RouteProp } from '@react-navigation/native';
 import mealAIService, { aiMealToMealAnalysis } from '../../services/mealAI';
 import { useAuth } from '../../hooks/useAuth';
 import { LoadingIndicator } from '../../components/ui/LoadingIndicator';

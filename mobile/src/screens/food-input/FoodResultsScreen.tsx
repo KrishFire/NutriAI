@@ -239,6 +239,17 @@ export default function FoodResultsScreen() {
   const analysisData = rawParams.refinedAnalysisData || rawParams.analysisData;
   const description = rawParams.description;
   
+  // DEBUG: Log received data
+  if (rawParams.refinedAnalysisData) {
+    console.log('🔍 DEBUG [FoodResults] Received REFINED data:', {
+      totalCalories: analysisData?.totalCalories || analysisData?.totalNutrition?.calories,
+      foods: analysisData?.foods?.map((f: any) => ({
+        name: f.name,
+        calories: f.nutrition?.calories || f.calories,
+      })),
+    });
+  }
+  
   // Auto-assigned meal type (not in state since it's not user-selectable)
   const autoMealType = getAutoMealType();
   
@@ -345,9 +356,10 @@ export default function FoodResultsScreen() {
       foods.forEach((food: any, index: number) => {
         const hasIngredients = food.ingredients && food.ingredients.length > 0;
         
-        // Initialize with zero nutrition if has ingredients (will be calculated from ingredients)
-        // Otherwise use the provided nutrition values
-        const initialNutrition = hasIngredients ? 
+        // For branded items with ingredients, use the known nutrition values
+        // For non-branded items with ingredients, start with zero (will be calculated)
+        // For items without ingredients, use the provided values
+        const initialNutrition = (hasIngredients && !food.isBranded) ? 
           { calories: 0, protein: 0, carbs: 0, fat: 0 } :
           {
             calories: Math.round(food.nutrition?.calories || food.calories || 0),
@@ -382,16 +394,21 @@ export default function FoodResultsScreen() {
             isFavorite: false,
           }));
           
-          // Recalculate parent nutrition as sum of ingredients
-          const totalNutrition = foodGroup.ingredients.reduce((acc, ingredient) => ({
-            calories: acc.calories + ingredient.nutrition.calories,
-            protein: acc.protein + ingredient.nutrition.protein,
-            carbs: acc.carbs + ingredient.nutrition.carbs,
-            fat: acc.fat + ingredient.nutrition.fat,
-          }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
-          
-          foodGroup.baseNutrition = totalNutrition;
-          foodGroup.nutrition = totalNutrition;
+          // ONLY recalculate parent nutrition for non-branded items
+          // Branded items should preserve their known nutrition values from the server
+          if (!food.isBranded) {
+            // Recalculate parent nutrition as sum of ingredients
+            const totalNutrition = foodGroup.ingredients.reduce((acc, ingredient) => ({
+              calories: acc.calories + ingredient.nutrition.calories,
+              protein: acc.protein + ingredient.nutrition.protein,
+              carbs: acc.carbs + ingredient.nutrition.carbs,
+              fat: acc.fat + ingredient.nutrition.fat,
+            }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+            
+            foodGroup.baseNutrition = totalNutrition;
+            foodGroup.nutrition = totalNutrition;
+          }
+          // For branded items, keep the original nutrition values
         }
         
         groups.push(foodGroup);
@@ -400,8 +417,24 @@ export default function FoodResultsScreen() {
       // AI returns flat structure - apply intelligent grouping
       const compositeKeywords = ['sandwich', 'salad', 'bowl', 'wrap', 'burger', 'pizza', 'taco', 'burrito'];
       const ingredientKeywords = ['bread', 'bun', 'lettuce', 'tomato', 'cheese', 'mayo', 'mayonnaise', 
-                                  'mustard', 'ketchup', 'onion', 'pickle', 'chicken', 'turkey', 'beef',
+                                  'mustard', 'ketchup', 'onion', 'chicken', 'turkey', 'beef',
                                   'ham', 'bacon', 'avocado', 'dressing', 'sauce', 'tortilla'];
+      // Note: 'pickle' removed - should be treated as standalone unless context indicates otherwise
+      
+      // Context-aware function to determine if item should be an ingredient
+      const shouldBeIngredient = (itemName: string, itemIndex: number, allFoods: any[]) => {
+        const itemNameLower = itemName.toLowerCase();
+        
+        // Special case: pickle can be ingredient or side
+        if (itemNameLower.includes('pickle')) {
+          // If it was added in a later "Add More" flow, treat as standalone
+          // This is a heuristic - items added later are likely separate
+          if (itemIndex > 0) return false;
+        }
+        
+        // Check if it's in the ingredient keywords
+        return ingredientKeywords.some(keyword => itemNameLower.includes(keyword));
+      };
       
       let currentComposite: FoodGroup | null = null;
       let standaloneItems: any[] = [];
@@ -412,8 +445,8 @@ export default function FoodResultsScreen() {
         // Check if this is a composite food
         const isComposite = compositeKeywords.some(keyword => foodNameLower.includes(keyword));
         
-        // Check if this is likely an ingredient
-        const isIngredient = ingredientKeywords.some(keyword => foodNameLower.includes(keyword));
+        // Check if this is likely an ingredient (context-aware)
+        const isIngredient = shouldBeIngredient(food.name, index, foods);
         
         if (isComposite) {
           // Save any pending composite
@@ -523,10 +556,12 @@ export default function FoodResultsScreen() {
         name: group.name,
         quantity: 1,
         unit: 'serving',
-        calories: group.nutrition.calories,
-        protein: group.nutrition.protein,
-        carbs: group.nutrition.carbs,
-        fat: group.nutrition.fat,
+        nutrition: {
+          calories: group.nutrition.calories,
+          protein: group.nutrition.protein,
+          carbs: group.nutrition.carbs,
+          fat: group.nutrition.fat,
+        },
       };
       
       // Add ingredients if it's a parent food
@@ -535,10 +570,12 @@ export default function FoodResultsScreen() {
           name: ingredient.name,
           quantity: 1,
           unit: 'serving',
-          calories: ingredient.nutrition.calories,
-          protein: ingredient.nutrition.protein,
-          carbs: ingredient.nutrition.carbs,
-          fat: ingredient.nutrition.fat,
+          nutrition: {
+            calories: ingredient.nutrition.calories,
+            protein: ingredient.nutrition.protein,
+            carbs: ingredient.nutrition.carbs,
+            fat: ingredient.nutrition.fat,
+          },
         }));
       }
       
