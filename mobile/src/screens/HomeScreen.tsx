@@ -34,6 +34,10 @@ import { TAB_BAR_HEIGHT, fontSize } from '../utils/tokens';
 import { hapticFeedback } from '../utils/haptics';
 import { useLeadingDebounce } from '../hooks/useLeadingDebounce';
 import { useDailyProgress } from '../hooks/useDailyProgress';
+import { useAuth } from '../hooks/useAuth';
+import { deleteMealByGroupId } from '../services/meals';
+import SwipeableRow from '../components/common/SwipeableRow';
+import { useDeletion } from '../contexts/DeletionContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { useHeaderHeight } from '../hooks/useHeaderHeight';
 import { SPACING } from '../constants';
@@ -64,6 +68,8 @@ type HomeScreenNavigationProp = CompositeNavigationProp<
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { data, loading, error, refreshing, refresh } = useDailyProgress();
+  const { user } = useAuth();
+  const { deletionCount, triggerDeletion } = useDeletion();
   const { headerHeight } = useHeaderHeight();
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -75,11 +81,19 @@ export default function HomeScreen() {
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const [showPremiumBanner, setShowPremiumBanner] = useState(false);
+  const [hasAnimatedToday, setHasAnimatedToday] = useState(false);
 
   // Macro colors from theme
   const macroColors = colors.macro;
 
   // Determine if we should show premium banner
+  // Refresh when a deletion happens from another screen
+  useEffect(() => {
+    if (deletionCount > 0) {
+      refresh();
+    }
+  }, [deletionCount]);
+
   useEffect(() => {
     // Show banner to free users occasionally
     const shouldShowForFreeUser = !canAccessPremiumFeatures && plan === 'free' && Math.random() < 0.5;
@@ -90,22 +104,25 @@ export default function HomeScreen() {
     setShowPremiumBanner(shouldShowBanner);
   }, [canAccessPremiumFeatures, plan]);
 
+  // Animate calories and show sparkles when data loads
   useEffect(() => {
-    // Animate calories when data loads
-    if (data && !loading) {
-      // Reduce animation delay
+    if (data && !loading && !hasAnimatedToday) {
+      // Start animation after a short delay
       setTimeout(() => {
         setAnimateCalories(true);
-      }, 200);
+        setHasAnimatedToday(true);
+      }, 300);
 
-      // Show particles when calories reach a milestone
-      if (data.calories.percentage >= 50 && !showParticles) {
+      // Show sparkle celebration when animation completes
+      setTimeout(() => {
+        setShowParticles(true);
+        // Hide particles after they play
         setTimeout(() => {
-          setShowParticles(true);
-        }, 1000);
-      }
+          setShowParticles(false);
+        }, 3000);
+      }, 2300); // Trigger after progress ring animation completes (300ms delay + 2000ms animation)
     }
-  }, [data, loading, showParticles]);
+  }, [data, loading, hasAnimatedToday]);
 
   const handleUpgrade = useLeadingDebounce(() => {
     hapticFeedback.selection();
@@ -362,36 +379,39 @@ export default function HomeScreen() {
                 </View>
 
                 <View className="items-center">
-                  <View className="w-48 h-48 relative mb-16">
-                    <ProgressRing
-                      percentage={displayData.calories.percentage}
-                      color={colors.primary}
-                      size={192}
-                      strokeWidth={12}
-                      animate={animateCalories}
-                      duration={2}
-                    >
-                      <View className="items-center justify-center">
-                        <Text
-                          className="font-bold"
-                          style={{ fontSize: 32, color: '#000000' }}
-                        >
-                          {displayData.calories.consumed}
-                        </Text>
-                        <Text
-                          className="text-gray-500"
-                          style={{ fontSize: 14 }}
-                        >
-                          of {displayData.calories.goal} cal
-                        </Text>
-                      </View>
-                    </ProgressRing>
+                  <View className="relative mb-16" style={{ width: 250, height: 250, alignItems: 'center', justifyContent: 'center' }}>
+                    <View className="absolute inset-0 items-center justify-center">
+                      <ProgressRing
+                        percentage={displayData.calories.percentage}
+                        color={colors.primary}
+                        size={192}
+                        strokeWidth={12}
+                        animate={animateCalories}
+                        duration={2000}
+                      >
+                        <View className="items-center justify-center">
+                          <AnimatedNumber
+                            value={animateCalories ? displayData.calories.consumed : 0}
+                            duration={2000}
+                            formatValue={(val) => Math.round(val).toString()}
+                            className="font-bold"
+                            style={{ fontSize: 32, color: '#000000' }}
+                          />
+                          <Text
+                            className="text-gray-500"
+                            style={{ fontSize: 14 }}
+                          >
+                            of {displayData.calories.goal} cal
+                          </Text>
+                        </View>
+                      </ProgressRing>
+                    </View>
                     {showParticles && (
                       <ParticleEffect
                         type="sparkle"
-                        intensity="medium"
-                        colors={[colors.primary, '#4F46E5', '#818CF8']}
-                        duration={2}
+                        intensity="high"
+                        colors={[colors.primary, '#320DFF', '#6366F1', '#A78BFA']}
+                        duration={2.5}
                       />
                     )}
                   </View>
@@ -421,7 +441,7 @@ export default function HomeScreen() {
                                 size={48}
                                 strokeWidth={4}
                                 animate={animateCalories}
-                                duration={1.5}
+                                duration={1800}
                               >
                                 <Text className="font-semibold text-xs text-gray-800">
                                   {macro.percentage}%
@@ -504,16 +524,34 @@ export default function HomeScreen() {
                       transition={{ delay: 1300 + index * 100, duration: 400 }}
                       className={index > 0 ? 'mt-3' : ''}
                     >
-                      <MealCard 
-                        meal={meal} 
-                        onPress={() => {
-                          hapticFeedback.selection();
-                          navigation.navigate('MealViewScreen' as any, {
-                            mealId: meal.id,
-                            mealGroupId: meal.mealGroupId,
-                          });
+                      <SwipeableRow
+                        disabled={!meal.mealGroupId}
+                        confirmMessage="Delete this meal from today?"
+                        onDelete={async () => {
+                          if (!meal.mealGroupId || !user) {
+                            Alert.alert('Cannot delete', 'Missing meal ID or user.');
+                            return;
+                          }
+                          const res = await deleteMealByGroupId(meal.mealGroupId, user.id);
+                          if (!res.success) {
+                            Alert.alert('Error', res.error || 'Failed to delete meal');
+                          } else {
+                            triggerDeletion(); // Notify HistoryScreen to refresh
+                            await refresh();
+                          }
                         }}
-                      />
+                      >
+                        <MealCard 
+                          meal={meal} 
+                          onPress={() => {
+                            hapticFeedback.selection();
+                            navigation.navigate('MealViewScreen' as any, {
+                              mealId: meal.id,
+                              mealGroupId: meal.mealGroupId,
+                            });
+                          }}
+                        />
+                      </SwipeableRow>
                     </MotiView>
                   ))}
                 </AnimatePresence>

@@ -47,6 +47,7 @@ import MealSavedScreen from '../screens/MealSavedScreen';
 import RefineWithAIScreen from '../screens/RefineWithAIScreen';
 import AddMoreScreen from '../screens/AddMoreScreen';
 import MealViewScreen from '../screens/MealViewScreen';
+import EditMealScreen from '../screens/EditMealScreen';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -365,6 +366,15 @@ function AppStack() {
       <RootStack.Screen
         name="AddMoreScreen"
         component={AddMoreScreen}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          presentation: 'card',
+        }}
+      />
+      <RootStack.Screen
+        name="EditMeal"
+        component={EditMealScreen}
         options={{
           headerShown: false,
           animation: 'slide_from_right',

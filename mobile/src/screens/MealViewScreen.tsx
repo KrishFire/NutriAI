@@ -24,6 +24,7 @@ import {
   ChevronDown, 
   ChevronUp,
   Plus,
+  Edit2,
 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { RootStackParamList } from '../types/navigation';
@@ -32,6 +33,9 @@ import { supabase } from '../config/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import mealAIService from '../services/mealAI';
 import { hapticFeedback } from '../utils/haptics';
+import FoodItemCard from '../components/FoodItemCard';
+import AnimatedDonutChart from '../components/common/AnimatedDonutChart';
+import { useSyncedFavoriting } from '../hooks/useSyncedFavoriting';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -42,6 +46,7 @@ type MealViewScreenRouteProp = RouteProp<RootStackParamList, 'MealViewScreen'>;
 type MealViewScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MealViewScreen'>;
 
 interface FoodItemData {
+  id: string;
   name: string;
   quantity: string;
   calories: number;
@@ -51,6 +56,8 @@ interface FoodItemData {
   fiber?: number;
   sugar?: number;
   sodium?: number;
+  isFavorite: boolean;
+  ingredients?: FoodItemData[]; // Add ingredients support
 }
 
 interface MealData {
@@ -81,6 +88,45 @@ export default function MealViewScreen() {
   const [macroAnimationKey, setMacroAnimationKey] = useState(0);
 
   const { mealId, mealGroupId } = route.params || {};
+  
+  // Use synced favoriting hook for foods
+  const { items: syncedFoods, toggleFavorite } = useSyncedFavoriting<FoodItemData>(
+    mealData?.foods || []
+  );
+  
+  // Update synced foods when mealData changes
+  useEffect(() => {
+    if (mealData?.foods) {
+      // Synced foods are already managed by the hook
+      // The hook will reset when mealData.foods changes
+    }
+  }, [mealData]);
+
+  // Helper function to recursively map food items and their ingredients
+  const mapApiFoodToViewData = (apiItem: any, parentIndex: number, ingredientIndex?: number): FoodItemData => {
+    const id = ingredientIndex !== undefined 
+      ? `food_${parentIndex}_ing_${ingredientIndex}`
+      : `food_${parentIndex}`;
+    
+    const mappedIngredients = (apiItem.ingredients || []).map((ing: any, idx: number) => 
+      mapApiFoodToViewData(ing, parentIndex, idx)
+    );
+    
+    return {
+      id,
+      name: apiItem.name,
+      quantity: apiItem.quantity || '',
+      calories: apiItem.nutrition?.calories || apiItem.calories || 0,
+      protein: apiItem.nutrition?.protein || apiItem.protein || 0,
+      carbs: apiItem.nutrition?.carbs || apiItem.carbs || 0,
+      fat: apiItem.nutrition?.fat || apiItem.fat || 0,
+      fiber: apiItem.nutrition?.fiber || apiItem.fiber,
+      sugar: apiItem.nutrition?.sugar || apiItem.sugar,
+      sodium: apiItem.nutrition?.sodium || apiItem.sodium,
+      isFavorite: false, // Default to not favorite
+      ingredients: mappedIngredients,
+    };
+  };
 
   useEffect(() => {
     loadMealData();
@@ -135,17 +181,7 @@ export default function MealViewScreen() {
           totalProtein: mealAnalysis.totalNutrition?.protein || 0,
           totalCarbs: mealAnalysis.totalNutrition?.carbs || 0,
           totalFat: mealAnalysis.totalNutrition?.fat || 0,
-          foods: mealAnalysis.foods?.map((food: any) => ({
-            name: food.name,
-            quantity: food.quantity,
-            calories: food.nutrition?.calories || 0,
-            protein: food.nutrition?.protein || 0,
-            carbs: food.nutrition?.carbs || 0,
-            fat: food.nutrition?.fat || 0,
-            fiber: food.nutrition?.fiber,
-            sugar: food.nutrition?.sugar,
-            sodium: food.nutrition?.sodium,
-          })) || [],
+          foods: mealAnalysis.foods?.map((food, index) => mapApiFoodToViewData(food, index)) || [],
           imageUrl: result.imageUrl,
           notes: mealAnalysis.notes,
           title: mealAnalysis.title || mealAnalysis.mealTitle, // Try to get meal title
@@ -289,6 +325,40 @@ export default function MealViewScreen() {
     return 0;
   };
 
+
+  const getMacroChartData = () => {
+    if (!mealData) return [];
+    
+    const totalGrams = mealData.totalCarbs + mealData.totalProtein + mealData.totalFat;
+    
+    if (totalGrams === 0) {
+      return [
+        { key: 'carbs', value: 0, color: '#FFC078' },
+        { key: 'protein', value: 0, color: '#74C0FC' },
+        { key: 'fat', value: 0, color: '#8CE99A' },
+      ];
+    }
+    
+    // Calculate percentages based on gram weight
+    return [
+      { 
+        key: 'carbs', 
+        value: (mealData.totalCarbs / totalGrams) * 100, 
+        color: '#FFC078' 
+      },
+      { 
+        key: 'protein', 
+        value: (mealData.totalProtein / totalGrams) * 100, 
+        color: '#74C0FC' 
+      },
+      { 
+        key: 'fat', 
+        value: (mealData.totalFat / totalGrams) * 100, 
+        color: '#8CE99A' 
+      },
+    ];
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -388,101 +458,62 @@ export default function MealViewScreen() {
         <View style={styles.contentContainer}>
           {/* Calories Card */}
           <View style={styles.caloriesCard}>
-            <Text style={styles.caloriesValue}>{mealData.totalCalories}</Text>
-            <Text style={styles.caloriesLabel}>calories</Text>
-            <Text style={styles.totalLabel}>Total calories</Text>
+            <View style={styles.caloriesMain}>
+              <View style={styles.caloriesLeft}>
+                <Text style={styles.caloriesValue}>{mealData.totalCalories}</Text>
+                <Text style={styles.caloriesLabel}>calories</Text>
+                <Text style={styles.totalLabel}>Total calories</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => {
+                  hapticFeedback.selection();
+                  const targetId = mealGroupId || mealId;
+                  if (targetId) {
+                    navigation.navigate('EditMeal', { 
+                      mealId: targetId,
+                      meal: { mealGroupId: targetId }
+                    });
+                  }
+                }}
+              >
+                <Edit2 size={16} color="#320DFF" />
+                <Text style={styles.editButtonText}>Edit Meal</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Macronutrients */}
           <View style={styles.macrosCard}>
             <Text style={styles.sectionTitle}>Macronutrients</Text>
             
-            <View style={styles.macrosList}>
-              {/* Carbs */}
-              <View style={styles.macroItem}>
-                <View style={styles.macroHeader}>
-                  <View style={styles.macroLabelContainer}>
-                    <View style={[styles.macroDot, { backgroundColor: '#FFC078' }]} />
-                    <Text style={styles.macroName}>Carbs</Text>
-                  </View>
-                  <Text style={styles.macroValue}>{mealData.totalCarbs}g</Text>
-                </View>
-                <View style={styles.macroBarContainer}>
-                  <MotiView
-                    key={`carbs-${macroAnimationKey}`}
-                    from={{ width: '0%' }}
-                    animate={{ 
-                      width: `${calculateMacroPercentage(mealData.totalCarbs, mealData.totalCalories)}%`
-                    }}
-                    transition={{
-                      type: 'timing',
-                      duration: 800,
-                      delay: 0,
-                    }}
-                    style={[
-                      styles.macroBar,
-                      { backgroundColor: '#FFC078' }
-                    ]} 
-                  />
-                </View>
+            {/* Animated Donut Chart */}
+            <View style={styles.chartContainer}>
+              <AnimatedDonutChart
+                size={160}
+                strokeWidth={24}
+                data={getMacroChartData()}
+                animationDuration={800}
+                delayBetweenSegments={100}
+              />
+            </View>
+            
+            {/* Macro Legend */}
+            <View style={styles.macroLegend}>
+              <View style={styles.macroLegendItem}>
+                <View style={[styles.macroColorDot, { backgroundColor: '#FFC078' }]} />
+                <Text style={styles.macroLegendLabel}>Carbs</Text>
+                <Text style={styles.macroLegendValue}>{mealData.totalCarbs}g</Text>
               </View>
-
-              {/* Protein */}
-              <View style={styles.macroItem}>
-                <View style={styles.macroHeader}>
-                  <View style={styles.macroLabelContainer}>
-                    <View style={[styles.macroDot, { backgroundColor: '#74C0FC' }]} />
-                    <Text style={styles.macroName}>Protein</Text>
-                  </View>
-                  <Text style={styles.macroValue}>{mealData.totalProtein}g</Text>
-                </View>
-                <View style={styles.macroBarContainer}>
-                  <MotiView
-                    key={`protein-${macroAnimationKey}`}
-                    from={{ width: '0%' }}
-                    animate={{ 
-                      width: `${calculateMacroPercentage(mealData.totalProtein, mealData.totalCalories)}%`
-                    }}
-                    transition={{
-                      type: 'timing',
-                      duration: 800,
-                      delay: 100,
-                    }}
-                    style={[
-                      styles.macroBar,
-                      { backgroundColor: '#74C0FC' }
-                    ]} 
-                  />
-                </View>
+              <View style={styles.macroLegendItem}>
+                <View style={[styles.macroColorDot, { backgroundColor: '#74C0FC' }]} />
+                <Text style={styles.macroLegendLabel}>Protein</Text>
+                <Text style={styles.macroLegendValue}>{mealData.totalProtein}g</Text>
               </View>
-
-              {/* Fat */}
-              <View style={styles.macroItem}>
-                <View style={styles.macroHeader}>
-                  <View style={styles.macroLabelContainer}>
-                    <View style={[styles.macroDot, { backgroundColor: '#8CE99A' }]} />
-                    <Text style={styles.macroName}>Fat</Text>
-                  </View>
-                  <Text style={styles.macroValue}>{mealData.totalFat}g</Text>
-                </View>
-                <View style={styles.macroBarContainer}>
-                  <MotiView
-                    key={`fat-${macroAnimationKey}`}
-                    from={{ width: '0%' }}
-                    animate={{ 
-                      width: `${calculateMacroPercentage(mealData.totalFat, mealData.totalCalories)}%`
-                    }}
-                    transition={{
-                      type: 'timing',
-                      duration: 800,
-                      delay: 200,
-                    }}
-                    style={[
-                      styles.macroBar,
-                      { backgroundColor: '#8CE99A' }
-                    ]} 
-                  />
-                </View>
+              <View style={styles.macroLegendItem}>
+                <View style={[styles.macroColorDot, { backgroundColor: '#8CE99A' }]} />
+                <Text style={styles.macroLegendLabel}>Fat</Text>
+                <Text style={styles.macroLegendValue}>{mealData.totalFat}g</Text>
               </View>
             </View>
           </View>
@@ -490,82 +521,51 @@ export default function MealViewScreen() {
           {/* Food Items */}
           <View style={styles.foodItemsSection}>
             <Text style={styles.sectionTitle}>Food Items</Text>
-            {mealData.foods.map((food, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.foodItem}
-                onPress={() => toggleFoodItem(index)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.foodItemMain}>
-                  <View style={styles.foodItemLeft}>
-                    <Text style={styles.foodName}>{food.name}</Text>
-                    {!expandedItems.has(index) && (
-                      <View style={styles.foodItemMacros}>
-                        <Text style={styles.foodMacroText}>P: {food.protein}g</Text>
-                        <Text style={styles.foodMacroText}>C: {food.carbs}g</Text>
-                        <Text style={styles.foodMacroText}>F: {food.fat}g</Text>
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.foodItemRight}>
-                    <Text style={styles.foodCalories}>{food.calories} cal</Text>
-                    <TouchableOpacity
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        hapticFeedback.selection();
-                        // TODO: Toggle favorite for individual food item
-                      }}
-                    >
-                      <Heart size={20} color="#6B7280" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                
-                {expandedItems.has(index) && (
-                  <MotiView
-                    from={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    transition={{ type: 'timing', duration: 300 }}
-                  >
-                    <View style={styles.foodItemExpanded}>
-                      <View style={styles.nutritionGrid}>
-                        <View style={styles.nutritionItem}>
-                          <Text style={styles.nutritionLabel}>Protein:</Text>
-                          <Text style={styles.nutritionValue}>{food.protein}g</Text>
-                        </View>
-                        <View style={styles.nutritionItem}>
-                          <Text style={styles.nutritionLabel}>Carbs:</Text>
-                          <Text style={styles.nutritionValue}>{food.carbs}g</Text>
-                        </View>
-                        <View style={styles.nutritionItem}>
-                          <Text style={styles.nutritionLabel}>Fat:</Text>
-                          <Text style={styles.nutritionValue}>{food.fat}g</Text>
-                        </View>
-                        {food.fiber !== undefined && (
-                          <View style={styles.nutritionItem}>
-                            <Text style={styles.nutritionLabel}>Fiber:</Text>
-                            <Text style={styles.nutritionValue}>{food.fiber}g</Text>
-                          </View>
-                        )}
-                        {food.sugar !== undefined && (
-                          <View style={styles.nutritionItem}>
-                            <Text style={styles.nutritionLabel}>Sugar:</Text>
-                            <Text style={styles.nutritionValue}>{food.sugar}g</Text>
-                          </View>
-                        )}
-                        {food.sodium !== undefined && (
-                          <View style={styles.nutritionItem}>
-                            <Text style={styles.nutritionLabel}>Sodium:</Text>
-                            <Text style={styles.nutritionValue}>{food.sodium}mg</Text>
-                          </View>
-                        )}
-                      </View>
-                      <Text style={styles.foodQuantity}>{food.quantity}</Text>
-                    </View>
-                  </MotiView>
-                )}
-              </TouchableOpacity>
+            {syncedFoods.map((food, index) => (
+              <FoodItemCard
+                key={food.id}
+                item={{
+                  id: food.id,
+                  name: food.name,
+                  nutrition: {
+                    calories: food.calories,
+                    protein: food.protein,
+                    carbs: food.carbs,
+                    fat: food.fat,
+                    fiber: food.fiber,
+                    sugar: food.sugar,
+                    sodium: food.sodium,
+                  },
+                  isFavorite: food.isFavorite,
+                  isParent: food.ingredients && food.ingredients.length > 0,
+                  expanded: expandedItems.has(index),
+                  ingredients: (food.ingredients || []).map((ing) => ({
+                    id: ing.id,
+                    name: ing.name,
+                    quantity: ing.quantity || '',
+                    nutrition: {
+                      calories: ing.calories || 0,
+                      protein: ing.protein || 0,
+                      carbs: ing.carbs || 0,
+                      fat: ing.fat || 0,
+                      fiber: ing.fiber,
+                      sugar: ing.sugar,
+                      sodium: ing.sodium,
+                    },
+                    isFavorite: ing.isFavorite,
+                  })),
+                  quantity: food.quantity,
+                }}
+                index={index}
+                onToggleExpanded={() => toggleFoodItem(index)}
+                onToggleFavorite={(groupId: string, itemId?: string) => {
+                  hapticFeedback.selection();
+                  // Toggle favorite using the synced hook
+                  toggleFavorite(groupId, itemId);
+                }}
+                showExpandable={true}
+                showQuantity={true}
+              />
             ))}
           </View>
 
@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   headerContainer: {
-    height: 200,
+    height: 280,
     position: 'relative',
   },
   headerImage: {
@@ -687,12 +687,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     left: 20,
+    right: 20,
+    maxHeight: 120,
   },
   mealTitle: {
     fontSize: 32,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 4,
+    flexWrap: 'wrap',
+    lineHeight: 38,
   },
   mealTimeRow: {
     flexDirection: 'row',
@@ -721,9 +725,34 @@ const styles = StyleSheet.create({
     marginTop: 20,
     borderRadius: 16,
     padding: 24,
-    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#F3F4F6',
+  },
+  caloriesMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  caloriesLeft: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  editButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#320DFF',
   },
   caloriesValue: {
     fontSize: 48,
@@ -755,48 +784,33 @@ const styles = StyleSheet.create({
     color: '#111827',
     marginBottom: 20,
   },
-  macrosList: {
-    gap: 16,
+  chartContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
   },
-  macroItem: {
-    gap: 8,
+  macroLegend: {
+    marginTop: 8,
   },
-  macroHeader: {
+  macroLegendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  macroLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+  macroColorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
   },
-  macroDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  macroName: {
-    flex: 1,
-    fontSize: 14,
+  macroLegendLabel: {
+    fontSize: 15,
     color: '#6B7280',
+    flex: 1,
   },
-  macroBarContainer: {
-    height: 8,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  macroBar: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  macroValue: {
-    fontSize: 14,
+  macroLegendValue: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#111827',
-    textAlign: 'right',
   },
   foodItemsSection: {
     marginHorizontal: 16,

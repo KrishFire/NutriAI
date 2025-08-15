@@ -15,6 +15,8 @@ import * as Haptics from 'expo-haptics';
 import { Berry } from '../../components/ui/Berry';
 import { RootStackParamList } from '../../types/navigation';
 import mealAIService, { aiMealToMealAnalysis } from '../../services/mealAI';
+import { appendFoodsToMeal } from '../../services/meals';
+import { analyzeMealImage } from '../../services/openai';
 import { useAuth } from '../../hooks/useAuth';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -76,6 +78,8 @@ interface RouteParams {
   existingMealData?: any;
   description?: string;
   mealId?: string;
+  isEditMode?: boolean;
+  mealGroupId?: string;
 }
 
 export default function AnalyzingScreen() {
@@ -90,7 +94,9 @@ export default function AnalyzingScreen() {
     returnToAddMore,
     existingMealData,
     description: existingDescription,
-    mealId
+    mealId,
+    isEditMode,
+    mealGroupId
   } = route.params as RouteParams;
   
   const [progress, setProgress] = useState(0);
@@ -164,13 +170,28 @@ export default function AnalyzingScreen() {
           // Handle camera input
           console.log('[AnalyzingScreen] Processing camera input');
           
-          result = {
-            analysisData: route.params.analysisData,
-            description: route.params.description || 'Photo-based meal analysis',
-            mealType,
-            imageUri,
-            uploadedImageUrl,
-          };
+          // Check if analysis data was already provided (from barcode scanner)
+          if (route.params.analysisData) {
+            result = {
+              analysisData: route.params.analysisData,
+              description: route.params.description || 'Photo-based meal analysis',
+              mealType,
+              imageUri,
+              uploadedImageUrl,
+            };
+          } else {
+            // Need to analyze the image
+            console.log('[AnalyzingScreen] Analyzing image with AI');
+            const analysisData = await analyzeMealImage(imageUri);
+            
+            result = {
+              analysisData,
+              description: route.params.description || 'Photo-based meal analysis',
+              mealType,
+              imageUri,
+              uploadedImageUrl,
+            };
+          }
         } else {
           throw new Error(`Input type ${inputType} not yet implemented`);
         }
@@ -178,6 +199,31 @@ export default function AnalyzingScreen() {
         if (isMountedRef.current) {
           setAnalysisResult(result);
           setApiComplete(true);
+          
+          // For edit mode, navigate back immediately after analysis
+          if (isEditMode && mealGroupId && user) {
+            console.log('[AnalyzingScreen] Edit mode: navigating back immediately');
+            // Small delay to ensure the append operation can start
+            setTimeout(async () => {
+              try {
+                const appendResult = await appendFoodsToMeal(
+                  mealGroupId,
+                  user.id,
+                  result.analysisData.foods || []
+                );
+                
+                if (appendResult.success) {
+                  // Navigate directly to EditMeal instead of goBack
+                  navigation.navigate('EditMeal' as any, { 
+                    mealId: mealGroupId,
+                    meal: { mealGroupId }
+                  });
+                }
+              } catch (err) {
+                console.error('[AnalyzingScreen] Error appending foods:', err);
+              }
+            }, 500);
+          }
         }
       } catch (err) {
         console.error('[AnalyzingScreen] Analysis error:', err);
@@ -240,8 +286,12 @@ export default function AnalyzingScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
       // Use InteractionManager for smooth transition
-      InteractionManager.runAfterInteractions(() => {
+      InteractionManager.runAfterInteractions(async () => {
         if (isMountedRef.current) {
+          // Skip navigation for edit mode - already handled in Effect 1
+          if (isEditMode && mealGroupId && user) {
+            return;
+          }
           // Handle "Add More" flow - merge new items with existing meal
           if (returnToAddMore && existingMealData) {
             console.log('[AnalyzingScreen] Merging with existing meal data');
@@ -261,6 +311,8 @@ export default function AnalyzingScreen() {
                     analysisData: mergedData,
                     description: combineDescriptions(existingDescription, analysisResult.description),
                     mealId,
+                    isEditMode,
+                    mealGroupId,
                   },
                 },
               ],
@@ -274,7 +326,11 @@ export default function AnalyzingScreen() {
                 { name: 'Main' as any }, // Keep Main in stack so back button works
                 {
                   name: 'FoodResultsScreen' as any,
-                  params: analysisResult,
+                  params: {
+                    ...analysisResult,
+                    isEditMode,
+                    mealGroupId,
+                  },
                 },
               ],
             });

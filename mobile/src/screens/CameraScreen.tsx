@@ -49,8 +49,16 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
   // State for text input in simplified workflow
   const [textDescription, setTextDescription] = useState('');
 
-  // Check if we're in add mode
-  const { addToMeal, returnToAddMore, existingMealData, description, mealId } = route.params || {};
+  // Check if we're in add mode or edit mode
+  const { 
+    addToMeal, 
+    returnToAddMore, 
+    existingMealData, 
+    description, 
+    mealId,
+    isEditMode,
+    mealGroupId 
+  } = route.params || {};
 
   // Bottom sheet snap points
   const snapPoints = useMemo(() => ['25%', '50%'], []);
@@ -224,7 +232,16 @@ export default function CameraScreen({ navigation, route }: CameraScreenProps) {
       }
 
       // Navigate to AnalyzingScreen with proper parameters
-      if (returnToAddMore) {
+      if (isEditMode && mealGroupId) {
+        // Edit mode from EditMealScreen: Navigate to AnalyzingScreen with edit params
+        navigation.navigate('AnalyzingScreen', {
+          imageUri: capturedImage,
+          uploadedImageUrl,
+          description: textDescription.trim() || 'Photo-based meal analysis',
+          isEditMode: true,
+          mealGroupId,
+        });
+      } else if (returnToAddMore) {
         // Add More flow: Navigate to AnalyzingScreen with returnToAddMore flag
         navigation.navigate('AnalyzingScreen', {
           imageUri: capturedImage,

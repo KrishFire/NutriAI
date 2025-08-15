@@ -39,6 +39,84 @@ export interface DailyLog {
 /**
  * Get or create daily log for a user on a specific date
  */
+/**
+ * Helper function to convert FoodItem to flat format for correction_history storage
+ * This ensures ingredients have flat macro structure that the loader expects
+ */
+/**
+ * Parse a quantity string like "2 slices" into number and unit parts
+ * Handles formats: "2", "2 servings", "2 slices", "1.5 cups", bare "serving"
+ */
+function parseQuantityString(q: string): { quantity: number; unit: string } {
+  if (!q) return { quantity: 1, unit: 'serving' };
+  
+  // Handle bare "serving" or "servings"
+  if (q.toLowerCase() === 'serving' || q.toLowerCase() === 'servings') {
+    return { quantity: 1, unit: 'serving' };
+  }
+  
+  // Try to match number at start
+  const match = q.match(/^([0-9.]+)\s*(.*)$/);
+  if (match) {
+    const quantity = parseFloat(match[1]) || 1;
+    let unit = match[2].trim() || 'serving';
+    
+    // Normalize common units
+    if (unit === '') unit = 'serving';
+    if (unit === 'servings') unit = 'serving';
+    
+    return { quantity, unit };
+  }
+  
+  // No number found, treat as unit only
+  return { quantity: 1, unit: q };
+}
+
+function toFlatFoodForHistory(food: any, title?: string) {
+  // Parse quantity string like "1 serving" → {quantity: 1, unit: "serving"}
+  const parseQuantity = (qty: string | undefined) => {
+    if (!qty) return { number: 1, unit: 'serving' };
+    const match = qty.match(/^([\d.]+)\s*(.*)$/);
+    return {
+      number: match ? parseFloat(match[1]) : 1,
+      unit: match?.[2] || 'serving'
+    };
+  };
+  
+  const { number: qtyNum, unit: qtyUnit } = parseQuantity(food.quantity);
+  
+  return {
+    name: food.name,
+    quantity: qtyNum,
+    unit: qtyUnit,
+    // Flatten nutrition to top level
+    calories: food.nutrition?.calories ?? food.calories ?? 0,
+    protein: food.nutrition?.protein ?? food.protein ?? 0,
+    carbs: food.nutrition?.carbs ?? food.carbs ?? 0,
+    fat: food.nutrition?.fat ?? food.fat ?? 0,
+    fiber: food.nutrition?.fiber ?? food.fiber ?? 0,
+    sugar: food.nutrition?.sugar ?? food.sugar ?? 0,
+    sodium: food.nutrition?.sodium ?? food.sodium ?? 0,
+    title: title || 'Meal',
+    ingredients: (food.ingredients || []).map((ing: any) => {
+      const { number: iNum, unit: iUnit } = parseQuantity(ing.quantity);
+      return {
+        name: ing.name,
+        quantity: iNum,
+        unit: iUnit,
+        // Flatten ingredient nutrition too
+        calories: ing.nutrition?.calories ?? ing.calories ?? 0,
+        protein: ing.nutrition?.protein ?? ing.protein ?? 0,
+        carbs: ing.nutrition?.carbs ?? ing.carbs ?? 0,
+        fat: ing.nutrition?.fat ?? ing.fat ?? 0,
+        fiber: ing.nutrition?.fiber ?? ing.fiber ?? 0,
+        sugar: ing.nutrition?.sugar ?? ing.sugar ?? 0,
+        sodium: ing.nutrition?.sodium ?? ing.sodium ?? 0,
+      };
+    }),
+  };
+}
+
 export async function getOrCreateDailyLog(
   userId: string,
   date: Date
@@ -133,8 +211,8 @@ export async function saveMealAnalysis(
         daily_log_id: dailyLog.id!,
         food_item_id: foodItem.id,
         meal_type: mealType,
-        quantity: 1,
-        unit: food.quantity,
+        quantity: parseQuantityString(food.quantity).quantity,
+        unit: parseQuantityString(food.quantity).unit,
         calories: food.nutrition.calories,
         protein: food.nutrition.protein,
         carbs: food.nutrition.carbs,
@@ -334,25 +412,62 @@ export async function updateExistingMeal(
       `${date}T${new Date().toTimeString().slice(0, 8)}`
     ).toISOString();
 
-    // Prepare meal entries
-    const mealEntries: Partial<MealEntry>[] = analysis.foods.map(food => ({
-      user_id: userId,
-      meal_type: mealType,
-      logged_at: loggedAt,
-      food_name: food.name,
-      quantity: 1, // Convert to number, assuming quantity 1 for grouped entries
-      unit: food.quantity, // Store original quantity string in unit field
-      calories: Math.round(food.nutrition.calories || 0),
-      protein: Math.round(food.nutrition.protein || 0),
-      carbs: Math.round(food.nutrition.carbs || 0),
-      fat: Math.round(food.nutrition.fat || 0),
-      fiber: food.nutrition.fiber ? Math.round(food.nutrition.fiber) : null,
-      sugar: food.nutrition.sugar ? Math.round(food.nutrition.sugar) : null,
-      sodium: food.nutrition.sodium ? Math.round(food.nutrition.sodium) : null,
-      image_url: imageUrl,
-      notes: notes,
-      meal_group_id: mealGroupId,
-    }));
+    // Get or create daily log for this date
+    const { data: dailyLog } = await supabase
+      .from('daily_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', date)
+      .single();
+
+    const dailyLogId = dailyLog?.id;
+
+    // Prepare meal entries following the working pattern
+    const mealEntries: Omit<MealEntry, 'id' | 'created_at' | 'updated_at'>[] = [];
+
+    for (const food of analysis.foods) {
+      // First, check if food item exists or create it
+      const { data: foodItem, error: foodError } = await supabase
+        .from('food_items')
+        .upsert({
+          name: food.name,
+          serving_size: 1,
+          serving_unit: food.quantity || 'serving',
+          calories: food.nutrition?.calories || 0,
+          protein: food.nutrition?.protein || 0,
+          carbs: food.nutrition?.carbs || 0,
+          fat: food.nutrition?.fat || 0,
+          fiber: food.nutrition?.fiber || 0,
+          sugar: food.nutrition?.sugar || 0,
+          sodium: food.nutrition?.sodium || 0,
+          verified: false,
+        })
+        .select()
+        .single();
+
+      if (foodError) {
+        console.error('Error creating food item:', foodError);
+        continue;
+      }
+
+      // Create meal entry matching working pattern
+      mealEntries.push({
+        user_id: userId,
+        daily_log_id: dailyLogId,
+        food_item_id: foodItem.id,
+        meal_type: mealType,
+        meal_group_id: mealGroupId,
+        quantity: parseQuantityString(food.quantity || 'serving').quantity,
+        unit: parseQuantityString(food.quantity || 'serving').unit,
+        calories: Math.round(food.nutrition?.calories || 0),
+        protein: Math.round(food.nutrition?.protein || 0),
+        carbs: Math.round(food.nutrition?.carbs || 0),
+        fat: Math.round(food.nutrition?.fat || 0),
+        image_url: imageUrl,
+        notes: notes,
+        logged_at: loggedAt,
+      });
+    }
 
     // Insert new meal entries
     const { error: insertError } = await supabase
@@ -410,6 +525,305 @@ export async function updateExistingMeal(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update meal',
+    };
+  }
+}
+
+/**
+ * Update an existing meal by meal_group_id (UUID)
+ * Used when updating from EditMealScreen where we have the actual group ID
+ */
+export async function updateMealByGroupId(
+  mealGroupId: string,
+  userId: string,
+  analysis: MealAnalysis,
+  imageUrl?: string,
+  notes?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Validate UUID format
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(mealGroupId)) {
+      return { success: false, error: 'Invalid meal group ID format' };
+    }
+
+    // 1. Get existing meal entries to extract metadata
+    const { data: existingEntries, error: fetchError } = await supabase
+      .from('meal_entries')
+      .select('*')
+      .eq('meal_group_id', mealGroupId)
+      .eq('user_id', userId);
+
+    if (fetchError) {
+      throw new Error(`Failed to fetch existing entries: ${fetchError.message}`);
+    }
+
+    if (!existingEntries || existingEntries.length === 0) {
+      return { success: false, error: 'Meal not found' };
+    }
+
+    // Extract metadata from first entry
+    const firstEntry = existingEntries[0];
+    const mealType = firstEntry.meal_type;
+    const loggedAt = firstEntry.logged_at;
+    const date = loggedAt.split('T')[0];
+
+    // 2. Delete existing meal entries for this group
+    const { error: deleteError } = await supabase
+      .from('meal_entries')
+      .delete()
+      .eq('meal_group_id', mealGroupId)
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      throw new Error(`Failed to delete existing entries: ${deleteError.message}`);
+    }
+
+    // 3. Create new entries with updated data
+    // First need to get or create daily_log
+    // date is already declared above from loggedAt.split('T')[0]
+    const { data: dailyLog } = await supabase
+      .from('daily_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', date)
+      .single();
+
+    const dailyLogId = dailyLog?.id || firstEntry.daily_log_id;
+
+    // Create entries following the working pattern from logMeal
+    const mealEntries: Omit<MealEntry, 'id' | 'created_at' | 'updated_at'>[] = [];
+
+    for (const food of analysis.foods) {
+      // First, check if food item exists or create it
+      const { data: foodItem, error: foodError } = await supabase
+        .from('food_items')
+        .upsert({
+          name: food.name,
+          serving_size: 1,
+          serving_unit: food.quantity || 'serving',
+          calories: food.nutrition?.calories || food.calories || 0,
+          protein: food.nutrition?.protein || food.protein || 0,
+          carbs: food.nutrition?.carbs || food.carbs || 0,
+          fat: food.nutrition?.fat || food.fat || 0,
+          fiber: food.nutrition?.fiber || food.fiber || 0,
+          sugar: food.nutrition?.sugar || food.sugar || 0,
+          sodium: food.nutrition?.sodium || food.sodium || 0,
+          verified: false,
+        })
+        .select()
+        .single();
+
+      if (foodError) {
+        console.error('Error creating food item:', foodError);
+        continue;
+      }
+
+      // Create meal entry matching working pattern with correction_history
+      mealEntries.push({
+        user_id: userId,
+        daily_log_id: dailyLogId,
+        food_item_id: foodItem.id,
+        meal_type: mealType,
+        meal_group_id: mealGroupId, // Keep the same group ID
+        quantity: parseQuantityString(food.quantity || 'serving').quantity,
+        unit: parseQuantityString(food.quantity || 'serving').unit,
+        calories: Math.round(food.nutrition?.calories || food.calories || 0),
+        protein: Math.round(food.nutrition?.protein || food.protein || 0),
+        carbs: Math.round(food.nutrition?.carbs || food.carbs || 0),
+        fat: Math.round(food.nutrition?.fat || food.fat || 0),
+        image_url: imageUrl || firstEntry.image_url, // Keep existing image if not provided
+        notes: `${analysis.title || 'Meal'} - ${notes || 'AI-powered analysis'}`,
+        logged_at: loggedAt,
+        correction_history: [
+          {
+            role: 'assistant',
+            content: JSON.stringify(toFlatFoodForHistory(food, analysis.title)),
+          },
+        ],
+      });
+    }
+
+    // Insert new meal entries
+    const { error: insertError } = await supabase
+      .from('meal_entries')
+      .insert(mealEntries);
+
+    if (insertError) {
+      throw new Error(`Failed to insert updated entries: ${insertError.message}`);
+    }
+
+    // 4. Recalculate and update daily totals
+    const { data: allMealsToday } = await supabase
+      .from('meal_entries')
+      .select('calories, protein, carbs, fat')
+      .eq('user_id', userId)
+      .gte('logged_at', `${date}T00:00:00`)
+      .lte('logged_at', `${date}T23:59:59`);
+
+    if (allMealsToday && allMealsToday.length > 0) {
+      const dailyTotals = allMealsToday.reduce(
+        (acc, meal) => ({
+          total_calories: acc.total_calories + (meal.calories || 0),
+          total_protein: acc.total_protein + (meal.protein || 0),
+          total_carbs: acc.total_carbs + (meal.carbs || 0),
+          total_fat: acc.total_fat + (meal.fat || 0),
+        }),
+        { total_calories: 0, total_protein: 0, total_carbs: 0, total_fat: 0 }
+      );
+
+      // Update or create daily log
+      const { error: dailyLogError } = await supabase.from('daily_logs').upsert(
+        {
+          user_id: userId,
+          date: date,
+          ...dailyTotals,
+        },
+        {
+          onConflict: 'user_id,date',
+        }
+      );
+
+      if (dailyLogError) {
+        console.error('Error updating daily log:', dailyLogError);
+      }
+    }
+
+    console.log(
+      `[updateMealByGroupId] Successfully updated meal ${mealGroupId}`
+    );
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating meal by group ID:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update meal',
+    };
+  }
+}
+
+/**
+ * Append new foods to an existing meal
+ * Used when adding more food items from EditMealScreen
+ */
+export async function appendFoodsToMeal(
+  mealGroupId: string,
+  userId: string,
+  newFoods: MealAnalysis['foods']
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // 1. Get existing meal entries to determine meal type and date
+    const { data: existingEntries, error: fetchError } = await supabase
+      .from('meal_entries')
+      .select('*')
+      .eq('meal_group_id', mealGroupId)
+      .eq('user_id', userId);
+
+    if (fetchError) {
+      return { success: false, error: `Failed to fetch existing meal: ${fetchError.message}` };
+    }
+
+    if (!existingEntries || existingEntries.length === 0) {
+      return { success: false, error: 'Meal not found' };
+    }
+
+    // Extract meal metadata from first entry
+    const firstEntry = existingEntries[0];
+    const mealType = firstEntry.meal_type;
+    const loggedAt = firstEntry.logged_at;
+    const dailyLogId = firstEntry.daily_log_id;
+
+    // 2. Prepare new meal entries with the same group ID
+    const newMealEntries: Omit<MealEntry, 'id' | 'created_at' | 'updated_at'>[] = [];
+
+    for (const food of newFoods) {
+      // Check if food item exists or create it
+      const { data: foodItem, error: foodError } = await supabase
+        .from('food_items')
+        .upsert({
+          name: food.name,
+          serving_size: 1,
+          serving_unit: food.quantity || 'serving',
+          calories: food.nutrition?.calories || food.calories || 0,
+          protein: food.nutrition?.protein || food.protein || 0,
+          carbs: food.nutrition?.carbs || food.carbs || 0,
+          fat: food.nutrition?.fat || food.fat || 0,
+          fiber: food.nutrition?.fiber || food.fiber || 0,
+          sugar: food.nutrition?.sugar || food.sugar || 0,
+          sodium: food.nutrition?.sodium || food.sodium || 0,
+          verified: false,
+        })
+        .select()
+        .single();
+
+      if (foodError) {
+        console.error('Error creating food item:', foodError);
+        continue;
+      }
+
+      // Create new meal entry with same group ID
+      newMealEntries.push({
+        user_id: userId,
+        daily_log_id: dailyLogId,
+        food_item_id: foodItem.id,
+        meal_type: mealType,
+        meal_group_id: mealGroupId, // Use same group ID
+        quantity: parseQuantityString(food.quantity || 'serving').quantity,
+        unit: parseQuantityString(food.quantity || 'serving').unit,
+        calories: food.nutrition?.calories || food.calories || 0,
+        protein: food.nutrition?.protein || food.protein || 0,
+        carbs: food.nutrition?.carbs || food.carbs || 0,
+        fat: food.nutrition?.fat || food.fat || 0,
+        // Note: fiber, sugar, sodium are not tracked in the meal_entries table
+        logged_at: loggedAt, // Keep original logged_at time
+      });
+    }
+
+    // 3. Insert the new meal entries
+    const { error: insertError } = await supabase
+      .from('meal_entries')
+      .insert(newMealEntries);
+
+    if (insertError) {
+      return { success: false, error: `Failed to add foods: ${insertError.message}` };
+    }
+
+    // 4. Update daily log totals (calculate total nutrition from new foods)
+    const totalNewCalories = newFoods.reduce((sum, food) => 
+      sum + (food.nutrition?.calories || food.calories || 0), 0);
+    const totalNewProtein = newFoods.reduce((sum, food) => 
+      sum + (food.nutrition?.protein || food.protein || 0), 0);
+    const totalNewCarbs = newFoods.reduce((sum, food) => 
+      sum + (food.nutrition?.carbs || food.carbs || 0), 0);
+    const totalNewFat = newFoods.reduce((sum, food) => 
+      sum + (food.nutrition?.fat || food.fat || 0), 0);
+
+    // Get current daily log totals
+    const { data: dailyLog, error: dailyLogError } = await supabase
+      .from('daily_logs')
+      .select('*')
+      .eq('id', dailyLogId)
+      .single();
+
+    if (!dailyLogError && dailyLog) {
+      await supabase
+        .from('daily_logs')
+        .update({
+          total_calories: dailyLog.total_calories + totalNewCalories,
+          total_protein: dailyLog.total_protein + totalNewProtein,
+          total_carbs: dailyLog.total_carbs + totalNewCarbs,
+          total_fat: dailyLog.total_fat + totalNewFat,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', dailyLogId);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error appending foods to meal:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to add foods to meal',
     };
   }
 }
@@ -939,6 +1353,85 @@ export async function deleteMealEntry(
 }
 
 /**
+ * Delete a meal by group ID (deletes all entries in the group)
+ */
+export async function deleteMealByGroupId(
+  mealGroupId: string,
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Validate ID format
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(mealGroupId)) {
+      return { success: false, error: 'Invalid meal group ID' };
+    }
+
+    // 1) Lookup entries for metadata
+    const { data: existingEntries, error: fetchError } = await supabase
+      .from('meal_entries')
+      .select('*')
+      .eq('meal_group_id', mealGroupId)
+      .eq('user_id', userId);
+
+    if (fetchError) {
+      return { success: false, error: fetchError.message };
+    }
+    
+    if (!existingEntries || existingEntries.length === 0) {
+      return { success: false, error: 'Meal not found' };
+    }
+
+    const date = (existingEntries[0].logged_at || '').split('T')[0];
+
+    // 2) Delete the group entries
+    const { error: deleteError } = await supabase
+      .from('meal_entries')
+      .delete()
+      .eq('meal_group_id', mealGroupId)
+      .eq('user_id', userId);
+      
+    if (deleteError) {
+      return { success: false, error: deleteError.message };
+    }
+
+    // 3) Recalculate daily totals for that date
+    const { data: remainingMeals, error: remainingError } = await supabase
+      .from('meal_entries')
+      .select('calories, protein, carbs, fat')
+      .eq('user_id', userId)
+      .gte('logged_at', `${date}T00:00:00`)
+      .lte('logged_at', `${date}T23:59:59`);
+
+    if (remainingError) {
+      // Not fatal; just log
+      console.warn('Failed to recalc daily totals after delete:', remainingError.message);
+    } else {
+      const totals = (remainingMeals || []).reduce(
+        (acc, m) => ({
+          total_calories: acc.total_calories + (m.calories || 0),
+          total_protein: acc.total_protein + (m.protein || 0),
+          total_carbs: acc.total_carbs + (m.carbs || 0),
+          total_fat: acc.total_fat + (m.fat || 0),
+        }),
+        { total_calories: 0, total_protein: 0, total_carbs: 0, total_fat: 0 }
+      );
+
+      await supabase.from('daily_logs').upsert(
+        { user_id: userId, date, ...totals },
+        { onConflict: 'user_id,date' }
+      );
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete meal',
+    };
+  }
+}
+
+/**
  * Get meal details by date and meal type (for grouped meals)
  * This is used when navigating from History screen with synthetic meal IDs
  */
@@ -1121,26 +1614,62 @@ export async function getMealDetailsByGroupId(
     }
 
     // Transform meal entries into MealAnalysis format
-    const foods: FoodItem[] = mealEntries.map(entry => ({
-      name: entry.food_items?.name || entry.food_name || 'Unknown Food',
-      quantity: entry.unit || `${entry.quantity || 1} serving`,
-      nutrition: {
-        calories: Number(entry.calories) || 0,
-        protein: Number(entry.protein) || 0,
-        carbs: Number(entry.carbs) || 0,
-        fat: Number(entry.fat) || 0,
-        fiber: entry.food_items?.fiber
-          ? Number(entry.food_items.fiber)
-          : undefined,
-        sugar: entry.food_items?.sugar
-          ? Number(entry.food_items.sugar)
-          : undefined,
-        sodium: entry.food_items?.sodium
-          ? Number(entry.food_items.sodium)
-          : undefined,
-      },
-      confidence: 0.95, // High confidence since this is from database
-    }));
+    // Extract ingredients from correction_history if available
+    const foods: FoodItem[] = mealEntries.map(entry => {
+      // Try to extract ingredient data from correction_history
+      let ingredients: FoodItem[] = [];
+      if (entry.correction_history && Array.isArray(entry.correction_history) && entry.correction_history.length > 0) {
+        try {
+          // Read from LAST assistant message, not first
+          const history = [...entry.correction_history].reverse();
+          const lastAssistant = history.find(h => h.role === 'assistant' && h.content);
+          
+          if (lastAssistant && lastAssistant.content) {
+            const parsedContent = JSON.parse(lastAssistant.content);
+            if (parsedContent.ingredients && Array.isArray(parsedContent.ingredients)) {
+              ingredients = parsedContent.ingredients.map((ing: any) => ({
+                name: ing.name,
+                quantity: `${ing.quantity || 1} ${ing.unit || 'serving'}`,
+                nutrition: {
+                  // Support both flat (new) and nested (old) formats
+                  calories: ing.calories ?? ing.nutrition?.calories ?? 0,
+                  protein: ing.protein ?? ing.nutrition?.protein ?? 0,
+                  carbs: ing.carbs ?? ing.nutrition?.carbs ?? 0,
+                  fat: ing.fat ?? ing.nutrition?.fat ?? 0,
+                  fiber: ing.fiber ?? ing.nutrition?.fiber,
+                  sugar: ing.sugar ?? ing.nutrition?.sugar,
+                  sodium: ing.sodium ?? ing.nutrition?.sodium,
+                },
+              }));
+            }
+          }
+        } catch (error) {
+          console.log('[getMealDetailsByGroupId] Could not parse correction_history:', error);
+        }
+      }
+      
+      return {
+        name: entry.food_items?.name || entry.food_name || 'Unknown Food',
+        quantity: `${entry.quantity || 1} ${entry.unit || 'serving'}`,
+        nutrition: {
+          calories: Number(entry.calories) || 0,
+          protein: Number(entry.protein) || 0,
+          carbs: Number(entry.carbs) || 0,
+          fat: Number(entry.fat) || 0,
+          fiber: entry.food_items?.fiber
+            ? Number(entry.food_items.fiber)
+            : undefined,
+          sugar: entry.food_items?.sugar
+            ? Number(entry.food_items.sugar)
+            : undefined,
+          sodium: entry.food_items?.sodium
+            ? Number(entry.food_items.sodium)
+            : undefined,
+        },
+        confidence: 0.95, // High confidence since this is from database
+        ingredients, // Add ingredients if found
+      };
+    });
 
     // Calculate total nutrition
     const totalNutrition = foods.reduce(
@@ -1166,11 +1695,38 @@ export async function getMealDetailsByGroupId(
 
     // Get the image URL if available
     const imageUrl = mealEntries[0]?.image_url || undefined;
+    
+    // Extract title from correction_history or notes
+    let title: string | undefined;
+    try {
+      // First try to get title from the last correction_history entry
+      const firstEntry = mealEntries[0];
+      if (firstEntry?.correction_history && Array.isArray(firstEntry.correction_history) && firstEntry.correction_history.length > 0) {
+        const history = [...firstEntry.correction_history].reverse();
+        const lastAssistant = history.find(h => h.role === 'assistant' && h.content);
+        
+        if (lastAssistant && lastAssistant.content) {
+          const parsed = JSON.parse(lastAssistant.content);
+          title = parsed.title;
+        }
+      }
+      
+      // Fallback: Try to extract title from notes if not found in correction_history
+      if (!title && firstEntry?.notes) {
+        const titleMatch = firstEntry.notes.match(/^([^-]+)(?:\s*-\s*)?/);
+        if (titleMatch) {
+          title = titleMatch[1].trim();
+        }
+      }
+    } catch (error) {
+      console.error('[getMealDetailsByGroupId] Could not parse title:', error);
+    }
 
     const mealAnalysis: MealAnalysis = {
       foods,
       totalNutrition,
       confidence: 0.95, // High confidence since this is from database
+      title, // Add title to the analysis
     };
 
     return {
@@ -1225,3 +1781,4 @@ export async function updateMealEntry(
     return false;
   }
 }
+

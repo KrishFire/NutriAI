@@ -5,6 +5,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { StreakProvider } from './src/contexts/StreakContext';
 import { SubscriptionProvider } from './src/contexts/SubscriptionContext';
+import { DeletionProvider } from './src/contexts/DeletionContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import { initializeNotificationService } from './src/services/notifications';
 
@@ -23,7 +24,9 @@ export default function App() {
         <AuthProvider>
           <SubscriptionProvider>
             <StreakProvider>
-              <RootNavigator />
+              <DeletionProvider>
+                <RootNavigator />
+              </DeletionProvider>
             </StreakProvider>
           </SubscriptionProvider>
         </AuthProvider>

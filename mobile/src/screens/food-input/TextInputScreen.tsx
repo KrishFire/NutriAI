@@ -34,7 +34,14 @@ export default function TextInputScreen() {
   const { user, session } = useAuth();
   
   // Extract params for "Add More" flow
-  const { returnToAddMore, existingMealData, description, mealId } = route.params || {};
+  const { 
+    returnToAddMore, 
+    existingMealData, 
+    description, 
+    mealId,
+    isEditMode,
+    mealGroupId 
+  } = route.params || {};
   const [inputText, setInputText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,15 +64,27 @@ export default function TextInputScreen() {
     }
 
     // Navigate to analyzing screen which will handle the API call
-    navigation.navigate('AnalyzingScreen' as any, {
-      inputType: 'text',
-      inputData: inputText,
-      mealType: 'snack', // Could be dynamic based on time of day or user selection
-      returnToAddMore,
-      existingMealData,
-      description: description || inputText,
-      mealId,
-    });
+    if (isEditMode && mealGroupId) {
+      // Edit mode from EditMealScreen: Navigate with edit params
+      navigation.navigate('AnalyzingScreen' as any, {
+        inputType: 'text',
+        inputData: inputText,
+        mealType: 'snack', // Could be dynamic based on time of day or user selection
+        isEditMode: true,
+        mealGroupId,
+      });
+    } else {
+      // Normal flow or Add More flow
+      navigation.navigate('AnalyzingScreen' as any, {
+        inputType: 'text',
+        inputData: inputText,
+        mealType: 'snack', // Could be dynamic based on time of day or user selection
+        returnToAddMore,
+        existingMealData,
+        description: description || inputText,
+        mealId,
+      });
+    }
   };
 
   const clearInput = () => {

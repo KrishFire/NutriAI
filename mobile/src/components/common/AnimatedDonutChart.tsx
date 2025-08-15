@@ -119,6 +119,15 @@ const AnimatedSegment: React.FC<AnimatedSegmentProps> = ({
       [currentStartAngle, endAngle.value]
     );
 
+    // If the segment has no angle difference, return empty path
+    const angleDiff = currentEndAngle - currentStartAngle;
+    if (Math.abs(angleDiff) < 0.01) {
+      return {
+        d: '',
+        opacity: 0,
+      };
+    }
+
     const path = describeArc(
       center,
       center,
@@ -158,11 +167,26 @@ const AnimatedDonutChart: React.FC<AnimatedDonutChartProps> = ({
   // Initial mount animation progress
   const mountProgress = useSharedValue(0);
 
-  // Create animated values for each segment's start and end angles
-  const animatedAngles = data.map(() => ({
-    start: useSharedValue(0),
-    end: useSharedValue(0),
-  }));
+  // Create a fixed number of animated values (max 10 segments)
+  // This ensures hooks are always called in the same order
+  const angle0Start = useSharedValue(0);
+  const angle0End = useSharedValue(0);
+  const angle1Start = useSharedValue(0);
+  const angle1End = useSharedValue(0);
+  const angle2Start = useSharedValue(0);
+  const angle2End = useSharedValue(0);
+  const angle3Start = useSharedValue(0);
+  const angle3End = useSharedValue(0);
+  const angle4Start = useSharedValue(0);
+  const angle4End = useSharedValue(0);
+
+  const animatedAngles = [
+    { start: angle0Start, end: angle0End },
+    { start: angle1Start, end: angle1End },
+    { start: angle2Start, end: angle2End },
+    { start: angle3Start, end: angle3End },
+    { start: angle4Start, end: angle4End },
+  ];
 
   // Initial mount animation
   useEffect(() => {
@@ -172,35 +196,37 @@ const AnimatedDonutChart: React.FC<AnimatedDonutChartProps> = ({
   }, []);
 
   // Update angles when data changes
-  useAnimatedReaction(
-    () => data.map(d => d.value),
-    currentValues => {
-      'worklet';
+  useEffect(() => {
+    let cumulativeAngle = 0;
+    const total = data.reduce((sum, d) => sum + d.value, 0);
 
-      let cumulativeAngle = 0;
-      const total = currentValues.reduce((sum, val) => sum + val, 0);
+    data.forEach((segment, index) => {
+      if (index >= animatedAngles.length) return;
+      
+      const normalizedValue = total > 0 ? segment.value / total : 0;
+      const angleSpan = normalizedValue * 360;
 
-      currentValues.forEach((value, index) => {
-        const normalizedValue = total > 0 ? value / total : 0;
-        const angleSpan = normalizedValue * 360;
-
-        animatedAngles[index].start.value = withSpring(cumulativeAngle, {
+      animatedAngles[index].start.value = withSpring(cumulativeAngle, {
+        damping: 15,
+        stiffness: 150,
+      });
+      animatedAngles[index].end.value = withSpring(
+        cumulativeAngle + angleSpan,
+        {
           damping: 15,
           stiffness: 150,
-        });
-        animatedAngles[index].end.value = withSpring(
-          cumulativeAngle + angleSpan,
-          {
-            damping: 15,
-            stiffness: 150,
-          }
-        );
+        }
+      );
 
-        cumulativeAngle += angleSpan;
-      });
-    },
-    [data]
-  );
+      cumulativeAngle += angleSpan;
+    });
+
+    // Reset unused segments
+    for (let i = data.length; i < animatedAngles.length; i++) {
+      animatedAngles[i].start.value = 0;
+      animatedAngles[i].end.value = 0;
+    }
+  }, [data]);
 
   // Create the background circle path outside of the render
   const backgroundPath = React.useMemo(() => {
@@ -230,21 +256,17 @@ const AnimatedDonutChart: React.FC<AnimatedDonutChartProps> = ({
         />
 
         {/* Animated segments */}
-        {data.map((segment, index) => {
-          if (segment.value === 0) return null;
-
-          return (
-            <AnimatedSegment
-              key={segment.key}
-              size={size}
-              strokeWidth={strokeWidth}
-              color={segment.color}
-              startAngle={animatedAngles[index].start}
-              endAngle={animatedAngles[index].end}
-              mountProgress={mountProgress}
-            />
-          );
-        })}
+        {data.slice(0, animatedAngles.length).map((segment, index) => (
+          <AnimatedSegment
+            key={segment.key}
+            size={size}
+            strokeWidth={strokeWidth}
+            color={segment.color}
+            startAngle={animatedAngles[index].start}
+            endAngle={animatedAngles[index].end}
+            mountProgress={mountProgress}
+          />
+        ))}
       </Svg>
     </View>
   );

@@ -22,7 +22,15 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   const rafRef = useRef<number>();
 
   useEffect(() => {
-    startValueRef.current = displayValue;
+    // Always start from 0 for initial animation
+    const isInitialAnimation = startValueRef.current === 0 && value > 0;
+    if (isInitialAnimation) {
+      startValueRef.current = 0;
+      setDisplayValue(0);
+    } else {
+      startValueRef.current = displayValue;
+    }
+    
     startTimeRef.current = Date.now();
     const targetValue = value;
 
@@ -31,8 +39,9 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
       const elapsed = now - startTimeRef.current;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Easing function (ease-out-cubic)
-      const eased = 1 - Math.pow(1 - progress, 3);
+      // Custom easing: starts fast, slows down beautifully
+      // Using ease-out-quart for smooth deceleration
+      const eased = 1 - Math.pow(1 - progress, 4);
 
       const currentValue =
         startValueRef.current + (targetValue - startValueRef.current) * eased;

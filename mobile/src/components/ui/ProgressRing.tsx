@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
   useAnimatedStyle,
   interpolate,
+  Easing,
 } from 'react-native-reanimated';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -39,18 +40,17 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
 
   useEffect(() => {
     if (animate) {
-      animatedProgress.value = withSpring(percentage, {
-        damping: 12,
-        stiffness: 150,
-        mass: 1,
-        overshootClamping: false,
-        restDisplacementThreshold: 0.01,
-        restSpeedThreshold: 0.01,
+      // Start from 0 for initial animation
+      animatedProgress.value = 0;
+      // Animate with custom easing for beautiful effect
+      animatedProgress.value = withTiming(percentage, {
+        duration: duration,
+        easing: Easing.bezier(0.25, 0.46, 0.45, 0.94), // Custom easing curve
       });
     } else {
       animatedProgress.value = percentage;
     }
-  }, [percentage, animate]);
+  }, [percentage, animate, duration]);
 
   const animatedProps = useAnimatedProps(() => {
     'worklet';

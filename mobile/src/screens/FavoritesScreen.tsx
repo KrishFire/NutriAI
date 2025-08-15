@@ -7,10 +7,13 @@ import {
   TextInput,
   FlatList,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LoadingIndicator } from '../components/ui/LoadingIndicator';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useAuth } from '../contexts/AuthContext';
+import { appendFoodsToMeal } from '../services/meals';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   ArrowLeft,
@@ -59,8 +62,13 @@ interface FavoriteItem {
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = -SCREEN_WIDTH * 0.25;
 
-export default function FavoritesScreen() {
+export default function FavoritesScreen({ route }: any) {
   const navigation = useNavigation();
+  const { user } = useAuth();
+  
+  // Check if we're in edit mode
+  const isEditMode = route?.params?.isEditMode || false;
+  const mealGroupId = route?.params?.mealGroupId;
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<
     'all' | 'meals' | 'foods' | 'ingredients'
@@ -194,12 +202,46 @@ export default function FavoritesScreen() {
     setActiveFilter(filter);
   };
 
-  const handleSelectFavorite = (item: FavoriteItem) => {
+  const handleSelectFavorite = async (item: FavoriteItem) => {
     hapticFeedback.selection();
     if (isMultiSelectMode) {
       toggleItemSelection(item.id);
+    } else if (isEditMode && mealGroupId && user) {
+      // Edit mode: Append to existing meal
+      try {
+        const food = {
+          name: item.name,
+          quantity: item.quantity || '1 serving',
+          nutrition: {
+            calories: item.calories || 0,
+            protein: item.protein || 0,
+            carbs: item.carbs || 0,
+            fat: item.fat || 0,
+          },
+          confidence: 0.95,
+        };
+        
+        const result = await appendFoodsToMeal(mealGroupId, user.id, [food]);
+        
+        if (result.success) {
+          hapticFeedback.success();
+          setNotification({
+            show: true,
+            message: `${item.name} added to meal`,
+          });
+          // Navigate back to EditMealScreen
+          setTimeout(() => {
+            navigation.goBack();
+          }, 500);
+        } else {
+          Alert.alert('Error', result.error || 'Failed to add food to meal');
+        }
+      } catch (error) {
+        console.error('Error adding favorite to meal:', error);
+        Alert.alert('Error', 'Failed to add food to meal');
+      }
     } else {
-      // Navigate to meal details or add to current meal
+      // Normal mode: Navigate to meal details
       navigation.navigate(
         'MealDetails' as never,
         {
@@ -207,7 +249,7 @@ export default function FavoritesScreen() {
         } as never
       );
     }
-  };
+  };;
 
   const toggleItemSelection = (id: string) => {
     hapticFeedback.selection();

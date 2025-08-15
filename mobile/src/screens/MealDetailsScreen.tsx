@@ -310,36 +310,54 @@ export default function MealDetailsScreen({
   };
 
   const addFoodItemPhoto = () => {
-    if (!mealId) {
+    if (!realMealGroupId) {
       Alert.alert('Error', 'Cannot add food item - meal ID not available');
       return;
     }
 
-    navigation.navigate('AddMealFlow', {
-      screen: 'Camera',
-      params: {
-        addToMeal: {
-          mealId,
-          existingAnalysis: editedAnalysis,
-        },
-      },
+    // Use direct navigation with edit mode params instead of AddMealFlow
+    navigation.navigate('CameraInput', {
+      isEditMode: true,
+      mealGroupId: realMealGroupId,
+    });
+  };;
+
+  const addFoodItemText = () => {
+    if (!realMealGroupId) {
+      Alert.alert('Error', 'Cannot add food item - meal ID not available');
+      return;
+    }
+
+    // Use direct navigation with edit mode params instead of AddMealFlow
+    navigation.navigate('TextInput', {
+      isEditMode: true,
+      mealGroupId: realMealGroupId,
     });
   };
 
-  const addFoodItemText = () => {
-    if (!mealId) {
+  const addFoodItemVoice = () => {
+    if (!realMealGroupId) {
       Alert.alert('Error', 'Cannot add food item - meal ID not available');
       return;
     }
 
-    navigation.navigate('AddMealFlow', {
-      screen: 'ManualEntry',
-      params: {
-        addToMeal: {
-          mealId,
-          existingAnalysis: editedAnalysis,
-        },
-      },
+    // Navigate to VoiceLog with edit mode params
+    navigation.navigate('VoiceLog', {
+      isEditMode: true,
+      mealGroupId: realMealGroupId,
+    });
+  };
+
+  const addFoodItemBarcode = () => {
+    if (!realMealGroupId) {
+      Alert.alert('Error', 'Cannot add food item - meal ID not available');
+      return;
+    }
+
+    // Navigate to BarcodeInput with edit mode params
+    navigation.navigate('BarcodeInput', {
+      isEditMode: true,
+      mealGroupId: realMealGroupId,
     });
   };
 
@@ -739,6 +757,38 @@ export default function MealDetailsScreen({
                 style={styles.methodOption}
                 onPress={() => {
                   setShowAddFoodModal(false);
+                  addFoodItemVoice();
+                }}
+              >
+                <Text style={styles.methodIcon}>🎤</Text>
+                <View style={styles.methodContent}>
+                  <Text style={styles.methodTitle}>Voice Log</Text>
+                  <Text style={styles.methodDescription}>
+                    Speak what you ate
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.methodOption}
+                onPress={() => {
+                  setShowAddFoodModal(false);
+                  addFoodItemBarcode();
+                }}
+              >
+                <Text style={styles.methodIcon}>📊</Text>
+                <View style={styles.methodContent}>
+                  <Text style={styles.methodTitle}>Scan Barcode</Text>
+                  <Text style={styles.methodDescription}>
+                    Scan product barcode
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.methodOption}
+                onPress={() => {
+                  setShowAddFoodModal(false);
                   addFoodItemManual();
                 }}
               >
@@ -747,6 +797,29 @@ export default function MealDetailsScreen({
                   <Text style={styles.methodTitle}>Manual Entry</Text>
                   <Text style={styles.methodDescription}>
                     Enter nutrition manually
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.methodOption}
+                onPress={() => {
+                  setShowAddFoodModal(false);
+                  if (!realMealGroupId) {
+                    Alert.alert('Error', 'Cannot add from favorites - meal ID not available');
+                    return;
+                  }
+                  navigation.navigate('Favorites' as any, {
+                    isEditMode: true,
+                    mealGroupId: realMealGroupId,
+                  });
+                }}
+              >
+                <Text style={styles.methodIcon}>⭐</Text>
+                <View style={styles.methodContent}>
+                  <Text style={styles.methodTitle}>From Favorites</Text>
+                  <Text style={styles.methodDescription}>
+                    Quickly add saved items
                   </Text>
                 </View>
               </TouchableOpacity>

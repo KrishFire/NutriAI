@@ -26,6 +26,10 @@ import { hapticFeedback } from '../../utils/haptics';
 import { RootStackParamList } from '../../types/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import mealAIService from '../../services/mealAI';
+import { appendFoodsToMeal } from '../../services/meals';
+import { groupsToMealAnalysis } from '../../utils/mealGrouping';
+import FoodItemCard from '../../components/FoodItemCard';
+import AnimatedDonutChart from '../../components/common/AnimatedDonutChart';
 
 type RouteParams = RouteProp<RootStackParamList, 'FoodResultsScreen'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'FoodResultsScreen'>;
@@ -61,14 +65,13 @@ interface FoodGroup {
 // State management
 type State = {
   foodGroups: FoodGroup[];
-  globalServingSize: number;
   isEditMode: boolean;
 };
 
 type Action =
   | { type: 'TOGGLE_FAVORITE'; groupId: string; itemId?: string }
   | { type: 'TOGGLE_EXPANDED'; groupId: string }
-  | { type: 'ADJUST_SERVING'; delta: number }
+  | { type: 'UPDATE_SERVING_MULTIPLIER'; foodId: string; delta: number }
   | { type: 'SET_FOOD_GROUPS'; groups: FoodGroup[] }
   | { type: 'TOGGLE_EDIT_MODE' }
   | { type: 'DELETE_FOOD_GROUP'; groupId: string }
@@ -133,26 +136,27 @@ function reducer(state: State, action: Action): State {
       return { ...state, foodGroups: newGroups };
     }
     
-    case 'ADJUST_SERVING': {
-      const newServing = Math.max(0.5, state.globalServingSize + action.delta);
-      const multiplier = newServing / state.globalServingSize;
+    case 'UPDATE_SERVING_MULTIPLIER': {
+      const newGroups = state.foodGroups.map(group => {
+        if (group.id === action.foodId) {
+          const currentMultiplier = group.servingMultiplier || 1;
+          const newMultiplier = Math.max(0.5, currentMultiplier + action.delta);
+          
+          return {
+            ...group,
+            servingMultiplier: newMultiplier,
+            nutrition: {
+              calories: Math.round(group.baseNutrition.calories * newMultiplier),
+              protein: Math.round(group.baseNutrition.protein * newMultiplier),
+              carbs: Math.round(group.baseNutrition.carbs * newMultiplier),
+              fat: Math.round(group.baseNutrition.fat * newMultiplier),
+            },
+          };
+        }
+        return group;
+      });
       
-      const newGroups = state.foodGroups.map(group => ({
-        ...group,
-        servingMultiplier: group.servingMultiplier * multiplier,
-        nutrition: {
-          calories: Math.round(group.baseNutrition.calories * group.servingMultiplier * multiplier),
-          protein: Math.round(group.baseNutrition.protein * group.servingMultiplier * multiplier),
-          carbs: Math.round(group.baseNutrition.carbs * group.servingMultiplier * multiplier),
-          fat: Math.round(group.baseNutrition.fat * group.servingMultiplier * multiplier),
-        },
-      }));
-      
-      return {
-        ...state,
-        globalServingSize: newServing,
-        foodGroups: newGroups,
-      };
+      return { ...state, foodGroups: newGroups };
     }
     
     case 'SET_FOOD_GROUPS': {
@@ -238,6 +242,8 @@ export default function FoodResultsScreen() {
   const rawParams = route.params || {};
   const analysisData = rawParams.refinedAnalysisData || rawParams.analysisData;
   const description = rawParams.description;
+  const isEditMode = rawParams.isEditMode;
+  const mealGroupId = rawParams.mealGroupId;
   
   // DEBUG: Log received data
   if (rawParams.refinedAnalysisData) {
@@ -256,7 +262,6 @@ export default function FoodResultsScreen() {
   // Initialize state with reducer
   const [state, dispatch] = useReducer(reducer, {
     foodGroups: [],
-    globalServingSize: 1,
     isEditMode: false,
   });
   
@@ -550,52 +555,26 @@ export default function FoodResultsScreen() {
   
   // Transform foodGroups back to AIMealAnalysis format with updated nutrition
   const createUpdatedAnalysis = (): any => {
-    // Transform foodGroups to foods array
-    const foods = state.foodGroups.map(group => {
-      const food: any = {
-        name: group.name,
-        quantity: 1,
-        unit: 'serving',
-        nutrition: {
-          calories: group.nutrition.calories,
-          protein: group.nutrition.protein,
-          carbs: group.nutrition.carbs,
-          fat: group.nutrition.fat,
-        },
-      };
-      
-      // Add ingredients if it's a parent food
-      if (group.isParent && group.ingredients.length > 0) {
-        food.ingredients = group.ingredients.map(ingredient => ({
-          name: ingredient.name,
-          quantity: 1,
-          unit: 'serving',
-          nutrition: {
-            calories: ingredient.nutrition.calories,
-            protein: ingredient.nutrition.protein,
-            carbs: ingredient.nutrition.carbs,
-            fat: ingredient.nutrition.fat,
-          },
-        }));
-      }
-      
-      return food;
-    });
+    // Use groupsToMealAnalysis to preserve original quantities
+    const analysisFromGroups = groupsToMealAnalysis(state.foodGroups, analysisData);
     
-    // Return updated analysis with current totals
+    // Return analysis with preserved quantities and current on-screen totals
     return {
-      ...analysisData,
-      foods,
+      ...analysisFromGroups,
       totalCalories: totalNutrition.calories,
       totalProtein: totalNutrition.protein,
       totalCarbs: totalNutrition.carbs,
       totalFat: totalNutrition.fat,
+      totalNutrition: totalNutrition,
     };
-  };
+  };;
   
   // Handle save meal
   const handleSaveMeal = async () => {
-    if (!user || isSaving || !description || !analysisData) return;
+    if (!user || isSaving || !analysisData) return;
+    
+    // In edit mode, we don't need description
+    if (!isEditMode && !description) return;
     
     try {
       setIsSaving(true);
@@ -604,33 +583,60 @@ export default function FoodResultsScreen() {
       // Create updated analysis with current nutrition values from state
       const updatedAnalysis = createUpdatedAnalysis();
       
-      // Save the meal to database with updated analysis
-      const logResult = await mealAIService.saveMealDirectly(
-        updatedAnalysis,
-        description,
-        autoMealType,
-        new Date().toISOString().split('T')[0]
-      );
-      
-      if (!logResult.success) {
-        Alert.alert('Error', logResult.error || 'Failed to save meal');
-        return;
+      if (isEditMode) {
+        // Edit mode: Append foods to existing meal
+        if (!mealGroupId) {
+          Alert.alert('Error', 'Could not save changes. The meal identifier is missing.');
+          setIsSaving(false);
+          return;
+        }
+        
+        const result = await appendFoodsToMeal(
+          mealGroupId,
+          user.id,
+          updatedAnalysis.foods
+        );
+        
+        if (!result.success) {
+          Alert.alert('Error', result.error || 'Failed to add foods to meal');
+          setIsSaving(false);
+          return;
+        }
+        
+        hapticFeedback.success();
+        
+        // Navigate back to EditMealScreen
+        navigation.goBack();
+        // The EditMealScreen will refresh automatically with useFocusEffect
+      } else {
+        // Normal mode: Save as new meal
+        const logResult = await mealAIService.saveMealDirectly(
+          updatedAnalysis,
+          description,
+          autoMealType,
+          new Date().toISOString().split('T')[0]
+        );
+        
+        if (!logResult.success) {
+          Alert.alert('Error', logResult.error || 'Failed to save meal');
+          return;
+        }
+        
+        hapticFeedback.success();
+        
+        // Navigate to save confirmation screen with correct totals from updatedAnalysis
+        navigation.navigate('MealSaved' as any, {
+          meal: {
+            type: autoMealType,
+            calories: updatedAnalysis.totalCalories ?? updatedAnalysis.totalNutrition?.calories ?? totalNutrition.calories,
+            protein: updatedAnalysis.totalProtein ?? updatedAnalysis.totalNutrition?.protein ?? totalNutrition.protein,
+            carbs: updatedAnalysis.totalCarbs ?? updatedAnalysis.totalNutrition?.carbs ?? totalNutrition.carbs,
+            fat: updatedAnalysis.totalFat ?? updatedAnalysis.totalNutrition?.fat ?? totalNutrition.fat,
+          },
+        });
+        
+        // The MealSavedScreen will auto-navigate to Home after 2 seconds
       }
-      
-      hapticFeedback.success();
-      
-      // Navigate to save confirmation screen
-      navigation.navigate('MealSaved' as any, {
-        meal: {
-          type: autoMealType,
-          calories: totalNutrition.calories,
-          protein: totalNutrition.protein,
-          carbs: totalNutrition.carbs,
-          fat: totalNutrition.fat,
-        },
-      });
-      
-      // The MealSavedScreen will auto-navigate to Home after 2 seconds
     } catch (error) {
       console.error('Error saving meal:', error);
       Alert.alert('Error', 'Failed to save meal. Please try again.');
@@ -758,245 +764,120 @@ export default function FoodResultsScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Food Groups */}
         {state.foodGroups.map((group, index) => (
-          <MotiView
+          <FoodItemCard
             key={group.id}
-            from={{ opacity: 0, translateY: 20 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: index * 100 }}
-            style={styles.foodCard}
-          >
-            <View style={styles.foodHeader}>
-              <TouchableOpacity
-                style={styles.foodInfo}
-                onPress={() => {
-                  if (group.ingredients.length > 0) {
-                    hapticFeedback.selection();
-                    dispatch({ type: 'TOGGLE_EXPANDED', groupId: group.id });
-                  }
-                }}
-              >
-                <Text style={styles.foodName}>{group.name}</Text>
-                {group.ingredients.length > 0 && (
-                  <View style={styles.expandIcon}>
-                    {group.expanded ? (
-                      <ChevronUp size={16} color="#6B7280" />
-                    ) : (
-                      <ChevronDown size={16} color="#6B7280" />
-                    )}
-                  </View>
-                )}
-              </TouchableOpacity>
-              
-              <View style={styles.foodActions}>
-                {state.isEditMode ? (
-                  <TouchableOpacity
-                    onPress={() => handleDeleteFoodGroup(group.id)}
-                    style={styles.deleteButton}
-                  >
-                    <Trash2 size={18} color="#EF4444" />
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    onPress={() => {
-                      hapticFeedback.selection();
-                      dispatch({ type: 'TOGGLE_FAVORITE', groupId: group.id });
-                    }}
-                    style={styles.heartButton}
-                  >
-                    {renderHeartIcon(
-                      group.isFavorite,
-                      group.ingredients.length > 0,
-                      group.ingredients.length > 0
-                        ? group.ingredients.every(i => i.isFavorite)
-                        : undefined
-                    )}
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-            
-            <View style={styles.nutritionRow}>
-              <Text style={styles.caloriesText}>{group.nutrition.calories} cal</Text>
-              <View style={styles.macros}>
-                <Text style={styles.macroText}>Protein: {group.nutrition.protein}g</Text>
-                <Text style={styles.macroText}>Carbs: {group.nutrition.carbs}g</Text>
-                <Text style={styles.macroText}>Fat: {group.nutrition.fat}g</Text>
-              </View>
-            </View>
-            
-            {/* Expandable Ingredients */}
-            <AnimatePresence>
-              {group.expanded && group.ingredients.length > 0 && (
-                <MotiView
-                  from={{ opacity: 0, scaleY: 0 }}
-                  animate={{ opacity: 1, scaleY: 1 }}
-                  exit={{ opacity: 0, scaleY: 0 }}
-                  transition={{ type: 'timing', duration: 200 }}
-                  style={[styles.ingredientsContainer, { 
-                    transformOrigin: 'top',
-                    overflow: 'hidden'
-                  }]}
-                >
-                  <Text style={styles.ingredientsLabel}>Ingredients:</Text>
-                  {group.ingredients.map((item, itemIndex) => (
-                    <MotiView
-                      key={item.id}
-                      from={{ opacity: 0, translateX: -20 }}
-                      animate={{ opacity: 1, translateX: 0 }}
-                      transition={{ delay: itemIndex * 50 }}
-                      style={styles.ingredientRow}
-                    >
-                      <View style={styles.ingredientInfo}>
-                        <Text style={styles.ingredientName}>{item.name}</Text>
-                        <Text style={styles.ingredientQuantity}>{item.quantity}</Text>
-                      </View>
-                      
-                      <View style={styles.ingredientRight}>
-                        <View style={styles.ingredientNutrition}>
-                          <Text style={styles.ingredientCalories}>{Math.round(item.nutrition.calories * group.servingMultiplier)} cal</Text>
-                          <View style={styles.ingredientMacros}>
-                            <Text style={styles.ingredientMacro}>Protein: {Math.round(item.nutrition.protein * group.servingMultiplier)}g</Text>
-                            <Text style={styles.ingredientMacro}>Carbs: {Math.round(item.nutrition.carbs * group.servingMultiplier)}g</Text>
-                            <Text style={styles.ingredientMacro}>Fat: {Math.round(item.nutrition.fat * group.servingMultiplier)}g</Text>
-                          </View>
-                        </View>
-                        
-                        {state.isEditMode ? (
-                          <TouchableOpacity
-                            onPress={() => handleDeleteIngredient(group.id, item.id)}
-                            style={styles.ingredientDelete}
-                          >
-                            <Trash2 size={16} color="#EF4444" />
-                          </TouchableOpacity>
-                        ) : (
-                          <TouchableOpacity
-                            onPress={() => {
-                              hapticFeedback.selection();
-                              dispatch({ type: 'TOGGLE_FAVORITE', groupId: group.id, itemId: item.id });
-                            }}
-                            style={styles.ingredientHeart}
-                          >
-                            {renderHeartIcon(item.isFavorite, false)}
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    </MotiView>
-                  ))}
-                </MotiView>
-              )}
-            </AnimatePresence>
-          </MotiView>
+            item={{
+              id: group.id,
+              name: group.name,
+              nutrition: {
+                calories: group.nutrition.calories,
+                protein: group.nutrition.protein,
+                carbs: group.nutrition.carbs,
+                fat: group.nutrition.fat,
+              },
+              isFavorite: group.isFavorite,
+              isParent: group.isParent,
+              expanded: group.expanded,
+              ingredients: group.ingredients.map(ing => ({
+                id: ing.id,
+                name: ing.name,
+                quantity: ing.quantity,
+                nutrition: {
+                  calories: ing.nutrition.calories,
+                  protein: ing.nutrition.protein,
+                  carbs: ing.nutrition.carbs,
+                  fat: ing.nutrition.fat,
+                },
+                isFavorite: ing.isFavorite,
+              })),
+              quantity: '1 serving', // Default quantity
+              servingMultiplier: group.servingMultiplier,
+            }}
+            index={index}
+            isEditMode={state.isEditMode}
+            onToggleExpanded={() => dispatch({ type: 'TOGGLE_EXPANDED', groupId: group.id })}
+            onToggleFavorite={(groupId: string, itemId?: string) => {
+              hapticFeedback.selection();
+              dispatch({ type: 'TOGGLE_FAVORITE', groupId, itemId });
+            }}
+            onDelete={(groupId: string) => handleDeleteFoodGroup(groupId)}
+            onDeleteIngredient={(groupId: string, itemId: string) => 
+              handleDeleteIngredient(groupId, itemId)
+            }
+            showExpandable={true}
+            showQuantity={true}
+            showServingStepper={true}
+            onUpdateServing={(foodId, delta) => 
+              dispatch({ type: 'UPDATE_SERVING_MULTIPLIER', foodId, delta })
+            }
+          />
         ))}
         
-        {/* Serving Size */}
+        {/* Nutrition Summary - MealDetails Style */}
         <MotiView
           from={{ opacity: 0, translateY: 20 }}
           animate={{ opacity: 1, translateY: 0 }}
-          transition={{ delay: 400 }}
-          style={styles.servingCard}
+          transition={{ delay: 300 }}
+          style={styles.nutritionSummaryCard}
         >
-          <Text style={styles.servingTitle}>Serving Size</Text>
-          <View style={styles.servingControls}>
-            <TouchableOpacity
-              onPress={() => {
-                hapticFeedback.selection();
-                dispatch({ type: 'ADJUST_SERVING', delta: -0.5 });
-              }}
-              style={styles.servingButton}
-              disabled={state.globalServingSize <= 0.5}
-            >
-              <Text style={styles.servingButtonText}>−</Text>
-            </TouchableOpacity>
-            
-            <View style={styles.servingValue}>
-              <Text style={styles.servingNumber}>{state.globalServingSize}</Text>
-              <Text style={styles.servingLabel}>
-                {state.globalServingSize <= 1 ? 'serving' : 'servings'}
-              </Text>
-            </View>
-            
-            <TouchableOpacity
-              onPress={() => {
-                hapticFeedback.selection();
-                dispatch({ type: 'ADJUST_SERVING', delta: 0.5 });
-              }}
-              style={styles.servingButton}
-            >
-              <Text style={styles.servingButtonText}>+</Text>
-            </TouchableOpacity>
-          </View>
-        </MotiView>
-        
-        {/* Nutrition Summary */}
-        <MotiView
-          from={{ opacity: 0, translateY: 20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ delay: 500 }}
-          style={styles.nutritionCard}
-        >
-          <Text style={styles.nutritionTitle}>Nutrition Summary</Text>
-          
-          <View style={styles.totalCalories}>
-            <Text style={styles.totalCaloriesLabel}>Calories</Text>
-            <Text style={styles.totalCaloriesValue}>{totalNutrition.calories} cal</Text>
+          {/* Calories Section */}
+          <View style={styles.caloriesSection}>
+            <Text style={styles.caloriesValue}>{totalNutrition.calories}</Text>
+            <Text style={styles.caloriesLabel}>Calories</Text>
           </View>
           
-          <View style={styles.macrosList}>
-            {/* Protein */}
+          {/* Macronutrients Title */}
+          <Text style={styles.macrosTitle}>Macronutrients</Text>
+          
+          {/* Animated Donut Chart */}
+          <View style={styles.chartContainer}>
+            <AnimatedDonutChart
+              size={160}
+              strokeWidth={24}
+              data={(() => {
+                const totalGrams = totalNutrition.protein + totalNutrition.carbs + totalNutrition.fat;
+                if (totalGrams === 0) {
+                  return [{ key: 'empty', value: 100, color: '#E5E7EB' }];
+                }
+                return [
+                  { 
+                    key: 'carbs', 
+                    value: (totalNutrition.carbs / totalGrams) * 100, 
+                    color: '#FFC078' 
+                  },
+                  { 
+                    key: 'protein', 
+                    value: (totalNutrition.protein / totalGrams) * 100, 
+                    color: '#74C0FC' 
+                  },
+                  { 
+                    key: 'fat', 
+                    value: (totalNutrition.fat / totalGrams) * 100, 
+                    color: '#8CE99A' 
+                  },
+                ];
+              })()}
+              animationDuration={800}
+              delayBetweenSegments={100}
+            />
+          </View>
+          
+          {/* Macros Grid */}
+          <View style={styles.macrosGrid}>
             <View style={styles.macroItem}>
-              <View style={styles.macroHeader}>
-                <Text style={styles.macroLabel}>Protein</Text>
-                <Text style={styles.macroValue}>{totalNutrition.protein}g</Text>
-              </View>
-              <View style={styles.macroBar}>
-                <View
-                  style={[
-                    styles.macroProgress,
-                    {
-                      width: `${(totalNutrition.protein / (totalNutrition.protein + totalNutrition.carbs + totalNutrition.fat)) * 100}%`,
-                      backgroundColor: '#42A5F5',
-                    },
-                  ]}
-                />
-              </View>
+              <View style={[styles.macroColorDot, { backgroundColor: '#74C0FC' }]} />
+              <Text style={styles.macroValue}>{Math.round(totalNutrition.protein)}g</Text>
+              <Text style={styles.macroLabel}>Protein</Text>
             </View>
-            
-            {/* Carbs */}
             <View style={styles.macroItem}>
-              <View style={styles.macroHeader}>
-                <Text style={styles.macroLabel}>Carbs</Text>
-                <Text style={styles.macroValue}>{totalNutrition.carbs}g</Text>
-              </View>
-              <View style={styles.macroBar}>
-                <View
-                  style={[
-                    styles.macroProgress,
-                    {
-                      width: `${(totalNutrition.carbs / (totalNutrition.protein + totalNutrition.carbs + totalNutrition.fat)) * 100}%`,
-                      backgroundColor: '#FFA726',
-                    },
-                  ]}
-                />
-              </View>
+              <View style={[styles.macroColorDot, { backgroundColor: '#FFC078' }]} />
+              <Text style={styles.macroValue}>{Math.round(totalNutrition.carbs)}g</Text>
+              <Text style={styles.macroLabel}>Carbs</Text>
             </View>
-            
-            {/* Fat */}
             <View style={styles.macroItem}>
-              <View style={styles.macroHeader}>
-                <Text style={styles.macroLabel}>Fat</Text>
-                <Text style={styles.macroValue}>{totalNutrition.fat}g</Text>
-              </View>
-              <View style={styles.macroBar}>
-                <View
-                  style={[
-                    styles.macroProgress,
-                    {
-                      width: `${(totalNutrition.fat / (totalNutrition.protein + totalNutrition.carbs + totalNutrition.fat)) * 100}%`,
-                      backgroundColor: '#66BB6A',
-                    },
-                  ]}
-                />
-              </View>
+              <View style={[styles.macroColorDot, { backgroundColor: '#8CE99A' }]} />
+              <Text style={styles.macroValue}>{Math.round(totalNutrition.fat)}g</Text>
+              <Text style={styles.macroLabel}>Fat</Text>
             </View>
           </View>
         </MotiView>
@@ -1092,226 +973,68 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
   },
-  foodCard: {
+
+
+  nutritionSummaryCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    padding: 16,
-    marginBottom: 12,
-  },
-  foodHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
-  },
-  foodInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  foodName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  expandIcon: {
-    marginLeft: 8,
-    marginRight: 4,
-  },
-  heartButton: {
-    padding: 8,
-  },
-  foodActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  deleteButton: {
-    padding: 8,
-  },
-  nutritionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  caloriesText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  macros: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  macroText: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  ingredientsContainer: {
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    overflow: 'hidden',
-  },
-  ingredientsLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 8,
-  },
-  ingredientRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  ingredientInfo: {
-    flex: 1,
-  },
-  ingredientName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#111827',
-  },
-  ingredientQuantity: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  ingredientRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ingredientNutrition: {
-    alignItems: 'flex-end',
-    marginRight: 12,
-  },
-  ingredientCalories: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#111827',
-  },
-  ingredientMacros: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 2,
-  },
-  ingredientMacro: {
-    fontSize: 10,
-    color: '#6B7280',
-  },
-  ingredientHeart: {
-    padding: 4,
-  },
-  ingredientDelete: {
-    padding: 4,
-  },
-  servingCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 16,
-    marginBottom: 12,
-  },
-  servingTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    padding: 20,
+    marginTop: 8,
     marginBottom: 16,
   },
-  servingControls: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  caloriesSection: {
     alignItems: 'center',
+    marginBottom: 20,
   },
-  servingButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  servingButtonText: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: '#111827',
-  },
-  servingValue: {
-    alignItems: 'center',
-  },
-  servingNumber: {
-    fontSize: 20,
+  caloriesValue: {
+    fontSize: 40,
     fontWeight: '700',
     color: '#111827',
+    marginBottom: 4,
   },
-  servingLabel: {
-    fontSize: 14,
+  caloriesLabel: {
+    fontSize: 16,
+    fontWeight: '500',
     color: '#6B7280',
   },
-  nutritionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 16,
-    marginBottom: 16,
-  },
-  nutritionTitle: {
-    fontSize: 16,
+  macrosTitle: {
+    fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
-    marginBottom: 16,
-  },
-  totalCalories: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  totalCaloriesLabel: {
-    fontSize: 14,
     color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  totalCaloriesValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
+  chartContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
   },
-  macrosList: {
-    gap: 12,
+  macrosGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
   },
   macroItem: {
-    gap: 6,
-  },
-  macroHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    flex: 1,
   },
-  macroLabel: {
-    fontSize: 14,
-    color: '#6B7280',
+  macroColorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 8,
   },
   macroValue: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#111827',
+    marginBottom: 4,
   },
-  macroBar: {
-    height: 8,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  macroProgress: {
-    height: '100%',
-    borderRadius: 4,
+  macroLabel: {
+    fontSize: 12,
+    color: '#6B7280',
   },
   actionButtons: {
     marginBottom: 20,

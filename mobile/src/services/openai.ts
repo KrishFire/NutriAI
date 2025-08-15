@@ -23,6 +23,8 @@ export interface MealAnalysis {
   totalNutrition: NutritionData;
   confidence: number;
   notes?: string;
+  title?: string;
+  description?: string;
 }
 
 export async function analyzeMealImage(

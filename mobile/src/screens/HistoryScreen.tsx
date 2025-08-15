@@ -22,8 +22,12 @@ import Animated, {
 import { TAB_BAR_HEIGHT } from '../utils/tokens';
 import { hapticFeedback } from '../utils/haptics';
 import { Card } from '../components/ui/Card';
+import { MealCard } from '../components/ui/MealCard';
+import SwipeableRow from '../components/common/SwipeableRow';
+import { deleteMealByGroupId } from '../services/meals';
 import { useAuth } from '../hooks/useAuth';
 import { useDebounce } from '../hooks/useDebounce';
+import { useDeletion } from '../contexts/DeletionContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getMealHistory } from '../services/meals';
 import { SPACING } from '../constants';
@@ -76,6 +80,7 @@ interface DailySummary {
 export default function HistoryScreen() {
   const navigation = useNavigation<HistoryScreenNavigationProp>();
   const { user, preferences } = useAuth();
+  const { triggerDeletion } = useDeletion();
   const insets = useSafeAreaInsets();
   const { headerHeight } = useHeaderHeight();
   const scrollY = useRef(new RNAnimated.Value(0)).current;
@@ -86,6 +91,7 @@ export default function HistoryScreen() {
   const [historyData, setHistoryData] = useState<HistoryData | null>(null);
   const [dailySummary, setDailySummary] = useState<DailySummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Debounce the selected date to prevent rapid API calls
   const debouncedDate = useDebounce(selectedDate, 300);
@@ -174,7 +180,7 @@ export default function HistoryScreen() {
     return () => {
       isActive = false; // Cleanup to prevent stale updates
     };
-  }, [debouncedDate, user, preferences]);
+  }, [debouncedDate, user, preferences, refreshTrigger]);
 
   // Start rotation animation when screen comes into focus
   useFocusEffect(
@@ -186,6 +192,10 @@ export default function HistoryScreen() {
       
       // Trigger macro bar animations by changing the key
       setMacroAnimationKey(prev => prev + 1);
+      
+      // Trigger data refresh when screen comes into focus
+      // This ensures data is synced after deletions from other screens
+      setRefreshTrigger(prev => prev + 1);
 
       return () => {
         // Reset rotation when leaving screen
@@ -268,9 +278,8 @@ export default function HistoryScreen() {
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    // Reset the date to trigger a refresh
-    const currentDateCopy = new Date(selectedDate);
-    setSelectedDate(new Date(currentDateCopy));
+    // Trigger a refresh using the refreshTrigger
+    setRefreshTrigger(prev => prev + 1);
     
     // The useEffect will handle the actual refresh
     setTimeout(() => {
@@ -623,89 +632,42 @@ export default function HistoryScreen() {
                   }}
                   className="mb-3"
                 >
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => handleViewMeal(meal)}
+                  <SwipeableRow
+                    disabled={!meal.mealGroupId}
+                    confirmMessage="Delete this meal from history?"
+                    onDelete={async () => {
+                      if (!meal.mealGroupId || !user) {
+                        Alert.alert('Cannot delete', 'Missing meal ID or user.');
+                        return;
+                      }
+                      const res = await deleteMealByGroupId(meal.mealGroupId, user.id);
+                      if (!res.success) {
+                        Alert.alert('Error', res.error || 'Failed to delete meal');
+                      } else {
+                        triggerDeletion(); // Notify HomeScreen to refresh
+                        handleRefresh();
+                      }
+                    }}
                   >
-                    <Card className="p-3">
-                      <View className="flex-row">
-                        {meal.imageUrl ? (
-                          <Image
-                            source={{ uri: meal.imageUrl }}
-                            className="w-16 h-16 rounded-lg mr-3"
-                          />
-                        ) : (
-                          <View className="w-16 h-16 rounded-lg mr-3 bg-gray-200 items-center justify-center">
-                            <Text className="text-2xl">
-                              {meal.mealType === 'breakfast' ? '🍳' :
-                               meal.mealType === 'lunch' ? '🥗' :
-                               meal.mealType === 'dinner' ? '🍽️' : '🍎'}
-                            </Text>
-                          </View>
-                        )}
-                        <View className="flex-1">
-                          <View className="flex-row justify-between items-start">
-                            <View>
-                              <Text className="font-semibold text-gray-900 capitalize">
-                                {meal.title || meal.mealType}
-                              </Text>
-                              <Text className="text-sm text-gray-500">
-                                {formatMealTime(meal.mealType)}
-                              </Text>
-                            </View>
-                            <View className="items-end">
-                              <Text className="font-semibold text-gray-900">
-                                {meal.totalCalories}
-                              </Text>
-                              <Text className="text-xs text-gray-500">cal</Text>
-                            </View>
-                          </View>
-                          
-                          {/* Macro bars */}
-                          <View className="flex-row mt-2 space-x-1">
-                            <View className="flex-row items-center">
-                              <Text className="text-xs text-gray-600 mr-1">C: {meal.totalCarbs}g</Text>
-                              <View className="h-1 w-12 bg-gray-100 rounded-full overflow-hidden">
-                                <View 
-                                  className="h-full rounded-full"
-                                  style={{ 
-                                    backgroundColor: getMacroColor('carbs'),
-                                    width: `${Math.min((meal.totalCarbs / 100) * 100, 100)}%`
-                                  }}
-                                />
-                              </View>
-                            </View>
-                            
-                            <View className="flex-row items-center ml-2">
-                              <Text className="text-xs text-gray-600 mr-1">P: {meal.totalProtein}g</Text>
-                              <View className="h-1 w-12 bg-gray-100 rounded-full overflow-hidden">
-                                <View 
-                                  className="h-full rounded-full"
-                                  style={{ 
-                                    backgroundColor: getMacroColor('protein'),
-                                    width: `${Math.min((meal.totalProtein / 50) * 100, 100)}%`
-                                  }}
-                                />
-                              </View>
-                            </View>
-                            
-                            <View className="flex-row items-center ml-2">
-                              <Text className="text-xs text-gray-600 mr-1">F: {meal.totalFat}g</Text>
-                              <View className="h-1 w-12 bg-gray-100 rounded-full overflow-hidden">
-                                <View 
-                                  className="h-full rounded-full"
-                                  style={{ 
-                                    backgroundColor: getMacroColor('fat'),
-                                    width: `${Math.min((meal.totalFat / 30) * 100, 100)}%`
-                                  }}
-                                />
-                              </View>
-                            </View>
-                          </View>
-                        </View>
-                      </View>
-                    </Card>
-                  </TouchableOpacity>
+                    <MealCard
+                      meal={{
+                        id: meal.id,
+                        type: meal.mealType,
+                        time: formatMealTime(meal.mealType),
+                        calories: meal.totalCalories,
+                        image: meal.imageUrl,
+                        macros: {
+                          carbs: meal.totalCarbs,
+                          protein: meal.totalProtein,
+                          fat: meal.totalFat,
+                        },
+                        foods: meal.foods,
+                        mealGroupId: meal.mealGroupId,
+                        title: meal.title,
+                      }}
+                      onPress={() => handleViewMeal(meal)}
+                    />
+                  </SwipeableRow>
                 </MotiView>
               ))
             ) : (
